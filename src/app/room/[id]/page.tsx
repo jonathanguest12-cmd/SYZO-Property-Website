@@ -8,17 +8,15 @@ import {
   fetchRoomsForProperty,
 } from '@/lib/queries'
 import type { RoomWithProperty } from '@/lib/types'
-import { formatAvailableFrom, isAvailableNow, roomTypeLabel, stripHtml } from '@/lib/format'
+import { formatAvailableFrom, isAvailableNow, roomTypeLabel, parseAdvertDescription } from '@/lib/format'
 import PhotoGallery from '@/components/PhotoGallery'
 import ExpandableText from '@/components/ExpandableText'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
-/** Parse advert_description into structured paragraphs */
-function FormattedDescription({ html }: { html: string }) {
-  const plain = stripHtml(html)
-  const lines = plain.split(/\n/)
-
+/** Render plain text with paragraph breaks, bullets, and short headings */
+function TextBlock({ text }: { text: string }) {
+  const lines = text.split(/\n/)
   const elements: React.ReactNode[] = []
   let currentBullets: string[] = []
   let key = 0
@@ -38,53 +36,23 @@ function FormattedDescription({ html }: { html: string }) {
 
   for (const rawLine of lines) {
     const line = rawLine.trim()
-    if (!line) {
-      flushBullets()
-      continue
-    }
+    if (!line) { flushBullets(); continue }
 
     const bulletMatch = line.match(/^[-\u2022\u2013~]\s*(.*)/)
-    if (bulletMatch) {
-      currentBullets.push(bulletMatch[1])
-      continue
-    }
+    if (bulletMatch) { currentBullets.push(bulletMatch[1]); continue }
 
     if (line.length < 60 && (line.endsWith(':') || line.endsWith(';'))) {
       flushBullets()
-      elements.push(
-        <p key={key++} className="text-sm font-semibold" style={{ color: '#2D3038' }}>{line}</p>
-      )
+      elements.push(<p key={key++} className="text-sm font-semibold" style={{ color: '#2D3038' }}>{line}</p>)
       continue
     }
 
     flushBullets()
-
-    // Split long sentences on topic boundaries for readability
-    const sentences = line.match(/[^.!?]+[.!?]+/g)
-    if (sentences && sentences.length > 2) {
-      // Group into paragraphs of ~2 sentences
-      for (let i = 0; i < sentences.length; i += 2) {
-        const chunk = sentences.slice(i, i + 2).join('').trim()
-        if (chunk) {
-          elements.push(
-            <p key={key++} className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{chunk}</p>
-          )
-        }
-      }
-    } else {
-      elements.push(
-        <p key={key++} className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{line}</p>
-      )
-    }
+    elements.push(<p key={key++} className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{line}</p>)
   }
 
   flushBullets()
-
-  return (
-    <div className="max-w-prose space-y-3">
-      {elements}
-    </div>
-  )
+  return <div className="space-y-2.5">{elements}</div>
 }
 
 /** Extract letting details from additional_info JSONB */
@@ -259,16 +227,39 @@ export default async function RoomDetailPage({
             </div>
 
             {/* Card 2: Property Description — with Show More toggle */}
-            {room.advert_description && (
-              <div className="rounded-xl bg-white p-6" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-                <h2 className="text-sm font-semibold uppercase tracking-[0.1em] mb-4" style={{ color: '#9CA3AF' }}>
-                  Property Description
-                </h2>
-                <ExpandableText maxHeight={200}>
-                  <FormattedDescription html={room.advert_description} />
-                </ExpandableText>
-              </div>
-            )}
+            {room.advert_description && (() => {
+              const parsed = parseAdvertDescription(room.advert_description)
+              return (
+                <>
+                  {parsed.description && (
+                    <div className="rounded-xl bg-white p-6" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+                      <h2 className="text-sm font-semibold uppercase tracking-[0.1em] mb-4" style={{ color: '#9CA3AF' }}>
+                        Property Description
+                      </h2>
+                      <ExpandableText maxHeight={200}>
+                        <TextBlock text={parsed.description} />
+                      </ExpandableText>
+                    </div>
+                  )}
+                  {/* Structured info sections: Shops, Transport, Healthcare */}
+                  {parsed.sections.length > 0 && (
+                    <div className="rounded-xl bg-white p-6" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+                      <h2 className="text-sm font-semibold uppercase tracking-[0.1em] mb-4" style={{ color: '#9CA3AF' }}>
+                        Local Area
+                      </h2>
+                      <div className="space-y-4">
+                        {parsed.sections.map((section, idx) => (
+                          <div key={idx}>
+                            <p className="text-sm font-semibold mb-1" style={{ color: '#2D3038' }}>{section.title}</p>
+                            <TextBlock text={section.content} />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )
+            })()}
 
             {/* Card 3: Property Features */}
             {room.property_amenities.length > 0 && (
