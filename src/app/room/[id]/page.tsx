@@ -1,3 +1,5 @@
+export const revalidate = 3600 // ISR: cache pages for 1 hour
+
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import Image from 'next/image'
@@ -171,10 +173,12 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
         </Link>
 
         <div className="grid gap-8 lg:grid-cols-12">
-          {/* LEFT: Photos + Apply + Other Rooms (sticky) */}
+          {/* LEFT: Photos + Apply + Other Rooms (sticky, fits viewport) */}
           <div className="lg:col-span-5">
-            <div className="lg:sticky lg:top-20 flex flex-col gap-5">
-              <PhotoGallery photos={galleryPhotos} alt={room.property_name} />
+            <div className="lg:sticky lg:top-20 flex flex-col gap-4" style={{ maxHeight: 'calc(100vh - 100px)', overflowY: 'auto' }}>
+              <div style={{ maxHeight: '350px' }}>
+                <PhotoGallery photos={galleryPhotos} alt={room.property_name} />
+              </div>
 
               <div className="hidden lg:block">
                 <Link href={`/apply/${room.id}`} className="btn-primary w-full inline-flex items-center justify-center rounded-lg px-6 py-3.5 text-base font-semibold text-white">
@@ -182,53 +186,36 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
                 </Link>
               </div>
 
-              {/* Property link */}
-              <p className="hidden lg:block text-center text-sm" style={{ color: '#9CA3AF' }}>
-                This room is at{' '}
-                <Link href={`/property/${room.property_ref}`} className="font-medium underline underline-offset-2 transition-colors duration-200 hover:opacity-70" style={{ color: '#2D3038' }}>
-                  {room.property_name}
-                </Link>
-              </p>
-
-              {/* Other rooms — large, impactful cards */}
+              {/* Other rooms — compact cards */}
               {otherRooms.length > 0 && (
-                <div className="hidden lg:block mt-6">
-                  <h3 className="text-lg font-bold mb-4" style={{ color: '#2D3038' }}>
+                <div className="hidden lg:block mt-4">
+                  <h3 className="text-sm font-semibold uppercase tracking-[0.1em] mb-3" style={{ color: '#9CA3AF' }}>
                     Other Rooms at {room.property_name}
                   </h3>
-                  <div className="flex flex-col gap-3">
-                    {otherRooms.map((r) => {
-                      const rAvail = formatAvailableFrom(r.available_from)
-                      const rAvailNow = isAvailableNow(r.available_from)
-                      return (
-                        <Link key={r.id} href={`/room/${r.id}`} className="overflow-hidden rounded-xl bg-white transition-shadow duration-200 hover:shadow-md" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-                          <div className="relative w-full overflow-hidden" style={{ height: '160px', backgroundColor: '#E5E3DF' }}>
-                            {r.photo_urls[0] ? (
-                              <Image src={r.photo_urls[0]} alt={r.name} fill unoptimized className="object-cover" sizes="400px" loading="lazy" />
-                            ) : (
-                              <div className="flex h-full items-center justify-center" style={{ color: '#9CA3AF' }}>
-                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z" /><path d="M9 21V12h6v9" /></svg>
-                              </div>
-                            )}
-                          </div>
-                          <div className="p-4 flex flex-col gap-1.5">
-                            <p className="font-bold text-sm" style={{ color: '#2D3038' }}>{r.name}</p>
-                            <div className="flex items-baseline gap-2">
-                              <span className="text-xl font-bold tabular-nums" style={{ color: '#2D3038' }}>
-                                &pound;{Math.round(r.rent_pcm)}
-                              </span>
-                              <span className="text-sm" style={{ color: '#9CA3AF' }}>/month</span>
-                              <span className="ml-auto inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold" style={r.bills_included ? { backgroundColor: '#F0FAF0', color: '#16A34A' } : { backgroundColor: '#FEF9EF', color: '#B45309' }}>
-                                {r.bills_included ? 'Bills inc.' : 'Bills extra'}
-                              </span>
+                  <div className="flex flex-col gap-2">
+                    {otherRooms.map((r) => (
+                      <Link key={r.id} href={`/room/${r.id}`} className="flex gap-3 rounded-lg bg-white p-2.5 transition-shadow duration-200 hover:shadow-md" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+                        <div className="relative flex-shrink-0 overflow-hidden rounded-md" style={{ width: '100px', height: '75px', backgroundColor: '#E5E3DF' }}>
+                          {r.photo_urls[0] ? (
+                            <Image src={r.photo_urls[0]} alt={r.name} fill unoptimized className="object-cover" sizes="100px" loading="lazy" />
+                          ) : (
+                            <div className="flex h-full items-center justify-center" style={{ color: '#9CA3AF' }}>
+                              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z" /><path d="M9 21V12h6v9" /></svg>
                             </div>
-                            <p className="text-xs font-medium" style={{ color: rAvailNow ? '#16A34A' : '#6B7280' }}>
-                              {rAvail}
-                            </p>
+                          )}
+                        </div>
+                        <div className="flex flex-col gap-0.5 min-w-0 justify-center">
+                          <p className="font-semibold text-sm truncate" style={{ color: '#2D3038' }}>{r.name}</p>
+                          <div className="flex items-baseline gap-1.5">
+                            <span className="text-base font-bold tabular-nums" style={{ color: '#2D3038' }}>&pound;{Math.round(r.rent_pcm)}</span>
+                            <span className="text-xs" style={{ color: '#9CA3AF' }}>/mo</span>
+                            <span className="ml-auto inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold" style={r.bills_included ? { backgroundColor: '#F0FAF0', color: '#16A34A' } : { backgroundColor: '#FEF9EF', color: '#B45309' }}>
+                              {r.bills_included ? 'Bills inc.' : 'Bills extra'}
+                            </span>
                           </div>
-                        </Link>
-                      )
-                    })}
+                        </div>
+                      </Link>
+                    ))}
                   </div>
                 </div>
               )}
@@ -238,7 +225,16 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
           {/* RIGHT: Content cards */}
           <div className="flex flex-col gap-5 lg:col-span-7">
             <div>
-              <h1 className="text-2xl font-bold tracking-tight md:text-3xl" style={{ color: '#2D3038' }}>{room.property_name}</h1>
+              <div className="flex items-start justify-between gap-4">
+                <h1 className="text-2xl font-bold tracking-tight md:text-3xl" style={{ color: '#2D3038' }}>{room.property_name}</h1>
+                <Link
+                  href={`/property/${room.property_ref}`}
+                  className="flex-shrink-0 text-sm underline underline-offset-2 transition-colors duration-200 hover:opacity-70 mt-1"
+                  style={{ color: '#9CA3AF' }}
+                >
+                  View property page
+                </Link>
+              </div>
               <p className="mt-1.5 text-sm" style={{ color: '#9CA3AF' }}>
                 {room.property_city}, {room.property_postcode}
                 {room.room_type && ` \u00B7 ${roomTypeLabel(room.room_type)}`}

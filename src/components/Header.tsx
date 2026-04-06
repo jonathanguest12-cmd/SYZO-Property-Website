@@ -25,7 +25,7 @@ export default function Header() {
       }}
     >
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 md:px-8">
-        <Link href="/" className="inline-flex items-center gap-3">
+        <Link href="/" className="inline-flex items-center">
           <Image
             src="/SYZO-logo.png"
             alt="SYZO"
@@ -35,9 +35,6 @@ export default function Header() {
             unoptimized
             className="h-14 w-auto"
           />
-          <span className="hidden sm:block text-sm font-medium" style={{ color: '#9CA3AF' }}>
-            Rooms to rent across the South West
-          </span>
         </Link>
         <a
           href="mailto:hello@syzo.co"
