@@ -34,13 +34,18 @@ function ChevronRight() {
 }
 
 export default function PhotoGallery({ photos, alt }: PhotoGalleryProps) {
+  // Deduplicate by original title (same photo uploaded twice gets different CDN UUIDs but same title)
   const uniquePhotos = useMemo(() => {
-    const seen = new Set<string>()
+    const seenUrls = new Set<string>()
+    const seenTitles = new Set<string>()
     return photos.filter((p) => {
-      const filename = p.url.split('/').pop() || p.url
-      if (seen.has(p.url) || seen.has(filename)) return false
-      seen.add(p.url)
-      seen.add(filename)
+      if (seenUrls.has(p.url)) return false
+      seenUrls.add(p.url)
+      // Deduplicate by title if it's a meaningful title (not generic like "Room")
+      if (p.title && p.title !== 'Room' && p.title.length > 2) {
+        if (seenTitles.has(p.title)) return false
+        seenTitles.add(p.title)
+      }
       return true
     })
   }, [photos])
@@ -112,9 +117,9 @@ export default function PhotoGallery({ photos, alt }: PhotoGalleryProps) {
             src={mainPhoto.url}
             alt={mainPhoto.title || alt}
             fill
+            unoptimized
             className="object-cover"
             sizes="(max-width: 768px) 100vw, 500px"
-            quality={85}
             priority={safeIndex === 0}
           />
 
@@ -173,9 +178,9 @@ export default function PhotoGallery({ photos, alt }: PhotoGalleryProps) {
                   src={photo.url}
                   alt={photo.title || `Photo ${idx + 1}`}
                   fill
+                  unoptimized
                   className="object-cover"
                   sizes="56px"
-                  quality={85}
                   loading="lazy"
                 />
               </button>
@@ -222,9 +227,9 @@ export default function PhotoGallery({ photos, alt }: PhotoGalleryProps) {
               src={mainPhoto.url}
               alt={mainPhoto.title || alt}
               fill
+              unoptimized
               className="object-contain"
               sizes="90vw"
-              quality={90}
               priority
             />
           </div>

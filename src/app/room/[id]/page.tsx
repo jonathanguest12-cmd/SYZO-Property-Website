@@ -146,6 +146,8 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
         city: room.property_city,
         rent: Math.round(room.rent_pcm),
         billsIncluded: room.bills_included,
+        roomName: room.name || 'this room',
+        roomType: roomTypeLabel(room.room_type),
       })
     : null
 
@@ -180,10 +182,18 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
                 </Link>
               </div>
 
-              {/* Other rooms — bigger, more impactful cards */}
+              {/* Property link */}
+              <p className="hidden lg:block text-center text-sm" style={{ color: '#9CA3AF' }}>
+                This room is at{' '}
+                <Link href={`/property/${room.property_ref}`} className="font-medium underline underline-offset-2 transition-colors duration-200 hover:opacity-70" style={{ color: '#2D3038' }}>
+                  {room.property_name}
+                </Link>
+              </p>
+
+              {/* Other rooms — large, impactful cards */}
               {otherRooms.length > 0 && (
-                <div className="hidden lg:block">
-                  <h3 className="text-xs font-semibold uppercase tracking-[0.1em] mb-3" style={{ color: '#9CA3AF' }}>
+                <div className="hidden lg:block mt-6">
+                  <h3 className="text-lg font-bold mb-4" style={{ color: '#2D3038' }}>
                     Other Rooms at {room.property_name}
                   </h3>
                   <div className="flex flex-col gap-3">
@@ -192,22 +202,22 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
                       const rAvailNow = isAvailableNow(r.available_from)
                       return (
                         <Link key={r.id} href={`/room/${r.id}`} className="overflow-hidden rounded-xl bg-white transition-shadow duration-200 hover:shadow-md" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-                          <div className="relative w-full overflow-hidden" style={{ height: '120px', backgroundColor: '#E5E3DF' }}>
+                          <div className="relative w-full overflow-hidden" style={{ height: '160px', backgroundColor: '#E5E3DF' }}>
                             {r.photo_urls[0] ? (
-                              <Image src={r.photo_urls[0]} alt={r.name} fill className="object-cover" sizes="300px" quality={85} loading="lazy" />
+                              <Image src={r.photo_urls[0]} alt={r.name} fill unoptimized className="object-cover" sizes="400px" loading="lazy" />
                             ) : (
                               <div className="flex h-full items-center justify-center" style={{ color: '#9CA3AF' }}>
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z" /><path d="M9 21V12h6v9" /></svg>
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z" /><path d="M9 21V12h6v9" /></svg>
                               </div>
                             )}
                           </div>
-                          <div className="p-3 flex flex-col gap-1.5">
-                            <p className="font-semibold text-sm" style={{ color: '#2D3038' }}>{r.name}</p>
+                          <div className="p-4 flex flex-col gap-1.5">
+                            <p className="font-bold text-sm" style={{ color: '#2D3038' }}>{r.name}</p>
                             <div className="flex items-baseline gap-2">
-                              <span className="text-lg font-bold tabular-nums" style={{ color: '#2D3038' }}>
+                              <span className="text-xl font-bold tabular-nums" style={{ color: '#2D3038' }}>
                                 &pound;{Math.round(r.rent_pcm)}
                               </span>
-                              <span className="text-xs" style={{ color: '#9CA3AF' }}>/month</span>
+                              <span className="text-sm" style={{ color: '#9CA3AF' }}>/month</span>
                               <span className="ml-auto inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold" style={r.bills_included ? { backgroundColor: '#F0FAF0', color: '#16A34A' } : { backgroundColor: '#FEF9EF', color: '#B45309' }}>
                                 {r.bills_included ? 'Bills inc.' : 'Bills extra'}
                               </span>
@@ -387,7 +397,7 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
                     {otherRooms.map((r) => (
                       <Link key={r.id} href={`/room/${r.id}`} className="flex-shrink-0 overflow-hidden rounded-lg" style={{ width: '200px', border: '1px solid #F0EFEC' }}>
                         <div className="relative w-full" style={{ height: '100px', backgroundColor: '#E5E3DF' }}>
-                          {r.photo_urls[0] ? <Image src={r.photo_urls[0]} alt={r.name} fill className="object-cover" sizes="200px" quality={85} loading="lazy" /> : null}
+                          {r.photo_urls[0] ? <Image src={r.photo_urls[0]} alt={r.name} fill unoptimized className="object-cover" sizes="200px" loading="lazy" /> : null}
                         </div>
                         <div className="p-2.5">
                           <p className="font-semibold text-xs" style={{ color: '#2D3038' }}>{r.name}</p>

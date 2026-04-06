@@ -27,8 +27,8 @@ export default async function HomePage() {
             className="mt-3 text-3xl font-bold leading-tight tracking-tight md:text-5xl lg:text-[3.5rem]"
             style={{ color: '#2D3038' }}
           >
-            Rooms to rent in<br />
-            Plymouth & Newquay
+            Rooms to rent across<br />
+            the South West
           </h1>
           <p className="mt-4 max-w-lg text-base leading-relaxed md:text-lg" style={{ color: '#6B7280' }}>
             Beautifully furnished rooms in professionally managed shared houses.

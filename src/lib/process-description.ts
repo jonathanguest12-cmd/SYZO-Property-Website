@@ -1,7 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { stripHtml } from './format'
 
-// Simple in-memory cache (resets on server restart, which is fine)
 const cache = new Map<string, ProcessedDescription>()
 
 export interface ProcessedDescription {
@@ -20,12 +19,17 @@ export interface ProcessedDescription {
 export async function processDescription(
   roomId: string,
   rawHtml: string,
-  context: { address: string; city: string; rent: number; billsIncluded: boolean }
+  context: {
+    address: string
+    city: string
+    rent: number
+    billsIncluded: boolean
+    roomName: string
+    roomType: string
+  }
 ): Promise<ProcessedDescription | null> {
-  // Check cache first
   if (cache.has(roomId)) return cache.get(roomId)!
 
-  // Skip if no API key or no description
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey || !rawHtml) return null
 
@@ -41,7 +45,11 @@ export async function processDescription(
         role: 'user',
         content: `Process this property listing for a premium shared living website.
 
+You are writing about ${context.roomName} ONLY at ${context.address}, ${context.city}.
+
 Room context:
+- Room: ${context.roomName}
+- Room type: ${context.roomType}
 - Address: ${context.address}
 - City: ${context.city}
 - Rent: £${context.rent} pcm
@@ -50,14 +58,14 @@ Room context:
 Raw description:
 ${rawText}
 
-Return ONLY valid JSON with this structure:
+Return ONLY valid JSON:
 {
-  "property_overview": "2-3 clean sentences about the property. Professional tone. No SpareRoom marketing. No contradictions with bills status above.",
-  "room_description": "1-2 sentences about THIS specific room if info exists, otherwise null.",
-  "whats_included": ["Array of truthful inclusions. If bills NOT included, do NOT say bills included. Examples: 'Superfast WiFi', 'Professional cleaning', 'Fully furnished'"],
+  "property_overview": "2-3 clean sentences about the property. Professional tone. No SpareRoom marketing.",
+  "room_description": "2-3 sentences about ${context.roomName} specifically. If the raw text mentions this room, extract that info. If it mentions OTHER rooms at this property, IGNORE those completely. If no specific info about this room exists, write a brief description based on it being a ${context.roomType} in this property. NEVER leave this as just one short sentence.",
+  "whats_included": ["Array of truthful inclusions. If bills_included is ${context.billsIncluded ? 'true' : 'false'}, ${context.billsIncluded ? 'you may include bills-related items' : 'do NOT say bills are included'}. Examples: 'Superfast WiFi', 'Professional cleaning', 'Fully furnished'"],
   "local_area": {
     "shops": "Nearby shops or null",
-    "transport": "Nearby stations/airports or null",
+    "transport": "Nearby stations or null",
     "healthcare": "Nearby hospitals/doctors or null",
     "leisure": "Nearby entertainment or null"
   },
@@ -65,17 +73,16 @@ Return ONLY valid JSON with this structure:
 }
 
 Rules:
-- Remove ALL marketing: "Don't miss out!", "Contact us today", "Rooms go quickly"
-- Remove ALL SpareRoom text: "call, text or WhatsApp", "book a viewing", "put your name on a waiting list", "Contact us to apply"
-- Remove EPC ratings
-- Fix grammar and punctuation
-- Do NOT contradict bills_included status
-- Return ONLY valid JSON, no markdown, no preamble`
+- You are writing about ${context.roomName} ONLY. Ignore info about other rooms.
+- NEVER alter, infer, or contradict any factual room data (rent, deposit, bills status).
+- Remove ALL marketing copy and SpareRoom text (call/text/WhatsApp, book a viewing, waiting list, contact us).
+- Remove EPC ratings.
+- room_description must be 2-3 sentences minimum.
+- Return ONLY valid JSON, no markdown, no preamble.`
       }]
     })
 
     const text = response.content[0].type === 'text' ? response.content[0].text : ''
-    // Strip any markdown code fences
     const cleaned = text.replace(/```json\n?|\n?```/g, '').trim()
     const jsonMatch = cleaned.match(/\{[\s\S]*\}/)
     if (!jsonMatch) return null

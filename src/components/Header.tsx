@@ -24,18 +24,28 @@ export default function Header() {
         borderBottom: scrolled ? '1px solid rgba(45, 48, 56, 0.06)' : '1px solid transparent',
       }}
     >
-      <div className="mx-auto flex max-w-7xl items-center px-6 py-5 md:px-8">
-        <Link href="/" className="inline-flex items-center">
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 md:px-8">
+        <Link href="/" className="inline-flex items-center gap-3">
           <Image
             src="/SYZO-logo.png"
             alt="SYZO"
-            width={120}
-            height={40}
+            width={140}
+            height={56}
             priority
             unoptimized
-            className="h-8 w-auto"
+            className="h-14 w-auto"
           />
+          <span className="hidden sm:block text-sm font-medium" style={{ color: '#9CA3AF' }}>
+            Rooms to rent across the South West
+          </span>
         </Link>
+        <a
+          href="mailto:hello@syzo.co"
+          className="text-sm font-medium transition-colors duration-200 hover:opacity-70"
+          style={{ color: '#6B7280' }}
+        >
+          hello@syzo.co
+        </a>
       </div>
     </header>
   )
