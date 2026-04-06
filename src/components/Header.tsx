@@ -29,10 +29,11 @@ export default function Header() {
           <Image
             src="/SYZO-logo.png"
             alt="SYZO"
-            width={48}
-            height={48}
+            width={120}
+            height={40}
             priority
-            className="h-10 w-auto"
+            unoptimized
+            className="h-8 w-auto"
           />
         </Link>
         <nav className="flex items-center gap-8">
@@ -44,11 +45,11 @@ export default function Header() {
             Rooms
           </Link>
           <a
-            href="tel:01174504898"
+            href="mailto:hello@syzo.co"
             className="text-sm font-medium tracking-wide transition-colors duration-200"
             style={{ color: '#6B7280' }}
           >
-            0117 450 4898
+            hello@syzo.co
           </a>
         </nav>
       </div>

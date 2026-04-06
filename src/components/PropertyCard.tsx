@@ -50,15 +50,19 @@ export default function PropertyCard({
           </div>
         ) : (
           <div
-            className="flex items-center justify-center text-sm"
+            className="flex flex-col items-center justify-center gap-2"
             style={{
               aspectRatio: '16/10',
               maxHeight: '200px',
-              background: 'linear-gradient(135deg, #E5E3DF, #D8D5D0)',
-              color: '#6B7280',
+              background: 'linear-gradient(145deg, #E8E6E2, #DDD9D4)',
+              color: '#9CA3AF',
             }}
           >
-            No photo available
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z" />
+              <path d="M9 21V12h6v9" />
+            </svg>
+            <span className="text-xs font-medium">No photo</span>
           </div>
         )}
         {/* City badge */}

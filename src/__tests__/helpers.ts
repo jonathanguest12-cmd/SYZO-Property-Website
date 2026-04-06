@@ -29,6 +29,7 @@ export function makeRoom(overrides: Partial<RoomWithProperty> = {}): RoomWithPro
     property_images: [{ url: 'https://d19qeljo1i8r7y.cloudfront.net/prop1.jpg', title: 'Front' }],
     room_amenities: ['Desk', 'Wardrobe'],
     spareroom_listing_id: 'SR123',
+    additional_info: {},
     ...overrides,
   }
 }

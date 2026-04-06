@@ -31,7 +31,7 @@ export default async function HomePage() {
             Plymouth & Newquay
           </h1>
           <p className="mt-4 max-w-lg text-base leading-relaxed md:text-lg" style={{ color: '#6B7280' }}>
-            Beautifully furnished rooms in professionally managed shared houses. One monthly payment, all bills included.
+            Beautifully furnished rooms in professionally managed shared houses.
           </p>
         </div>
       </section>

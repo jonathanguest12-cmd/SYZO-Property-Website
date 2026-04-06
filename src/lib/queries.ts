@@ -42,6 +42,7 @@ export function mapRoomToRoomWithProperty(row: RoomRow): RoomWithProperty {
     spareroom_listing_id: row.spareroom_listing_id,
     advert_title: row.additional_info?.advertTitle ?? null,
     advert_description: row.additional_info?.advertDescription ?? null,
+    additional_info: row.additional_info ?? {},
   }
 }
 

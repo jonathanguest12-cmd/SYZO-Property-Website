@@ -10,16 +10,11 @@ import {
 import type { RoomWithProperty } from '@/lib/types'
 import { formatAvailableFrom, isAvailableNow, roomTypeLabel, stripHtml } from '@/lib/format'
 import PhotoGallery from '@/components/PhotoGallery'
+import ExpandableText from '@/components/ExpandableText'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
-function getRoomTitle(room: RoomWithProperty): string {
-  if (room.advert_title) return room.advert_title
-  const type = roomTypeLabel(room.room_type)
-  return `${type} \u2014 ${room.property_name}`
-}
-
-/** Parse advert_description into structured content */
+/** Parse advert_description into structured paragraphs */
 function FormattedDescription({ html }: { html: string }) {
   const plain = stripHtml(html)
   const lines = plain.split(/\n/)
@@ -33,7 +28,7 @@ function FormattedDescription({ html }: { html: string }) {
       elements.push(
         <ul key={key++} className="list-disc pl-5 space-y-1">
           {currentBullets.map((item, i) => (
-            <li key={i} className="leading-relaxed" style={{ color: '#6B7280' }}>{item}</li>
+            <li key={i} className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{item}</li>
           ))}
         </ul>
       )
@@ -57,15 +52,30 @@ function FormattedDescription({ html }: { html: string }) {
     if (line.length < 60 && (line.endsWith(':') || line.endsWith(';'))) {
       flushBullets()
       elements.push(
-        <p key={key++} className="font-semibold" style={{ color: '#2D3038' }}>{line}</p>
+        <p key={key++} className="text-sm font-semibold" style={{ color: '#2D3038' }}>{line}</p>
       )
       continue
     }
 
     flushBullets()
-    elements.push(
-      <p key={key++} className="leading-relaxed" style={{ color: '#6B7280' }}>{line}</p>
-    )
+
+    // Split long sentences on topic boundaries for readability
+    const sentences = line.match(/[^.!?]+[.!?]+/g)
+    if (sentences && sentences.length > 2) {
+      // Group into paragraphs of ~2 sentences
+      for (let i = 0; i < sentences.length; i += 2) {
+        const chunk = sentences.slice(i, i + 2).join('').trim()
+        if (chunk) {
+          elements.push(
+            <p key={key++} className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{chunk}</p>
+          )
+        }
+      }
+    } else {
+      elements.push(
+        <p key={key++} className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{line}</p>
+      )
+    }
   }
 
   flushBullets()
@@ -75,6 +85,35 @@ function FormattedDescription({ html }: { html: string }) {
       {elements}
     </div>
   )
+}
+
+/** Extract letting details from additional_info JSONB */
+function getLettingDetails(room: RoomWithProperty) {
+  const info = room.additional_info ?? {}
+  const prop = info.property ?? {}
+
+  return {
+    deposit: info.depositAmount ?? info.deposit ?? prop.deposit ?? null,
+    maxTenants: info.maximumTenants ?? prop.maximumOccupants ?? null,
+    minTenancy: info.minimumTenancy ?? info.minTenancy ?? null,
+  }
+}
+
+/** Deduplicate photos by URL and merge room + property photos */
+function buildGalleryPhotos(room: RoomWithProperty): { url: string; title: string }[] {
+  const roomPhotos = (room.photo_urls ?? []).map((url) => ({ url, title: 'Room' }))
+  const propertyPhotos = (room.property_images ?? []).length > 1
+    ? (room.property_images ?? []).slice(1) // skip first (usually exterior drawing)
+    : []
+  const all = [...roomPhotos, ...propertyPhotos]
+
+  // Deduplicate by URL
+  const seen = new Set<string>()
+  return all.filter((p) => {
+    if (seen.has(p.url)) return false
+    seen.add(p.url)
+    return true
+  })
 }
 
 async function resolveRoom(id: string): Promise<RoomWithProperty | null> {
@@ -94,10 +133,9 @@ export async function generateMetadata({
   const room = await resolveRoom(id)
   if (!room) return { title: 'Room Not Found - SYZO' }
 
-  const title = getRoomTitle(room)
   return {
-    title: `${title} - SYZO`,
-    description: `${title} in ${room.property_city}. \u00A3${Math.round(room.rent_pcm)}/month. ${room.bills_included ? 'Bills included.' : 'Bills extra.'}`,
+    title: `${room.property_name} - SYZO`,
+    description: `Room at ${room.property_name}, ${room.property_city}. \u00A3${Math.round(room.rent_pcm)}/month. ${room.bills_included ? 'Bills included.' : 'Bills extra.'}`,
   }
 }
 
@@ -114,14 +152,15 @@ export default async function RoomDetailPage({
     (r) => r.id !== room.id
   )
 
-  const title = getRoomTitle(room)
   const availText = formatAvailableFrom(room.available_from)
   const availNow = isAvailableNow(room.available_from)
+  const letting = getLettingDetails(room)
+  const galleryPhotos = buildGalleryPhotos(room)
 
-  const roomPhotos = (room.photo_urls ?? []).map((url) => ({ url, title: 'Room' }))
-  const propertyPhotos = room.property_images ?? []
-  const sharedSpacePhotos = propertyPhotos.length > 1 ? propertyPhotos.slice(1) : []
-  const allGalleryPhotos = [...roomPhotos, ...sharedSpacePhotos]
+  // Determine en-suite status from amenities
+  const hasEnSuite = room.room_amenities.some(
+    (a) => a.toLowerCase().includes('en-suite') || a.toLowerCase().includes('ensuite')
+  )
 
   return (
     <>
@@ -135,8 +174,8 @@ export default async function RoomDetailPage({
           &larr; Back to all rooms
         </Link>
 
-        {/* Photo gallery */}
-        <PhotoGallery photos={allGalleryPhotos} alt={title} />
+        {/* Photo gallery — merged room + property photos, deduplicated */}
+        <PhotoGallery photos={galleryPhotos} alt={room.property_name} />
 
         {/* Two-column layout */}
         <div className="mt-8 grid gap-8 lg:grid-cols-12">
@@ -148,14 +187,16 @@ export default async function RoomDetailPage({
                 className="text-2xl font-bold tracking-tight md:text-3xl"
                 style={{ color: '#2D3038' }}
               >
-                {title}
+                {room.property_name}
               </h1>
               <p className="mt-1.5 text-sm" style={{ color: '#9CA3AF' }}>
-                {room.property_name}, {room.property_city}, {room.property_postcode}
+                {room.property_city}, {room.property_postcode}
+                {room.room_type && ` \u00B7 ${roomTypeLabel(room.room_type)}`}
+                {hasEnSuite && ' \u00B7 En-suite'}
               </p>
             </div>
 
-            {/* Letting Details */}
+            {/* Card 1: Letting Details */}
             <div className="rounded-xl bg-white p-6" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
               <h2 className="text-sm font-semibold uppercase tracking-[0.1em] mb-4" style={{ color: '#9CA3AF' }}>
                 Letting Details
@@ -164,7 +205,7 @@ export default async function RoomDetailPage({
                 <div className="flex items-center justify-between py-3">
                   <span className="text-sm" style={{ color: '#6B7280' }}>Rent</span>
                   <span className="text-xl font-bold tabular-nums" style={{ color: '#2D3038' }}>
-                    &pound;{Math.round(room.rent_pcm)}<span className="text-sm font-normal ml-1" style={{ color: '#9CA3AF' }}>/month</span>
+                    &pound;{Math.round(room.rent_pcm)}<span className="text-sm font-normal ml-1" style={{ color: '#9CA3AF' }}>pcm</span>
                   </span>
                 </div>
                 <div className="flex items-center justify-between py-3">
@@ -180,6 +221,38 @@ export default async function RoomDetailPage({
                     {room.bills_included ? 'Included' : 'Not included'}
                   </span>
                 </div>
+                {letting.deposit != null && (
+                  <div className="flex items-center justify-between py-3">
+                    <span className="text-sm" style={{ color: '#6B7280' }}>Deposit</span>
+                    <span className="text-sm font-medium" style={{ color: '#2D3038' }}>
+                      &pound;{Math.round(Number(letting.deposit))}
+                    </span>
+                  </div>
+                )}
+                {room.room_type && (
+                  <div className="flex items-center justify-between py-3">
+                    <span className="text-sm" style={{ color: '#6B7280' }}>Room type</span>
+                    <span className="text-sm font-medium" style={{ color: '#2D3038' }}>
+                      {roomTypeLabel(room.room_type)}{hasEnSuite ? ' (en-suite)' : ''}
+                    </span>
+                  </div>
+                )}
+                {letting.maxTenants != null && (
+                  <div className="flex items-center justify-between py-3">
+                    <span className="text-sm" style={{ color: '#6B7280' }}>Max. tenants</span>
+                    <span className="text-sm font-medium" style={{ color: '#2D3038' }}>
+                      {letting.maxTenants}
+                    </span>
+                  </div>
+                )}
+                {letting.minTenancy != null && (
+                  <div className="flex items-center justify-between py-3">
+                    <span className="text-sm" style={{ color: '#6B7280' }}>Min. tenancy</span>
+                    <span className="text-sm font-medium" style={{ color: '#2D3038' }}>
+                      {letting.minTenancy}
+                    </span>
+                  </div>
+                )}
                 <div className="flex items-center justify-between py-3">
                   <span className="text-sm" style={{ color: '#6B7280' }}>Available</span>
                   <span
@@ -189,48 +262,22 @@ export default async function RoomDetailPage({
                     {availText}
                   </span>
                 </div>
-                {room.room_type && (
-                  <div className="flex items-center justify-between py-3">
-                    <span className="text-sm" style={{ color: '#6B7280' }}>Room type</span>
-                    <span className="text-sm font-medium" style={{ color: '#2D3038' }}>
-                      {roomTypeLabel(room.room_type)}
-                    </span>
-                  </div>
-                )}
               </div>
             </div>
 
-            {/* About This Room */}
+            {/* Card 2: Property Description — with Show More toggle */}
             {room.advert_description && (
               <div className="rounded-xl bg-white p-6" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
                 <h2 className="text-sm font-semibold uppercase tracking-[0.1em] mb-4" style={{ color: '#9CA3AF' }}>
-                  About This Room
+                  Property Description
                 </h2>
-                <FormattedDescription html={room.advert_description} />
+                <ExpandableText maxHeight={200}>
+                  <FormattedDescription html={room.advert_description} />
+                </ExpandableText>
               </div>
             )}
 
-            {/* Room Amenities */}
-            {room.room_amenities.length > 0 && (
-              <div className="rounded-xl bg-white p-6" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-                <h2 className="text-sm font-semibold uppercase tracking-[0.1em] mb-4" style={{ color: '#9CA3AF' }}>
-                  Room Amenities
-                </h2>
-                <div className="flex flex-wrap gap-2">
-                  {room.room_amenities.map((a) => (
-                    <span
-                      key={a}
-                      className="inline-flex items-center rounded-full px-3 py-1.5 text-sm font-medium"
-                      style={{ backgroundColor: '#F7F6F3', color: '#2D3038' }}
-                    >
-                      {a}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Property Features */}
+            {/* Card 3: Property Features */}
             {room.property_amenities.length > 0 && (
               <div className="rounded-xl bg-white p-6" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
                 <h2 className="text-sm font-semibold uppercase tracking-[0.1em] mb-4" style={{ color: '#9CA3AF' }}>
@@ -250,8 +297,8 @@ export default async function RoomDetailPage({
               </div>
             )}
 
-            {/* House Rules */}
-            {(room.property_pets_allowed !== null || room.property_smoking_allowed !== null) && (
+            {/* Card 4: House Rules */}
+            {(room.property_pets_allowed !== null || room.property_smoking_allowed !== null || letting.maxTenants != null) && (
               <div className="rounded-xl bg-white p-6" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
                 <h2 className="text-sm font-semibold uppercase tracking-[0.1em] mb-4" style={{ color: '#9CA3AF' }}>
                   House Rules
@@ -273,6 +320,14 @@ export default async function RoomDetailPage({
                       {room.property_smoking_allowed ? 'Smoking allowed' : 'No smoking'}
                     </span>
                   )}
+                  {letting.maxTenants != null && (
+                    <span
+                      className="inline-flex items-center rounded-full px-3 py-1.5 text-sm font-medium"
+                      style={{ backgroundColor: '#F7F6F3', color: '#2D3038' }}
+                    >
+                      Max {letting.maxTenants} occupant{Number(letting.maxTenants) !== 1 ? 's' : ''}
+                    </span>
+                  )}
                 </div>
               </div>
             )}
@@ -287,7 +342,7 @@ export default async function RoomDetailPage({
               <div>
                 <p className="text-3xl font-bold tabular-nums" style={{ color: '#2D3038' }}>
                   &pound;{Math.round(room.rent_pcm)}
-                  <span className="text-base font-normal ml-1" style={{ color: '#9CA3AF' }}>/month</span>
+                  <span className="text-base font-normal ml-1" style={{ color: '#9CA3AF' }}>pcm</span>
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -319,46 +374,16 @@ export default async function RoomDetailPage({
                 Apply to Rent
               </Link>
               <p className="text-center text-sm" style={{ color: '#9CA3AF' }}>
-                or call{' '}
-                <a href="tel:01174504898" className="font-medium underline underline-offset-2" style={{ color: '#2D3038' }}>
-                  0117 450 4898
+                or email{' '}
+                <a href="mailto:hello@syzo.co" className="font-medium underline underline-offset-2" style={{ color: '#2D3038' }}>
+                  hello@syzo.co
                 </a>
               </p>
             </div>
           </div>
         </div>
 
-        {/* Shared spaces gallery */}
-        {sharedSpacePhotos.length > 0 && (
-          <div className="mt-14">
-            <h2
-              className="text-sm font-semibold uppercase tracking-[0.1em] mb-5"
-              style={{ color: '#9CA3AF' }}
-            >
-              Shared Spaces
-            </h2>
-            <div className="grid gap-3 grid-cols-2 sm:grid-cols-3">
-              {sharedSpacePhotos.map((img, idx) => (
-                <div
-                  key={idx}
-                  className="relative overflow-hidden rounded-lg"
-                  style={{ aspectRatio: '4/3', backgroundColor: '#E5E3DF' }}
-                >
-                  <Image
-                    src={img.url}
-                    alt={img.title || `Shared space ${idx + 1}`}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                    quality={85}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Other rooms */}
+        {/* Other rooms at this property */}
         {otherRooms.length > 0 && (
           <div className="mt-14">
             <h2

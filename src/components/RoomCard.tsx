@@ -3,31 +3,38 @@ import Link from 'next/link'
 import type { RoomWithProperty } from '@/lib/types'
 import { formatAvailableFrom, isAvailableNow, roomTypeLabel } from '@/lib/format'
 
-function getRoomTitle(room: RoomWithProperty): { title: string; subtitle: string } {
-  const address = room.property_name
-  const postcode = room.property_postcode
-  const city = room.property_city
+/** SVG house icon for no-photo placeholder */
+function HouseIcon() {
+  return (
+    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z" />
+      <path d="M9 21V12h6v9" />
+    </svg>
+  )
+}
 
-  if (room.advert_title && !room.advert_title.includes(address)) {
-    return {
-      title: room.advert_title,
-      subtitle: `${address}, ${postcode}`,
-    }
-  }
+/** Build consistent feature pills: room type + en-suite if applicable */
+function getFeaturePills(room: RoomWithProperty): string[] {
+  const pills: string[] = []
 
+  // Room type
   const type = roomTypeLabel(room.room_type)
-  return {
-    title: `${type} \u2014 ${room.property_name}`,
-    subtitle: `${city}, ${postcode}`,
-  }
+  if (type !== 'Room') pills.push(type.replace(' Room', ''))
+
+  // En-suite detection from room amenities
+  const hasEnSuite = room.room_amenities.some(
+    (a) => a.toLowerCase().includes('en-suite') || a.toLowerCase().includes('ensuite')
+  )
+  if (hasEnSuite) pills.push('En-suite')
+
+  return pills
 }
 
 export default function RoomCard({ room }: { room: RoomWithProperty }) {
   const photoUrl = room.photo_urls.length > 0 ? room.photo_urls[0] : null
   const availText = formatAvailableFrom(room.available_from)
   const availNow = isAvailableNow(room.available_from)
-  const amenities = room.room_amenities.slice(0, 3)
-  const { title, subtitle } = getRoomTitle(room)
+  const featurePills = getFeaturePills(room)
 
   return (
     <Link
@@ -49,15 +56,16 @@ export default function RoomCard({ room }: { room: RoomWithProperty }) {
           </div>
         ) : (
           <div
-            className="flex items-center justify-center text-sm"
+            className="flex flex-col items-center justify-center gap-2"
             style={{
               aspectRatio: '16/10',
               maxHeight: '200px',
-              background: 'linear-gradient(135deg, #E5E3DF, #D8D5D0)',
-              color: '#6B7280',
+              background: 'linear-gradient(145deg, #E8E6E2, #DDD9D4)',
+              color: '#9CA3AF',
             }}
           >
-            No photo available
+            <HouseIcon />
+            <span className="text-xs font-medium">No photo</span>
           </div>
         )}
         {/* City badge */}
@@ -71,13 +79,13 @@ export default function RoomCard({ room }: { room: RoomWithProperty }) {
 
       {/* Content */}
       <div className="flex flex-1 flex-col gap-3 p-5">
-        {/* Title */}
+        {/* Title: always street address */}
         <div>
           <h3 className="text-[15px] font-semibold leading-snug" style={{ color: '#2D3038' }}>
-            {title}
+            {room.property_name}
           </h3>
           <p className="mt-0.5 text-sm truncate" style={{ color: '#9CA3AF' }}>
-            {subtitle}
+            {room.property_city}, {room.property_postcode}
           </p>
         </div>
 
@@ -99,16 +107,16 @@ export default function RoomCard({ room }: { room: RoomWithProperty }) {
           </span>
         </div>
 
-        {/* Amenities */}
-        {amenities.length > 0 && (
+        {/* Feature pills: Double, En-suite, etc. */}
+        {featurePills.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
-            {amenities.map((a) => (
+            {featurePills.map((pill) => (
               <span
-                key={a}
-                className="inline-flex items-center rounded-md px-2 py-0.5 text-xs"
-                style={{ backgroundColor: '#F7F6F3', color: '#6B7280' }}
+                key={pill}
+                className="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium"
+                style={{ backgroundColor: '#F7F6F3', color: '#2D3038' }}
               >
-                {a}
+                {pill}
               </span>
             ))}
           </div>

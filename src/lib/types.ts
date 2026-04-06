@@ -62,6 +62,8 @@ export interface RoomWithProperty {
   // Room amenities from additional_info
   room_amenities: string[]
   spareroom_listing_id: string | null
+  /** Raw COHO additional_info JSONB for detail page fields */
+  additional_info: Record<string, any>
 }
 
 export type AreaFilter = 'all' | 'plymouth' | 'newquay'
