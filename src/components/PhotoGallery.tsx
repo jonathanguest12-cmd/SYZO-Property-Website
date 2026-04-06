@@ -33,7 +33,7 @@ export default function PhotoGallery({ photos, alt }: PhotoGalleryProps) {
 
   if (uniquePhotos.length === 0) {
     return (
-      <div className="mx-auto" style={{ maxWidth: '800px' }}>
+      <div className="mx-auto" style={{ maxWidth: '100%' }}>
         <div
           className="relative w-full overflow-hidden rounded-xl flex flex-col items-center justify-center gap-3"
           style={{
@@ -63,7 +63,7 @@ export default function PhotoGallery({ photos, alt }: PhotoGalleryProps) {
   }
 
   return (
-    <div className="mx-auto" style={{ maxWidth: '800px' }}>
+    <div className="mx-auto" style={{ maxWidth: '100%' }}>
       {/* Main photo with arrows */}
       <div
         className="relative w-full overflow-hidden rounded-xl group/gallery"

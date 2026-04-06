@@ -42,21 +42,31 @@ export function stripHtml(html: string): string {
     .replace(/&gt;/g, '>')
     .replace(/&#39;/g, "'")
     .replace(/&quot;/g, '"')
-    // Fix missing space after period followed by capital letter (e.g. "Station.Shops")
+    // Fix missing space after period followed by capital letter
     .replace(/\.([A-Z])/g, '. $1')
     // Collapse multiple newlines
     .replace(/\n{3,}/g, '\n\n')
     .trim()
 }
 
+/** Illustration/drawing detection for first property photo */
+const ILLUSTRATION_PATTERNS = /chatgpt|drawing|clip2comic|cartoon|sketch|illustration|thumbnail|ai.?generat/i
+
+export function isIllustrationPhoto(title: string): boolean {
+  return ILLUSTRATION_PATTERNS.test(title)
+}
+
+export interface ParsedDescription {
+  description: string
+  whatsIncluded: string[]
+  depositInfo: string
+  sections: { title: string; content: string }[]
+}
+
 /**
  * Parse COHO advert HTML into structured sections.
- * Splits on <h4> section headers, removes boilerplate, and cleans up text.
  */
-export function parseAdvertDescription(html: string): {
-  description: string
-  sections: { title: string; content: string }[]
-} {
+export function parseAdvertDescription(html: string): ParsedDescription {
   // Boilerplate patterns to remove
   const boilerplatePatterns = [
     /call,?\s*text,?\s*(?:or\s+)?WhatsApp\s+(?:us\s+)?to\s+book\s+(?:in\s+)?a\s+viewing[^.]*\./gi,
@@ -66,31 +76,20 @@ export function parseAdvertDescription(html: string): {
     /Brought\s+to\s+the\s+market\s+by\s+SYZO[^.]*\./gi,
   ]
 
-  // SYZO boilerplate section markers — remove everything from these to next section
-  const syzoBoilerplateHeaders = [
-    'Our homes provide:',
-    'What Makes Our House Shares Special?',
-    'What makes our house shares special?',
-  ]
-
   // Split HTML on <h4> tags to extract named sections
-  const sectionRegex = /<h4[^>]*>(.*?)<\/h4>/gi
-  const sectionParts: { title: string; html: string }[] = []
-  let lastIndex = 0
-  let mainHtml = ''
-  let match
-
-  // Reset regex
   const allMatches: { title: string; index: number; endIndex: number }[] = []
-  const tempHtml = html
   const regex = /<h4[^>]*>(.*?)<\/h4>/gi
-  while ((match = regex.exec(tempHtml)) !== null) {
+  let match
+  while ((match = regex.exec(html)) !== null) {
     allMatches.push({
       title: match[1].replace(/<[^>]*>/g, '').replace(/&amp;/g, '&').trim(),
       index: match.index,
       endIndex: match.index + match[0].length,
     })
   }
+
+  let mainHtml = ''
+  const sectionParts: { title: string; html: string }[] = []
 
   if (allMatches.length === 0) {
     mainHtml = html
@@ -109,44 +108,77 @@ export function parseAdvertDescription(html: string): {
   // Process main description
   let desc = stripHtml(mainHtml)
 
-  // Remove boilerplate lines
+  // Remove boilerplate
   for (const pattern of boilerplatePatterns) {
     desc = desc.replace(pattern, '')
   }
 
-  // Remove SYZO boilerplate sections (from header to next empty line or end)
-  for (const header of syzoBoilerplateHeaders) {
+  // Extract "What's Included" bullet items
+  const whatsIncluded: string[] = []
+  const includesHeaders = [
+    'Our homes provide:',
+    'What Makes Our House Shares Special?',
+    'What makes our house shares special?',
+  ]
+
+  for (const header of includesHeaders) {
     const headerIdx = desc.indexOf(header)
-    if (headerIdx !== -1) {
-      // Find the end of this boilerplate block — look for a double newline or known section
-      const afterHeader = desc.substring(headerIdx)
-      // Remove from header through known boilerplate list items
-      const endPatterns = [
-        /EPC Rating/,
-        /Costs:/,
-        /Holding Deposit/,
-        /Maximum occupancy/,
-        /Pets\s*[&:]/i,
-      ]
-      let endIdx = desc.length
-      for (const ep of endPatterns) {
-        const m = afterHeader.match(ep)
-        if (m && m.index !== undefined) {
-          endIdx = Math.min(endIdx, headerIdx + m.index)
-        }
-      }
-      desc = desc.substring(0, headerIdx) + desc.substring(endIdx)
+    if (headerIdx === -1) continue
+
+    const afterHeader = desc.substring(headerIdx + header.length)
+    // Collect lines until we hit a known section boundary
+    const endPatterns = [/EPC Rat/i, /Costs:/i, /Holding Deposit/i, /Maximum occupancy/i, /Pets\s*[&:]/i, /Tenancy Deposit/i]
+    let endOffset = afterHeader.length
+    for (const ep of endPatterns) {
+      const m = afterHeader.match(ep)
+      if (m?.index !== undefined) endOffset = Math.min(endOffset, m.index)
     }
+
+    const block = afterHeader.substring(0, endOffset)
+    const lines = block.split('\n').map((l) => l.trim()).filter(Boolean)
+    for (const line of lines) {
+      const clean = line.replace(/^[-~\u2022\u2013]\s*/, '').trim()
+      if (clean && clean.length > 5 && !clean.endsWith(':')) {
+        whatsIncluded.push(clean)
+      }
+    }
+
+    // Remove from desc: header + extracted block
+    desc = desc.substring(0, headerIdx) + desc.substring(headerIdx + header.length + endOffset)
   }
 
-  // Clean up excess whitespace
-  desc = desc.replace(/\n{3,}/g, '\n\n').trim()
+  // Extract deposit info
+  let depositInfo = ''
+  const depositMatch = desc.match(/(Holding [Dd]eposit:[\s\S]*?)(?=\n\n|$)/)
+  if (depositMatch) {
+    // Grab from "Holding Deposit" through "Tenancy Deposit" section
+    const startIdx = desc.indexOf(depositMatch[0])
+    const remaining = desc.substring(startIdx)
+    // Find a good cutoff - end of deposit info
+    const cutPatterns = [/\n\n(?!.*[Dd]eposit)/]
+    let endIdx = remaining.length
+    // Just take everything from Holding Deposit to end of description (it's usually at the end)
+    depositInfo = remaining.trim()
+    desc = desc.substring(0, startIdx).trim()
+  }
 
-  // Process structured sections
+  // Remove EPC Rating lines, Costs: header, and leftover boilerplate
+  desc = desc.replace(/EPC\s+Rating?:?\s*\w*/gi, '')
+  desc = desc.replace(/\bCosts:\s*/gi, '')
+  desc = desc.replace(/Maximum occupancy:[^\n]*/gi, '')
+  desc = desc.replace(/Pets\s*&\s*children:[^\n]*/gi, '')
+
+  // Clean up
+  desc = desc.replace(/\n{3,}/g, '\n\n').trim()
+  depositInfo = depositInfo.replace(/\n{3,}/g, '\n\n').trim()
+  // Remove EPC from deposit info too
+  depositInfo = depositInfo.replace(/EPC\s+Rating?:?\s*\w*/gi, '').replace(/\n{3,}/g, '\n\n').trim()
+
+  // Process h4 sections
   const sections = sectionParts.map((s) => ({
     title: s.title,
     content: stripHtml(s.html),
   })).filter((s) => s.content.length > 0)
 
-  return { description: desc, sections }
+  return { description: desc, whatsIncluded, depositInfo, sections }
 }

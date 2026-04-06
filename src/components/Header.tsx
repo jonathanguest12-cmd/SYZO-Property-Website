@@ -24,7 +24,7 @@ export default function Header() {
         borderBottom: scrolled ? '1px solid rgba(45, 48, 56, 0.06)' : '1px solid transparent',
       }}
     >
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5 md:px-8">
+      <div className="mx-auto flex max-w-7xl items-center px-6 py-5 md:px-8">
         <Link href="/" className="inline-flex items-center">
           <Image
             src="/SYZO-logo.png"
@@ -36,22 +36,6 @@ export default function Header() {
             className="h-8 w-auto"
           />
         </Link>
-        <nav className="flex items-center gap-8">
-          <Link
-            href="/"
-            className="text-sm font-medium tracking-wide transition-colors duration-200"
-            style={{ color: '#2D3038' }}
-          >
-            Rooms
-          </Link>
-          <a
-            href="mailto:hello@syzo.co"
-            className="text-sm font-medium tracking-wide transition-colors duration-200"
-            style={{ color: '#6B7280' }}
-          >
-            hello@syzo.co
-          </a>
-        </nav>
       </div>
     </header>
   )

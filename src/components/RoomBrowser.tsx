@@ -118,12 +118,32 @@ export default function RoomBrowser({ rooms, initialArea = 'all' }: RoomBrowserP
     <div className="mx-auto w-full max-w-7xl px-4 py-6 md:px-8 md:py-8">
       {/* Controls bar */}
       <div className="flex items-center justify-between gap-4">
-        <p className="text-sm" style={{ color: '#6B7280' }}>
-          <span className="text-lg font-bold tabular-nums" style={{ color: '#2D3038' }}>
-            {filtered.length}
-          </span>{' '}
-          room{filtered.length !== 1 ? 's' : ''} available
-        </p>
+        <div className="flex items-center gap-4">
+          <p className="text-sm" style={{ color: '#6B7280' }}>
+            <span className="text-lg font-bold tabular-nums" style={{ color: '#2D3038' }}>
+              {filtered.length}
+            </span>{' '}
+            room{filtered.length !== 1 ? 's' : ''} available
+          </p>
+          {/* City filter — inline text links */}
+          <div className="hidden sm:flex items-center gap-1 text-sm">
+            {([['all', 'All'], ['plymouth', 'Plymouth'], ['newquay', 'Newquay']] as const).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setArea(value as AreaFilter)}
+                className="px-2 py-1 rounded-md font-medium transition-all duration-200"
+                style={
+                  area === value
+                    ? { color: '#2D3038', backgroundColor: '#EEEDEA' }
+                    : { color: '#9CA3AF' }
+                }
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
 
         <div className="flex items-center gap-2">
           {/* View toggle */}
