@@ -71,7 +71,8 @@ export default function RoomBrowser({ rooms, initialArea = 'all' }: RoomBrowserP
   }, [area, priceRange, availabilityFilter])
 
   const filtered = useMemo(() => {
-    let result = rooms
+    // Only show rooms with photos on browse page
+    let result = rooms.filter((r) => r.photo_urls && r.photo_urls.length > 0)
 
     if (area !== 'all') {
       result = result.filter(
