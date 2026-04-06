@@ -1,47 +1,64 @@
-export interface Property {
+export interface RoomRow {
   id: string
+  property_id: string | null
   coho_reference: string
-  address_line1: string
-  address_city: string
-  address_postcode: string
-  pets_allowed: boolean
-  smoking_allowed: boolean
-  property_type: string
-  number_of_bedrooms: number
-  number_of_bathrooms: number
-  total_rooms: number
-  rooms_occupied: number
-  headline_description: string
-  amenities: string[]
-  additional_info: Record<string, unknown>
-}
-
-export interface Room {
-  id: string
-  property_id: string
-  coho_reference: string
-  rent: number
-  payment_frequency: string
-  room_size: string
-  bills_inclusive: string
-  available_from: string
-  deposit_amount_required: number
-  guarantor_required: boolean
-  advert_title: string
-  advert_description: string
-  amenities: string[]
-  images: { url: string }[]
+  name: string
+  rent_pcm: number
+  room_type: string // 'doubleRoom' | 'singleRoom' | 'notApplicableOrNull'
+  status: string
+  available_from: string | null
   spareroom_listing_id: string | null
-  additional_info: Record<string, unknown>
+  photo_urls: string[]
+  bills_included: boolean
+  broadband_included: boolean
+  room_description: string | null
+  house_rules: string | null
+  additional_info: Record<string, any>
 }
 
-export interface RoomWithProperty extends Room {
-  address_line1: string
-  address_city: string
-  address_postcode: string
-  pets_allowed: boolean
-  smoking_allowed: boolean
-  property_coho_ref: string
+export interface PropertyRow {
+  id: string
+  coho_reference: string
+  name: string
+  address: string
+  postcode: string
+  city: string
+  area: string
+  total_rooms: number
+  occupied_rooms: number
+  photo_url: string | null
+  active: boolean
+}
+
+/** Enriched room with property data extracted from additional_info */
+export interface RoomWithProperty {
+  id: string
+  coho_reference: string
+  name: string
+  rent_pcm: number
+  room_type: string
+  available_from: string
+  photo_urls: string[]
+  bills_included: boolean
+  broadband_included: boolean
+  room_description: string | null
+  // Property data (from additional_info.property)
+  property_ref: string
+  property_name: string
+  property_city: string
+  property_postcode: string
+  property_amenities: string[]
+  property_photo_url: string | null
+  property_total_rooms: number
+  property_pets_allowed: boolean | null
+  property_smoking_allowed: boolean | null
+  property_bedrooms: number | null
+  property_bathrooms: number | null
+  property_headline: string | null
+  property_images: { url: string; title: string }[]
+  // Room amenities from additional_info
+  room_amenities: string[]
+  spareroom_listing_id: string | null
 }
 
 export type AreaFilter = 'all' | 'plymouth' | 'newquay'

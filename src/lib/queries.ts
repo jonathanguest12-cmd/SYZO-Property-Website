@@ -1,67 +1,67 @@
 import { createServerSupabaseClient } from './supabase-server'
-import type { Property, Room, RoomWithProperty } from './types'
+import type { RoomRow, PropertyRow, RoomWithProperty } from './types'
 
 /**
- * Maps a raw room row (with nested properties relation) to a flat RoomWithProperty.
+ * Extract property data from additional_info and flatten into RoomWithProperty.
  */
-function mapRoomWithProperty(row: Record<string, unknown>): RoomWithProperty {
-  const property = row.properties as Record<string, unknown>
+export function mapRoomToRoomWithProperty(row: RoomRow): RoomWithProperty {
+  const prop = row.additional_info?.property ?? {}
+  const roomAmenities = row.additional_info?.amenities ?? []
+
+  // Main property photo: prefer prop.image, fall back to first in prop.images
+  const images: { url: string; title: string }[] = Array.isArray(prop.images)
+    ? prop.images
+    : []
+  const mainImage = prop.image?.url ?? (images.length > 0 ? images[0].url : null)
+
   return {
-    id: row.id as string,
-    property_id: row.property_id as string,
-    coho_reference: row.coho_reference as string,
-    rent: row.rent as number,
-    payment_frequency: row.payment_frequency as string,
-    room_size: row.room_size as string,
-    bills_inclusive: row.bills_inclusive as string,
-    available_from: row.available_from as string,
-    deposit_amount_required: row.deposit_amount_required as number,
-    guarantor_required: row.guarantor_required as boolean,
-    advert_title: row.advert_title as string,
-    advert_description: row.advert_description as string,
-    amenities: row.amenities as string[],
-    images: row.images as { url: string }[],
-    spareroom_listing_id: row.spareroom_listing_id as string | null,
-    additional_info: row.additional_info as Record<string, unknown>,
-    address_line1: property.address_line1 as string,
-    address_city: property.address_city as string,
-    address_postcode: property.address_postcode as string,
-    pets_allowed: property.pets_allowed as boolean,
-    smoking_allowed: property.smoking_allowed as boolean,
-    property_coho_ref: property.coho_reference as string,
+    id: row.id,
+    coho_reference: row.coho_reference,
+    name: row.name,
+    rent_pcm: Number(row.rent_pcm),
+    room_type: row.room_type,
+    available_from: row.available_from!,
+    photo_urls: row.photo_urls ?? [],
+    bills_included: row.bills_included,
+    broadband_included: row.broadband_included,
+    room_description: row.room_description,
+    property_ref: prop.reference ?? '',
+    property_name: prop.name ?? '',
+    property_city: prop.majorAreaReference ?? '',
+    property_postcode: prop.postcode ?? '',
+    property_amenities: Array.isArray(prop.amenities) ? prop.amenities : [],
+    property_photo_url: mainImage,
+    property_total_rooms: prop.totalRooms ?? 0,
+    property_pets_allowed: prop.petsAllowed ?? null,
+    property_smoking_allowed: prop.smokingAllowed ?? null,
+    property_bedrooms: prop.numberOfBedrooms ?? null,
+    property_bathrooms: prop.numberOfBathrooms ?? null,
+    property_headline: prop.headlineDescription ?? null,
+    property_images: images,
+    room_amenities: Array.isArray(roomAmenities) ? roomAmenities : [],
+    spareroom_listing_id: row.spareroom_listing_id,
   }
 }
 
-const ROOM_WITH_PROPERTY_SELECT = `
-  *,
-  properties!inner(
-    coho_reference,
-    address_line1,
-    address_city,
-    address_postcode,
-    pets_allowed,
-    smoking_allowed
-  )
-`
-
 /**
- * Fetch all rooms that have an available_from date, joined with property data.
+ * Fetch all rooms that have an available_from date.
  */
 export async function fetchAllRooms(): Promise<RoomWithProperty[]> {
   const supabase = await createServerSupabaseClient()
   const { data, error } = await supabase
     .from('rooms')
-    .select(ROOM_WITH_PROPERTY_SELECT)
+    .select('*')
     .not('available_from', 'is', null)
+    .order('rent_pcm', { ascending: true })
 
   if (error) throw error
-  return (data ?? []).map(mapRoomWithProperty)
+  return (data ?? []).map((row) => mapRoomToRoomWithProperty(row as RoomRow))
 }
 
 /**
  * Fetch a single property by its coho_reference.
  */
-export async function fetchProperty(cohoRef: string): Promise<Property | null> {
+export async function fetchProperty(cohoRef: string): Promise<PropertyRow | null> {
   const supabase = await createServerSupabaseClient()
   const { data, error } = await supabase
     .from('properties')
@@ -70,35 +70,40 @@ export async function fetchProperty(cohoRef: string): Promise<Property | null> {
     .single()
 
   if (error) {
-    if (error.code === 'PGRST116') return null // not found
+    if (error.code === 'PGRST116') return null
     throw error
   }
-  return data as Property
+  return data as PropertyRow
 }
 
 /**
- * Fetch all available rooms for a given property ID.
+ * Fetch all available rooms for a given property reference.
+ * Since property_id is NULL, we fetch all available rooms and filter
+ * by additional_info.property.reference on the client.
  */
-export async function fetchRoomsForProperty(propertyId: string): Promise<Room[]> {
+export async function fetchRoomsForProperty(propertyRef: string): Promise<RoomWithProperty[]> {
   const supabase = await createServerSupabaseClient()
   const { data, error } = await supabase
     .from('rooms')
     .select('*')
-    .eq('property_id', propertyId)
     .not('available_from', 'is', null)
+    .order('rent_pcm', { ascending: true })
 
   if (error) throw error
-  return (data ?? []) as Room[]
+
+  return (data ?? [])
+    .map((row) => mapRoomToRoomWithProperty(row as RoomRow))
+    .filter((room) => room.property_ref === propertyRef)
 }
 
 /**
- * Fetch a single room by UUID, with property data.
+ * Fetch a single room by UUID, enriched with property data.
  */
 export async function fetchRoomById(roomId: string): Promise<RoomWithProperty | null> {
   const supabase = await createServerSupabaseClient()
   const { data, error } = await supabase
     .from('rooms')
-    .select(ROOM_WITH_PROPERTY_SELECT)
+    .select('*')
     .eq('id', roomId)
     .single()
 
@@ -106,17 +111,19 @@ export async function fetchRoomById(roomId: string): Promise<RoomWithProperty | 
     if (error.code === 'PGRST116') return null
     throw error
   }
-  return mapRoomWithProperty(data as Record<string, unknown>)
+  return mapRoomToRoomWithProperty(data as RoomRow)
 }
 
 /**
- * Fetch a room by its SpareRoom listing ID, with property data.
+ * Fetch a room by its SpareRoom listing ID.
  */
-export async function fetchRoomBySpareRoomId(listingId: string): Promise<RoomWithProperty | null> {
+export async function fetchRoomBySpareRoomId(
+  listingId: string
+): Promise<RoomWithProperty | null> {
   const supabase = await createServerSupabaseClient()
   const { data, error } = await supabase
     .from('rooms')
-    .select(ROOM_WITH_PROPERTY_SELECT)
+    .select('*')
     .eq('spareroom_listing_id', listingId)
     .single()
 
@@ -124,43 +131,56 @@ export async function fetchRoomBySpareRoomId(listingId: string): Promise<RoomWit
     if (error.code === 'PGRST116') return null
     throw error
   }
-  return mapRoomWithProperty(data as Record<string, unknown>)
+  return mapRoomToRoomWithProperty(data as RoomRow)
 }
 
 /**
  * Count available rooms, optionally filtered by city.
+ * Uses additional_info->property->>majorAreaReference for city filtering.
  */
 export async function fetchAvailableRoomCount(city?: string): Promise<number> {
   const supabase = await createServerSupabaseClient()
-  let query = supabase
-    .from('rooms')
-    .select('*, properties!inner(address_city)', { count: 'exact', head: true })
-    .not('available_from', 'is', null)
 
   if (city) {
-    query = query.ilike('properties.address_city', city)
+    // Fetch all available rooms and filter by city from additional_info
+    const { data, error } = await supabase
+      .from('rooms')
+      .select('additional_info')
+      .not('available_from', 'is', null)
+
+    if (error) throw error
+
+    return (data ?? []).filter((row: any) => {
+      const rowCity = row.additional_info?.property?.majorAreaReference ?? ''
+      return rowCity.toLowerCase() === city.toLowerCase()
+    }).length
   }
 
-  const { count, error } = await query
+  const { count, error } = await supabase
+    .from('rooms')
+    .select('*', { count: 'exact', head: true })
+    .not('available_from', 'is', null)
 
   if (error) throw error
   return count ?? 0
 }
 
 /**
- * Insert a stale link lead record.
- * NOTE: Column names may need adjustment based on actual leads table schema.
+ * Insert a stale link lead record. Best-effort — silently fails.
  */
-export async function insertStaleLinkLead(listingId: string, city?: string): Promise<void> {
-  const supabase = await createServerSupabaseClient()
-  const { error } = await supabase
-    .from('leads')
-    .insert({
+export async function insertStaleLinkLead(
+  listingId: string,
+  city?: string
+): Promise<void> {
+  try {
+    const supabase = await createServerSupabaseClient()
+    await supabase.from('leads').insert({
       source: 'spareroom',
       status: 'stale_link',
       spareroom_listing_id: listingId,
       city: city ?? null,
     })
-
-  if (error) throw error
+  } catch {
+    // Silently fail — the leads table may have constraints we can't satisfy
+  }
 }

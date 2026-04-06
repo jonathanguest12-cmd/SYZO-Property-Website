@@ -1,0 +1,32 @@
+import type { RoomWithProperty } from '@/lib/types'
+
+export function makeRoom(overrides: Partial<RoomWithProperty> = {}): RoomWithProperty {
+  return {
+    id: 'room-1',
+    coho_reference: 'COHO-R1',
+    name: 'Room 1',
+    rent_pcm: 550,
+    room_type: 'doubleRoom',
+    available_from: '2026-05-01',
+    photo_urls: ['https://d19qeljo1i8r7y.cloudfront.net/photo1.jpg'],
+    bills_included: true,
+    broadband_included: true,
+    room_description: '<p>A nice room</p>',
+    property_ref: 'PROP-1',
+    property_name: '64 Alexandra Road',
+    property_city: 'Plymouth',
+    property_postcode: 'PL4 7EG',
+    property_amenities: ['Garden', 'Parking'],
+    property_photo_url: 'https://d19qeljo1i8r7y.cloudfront.net/prop1.jpg',
+    property_total_rooms: 6,
+    property_pets_allowed: false,
+    property_smoking_allowed: false,
+    property_bedrooms: 6,
+    property_bathrooms: 2,
+    property_headline: 'A lovely house share',
+    property_images: [{ url: 'https://d19qeljo1i8r7y.cloudfront.net/prop1.jpg', title: 'Front' }],
+    room_amenities: ['Desk', 'Wardrobe'],
+    spareroom_listing_id: 'SR123',
+    ...overrides,
+  }
+}
