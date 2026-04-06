@@ -1,9 +1,9 @@
 @import "tailwindcss";
 
 :root {
-  --background: #FAFAFA;
+  --background: #f8f9fa;
   --foreground: #2D3038;
-  --primary: #2D3038;
+  --primary: #1a1a2e;
   --surface: #FFFFFF;
   --text-secondary: #888888;
   --bills-included-bg: #E8F5E9;
@@ -11,7 +11,7 @@
   --bills-extra-bg: #FEF3C7;
   --bills-extra-text: #B45309;
   --available-now: #2E7D32;
-  --filter-active-bg: #2D3038;
+  --filter-active-bg: #1a1a2e;
   --filter-inactive-bg: #F0F0F0;
   --filter-inactive-text: #666666;
 }

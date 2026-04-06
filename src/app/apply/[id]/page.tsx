@@ -37,13 +37,14 @@ function RoomSummary({ room }: { room: RoomWithProperty }) {
         style={{ backgroundColor: '#FFFFFF', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}
       >
         {photoUrl && (
-          <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden" style={{ borderRadius: '8px', backgroundColor: '#F0F0F0' }}>
+          <div className="relative flex-shrink-0 overflow-hidden" style={{ width: '80px', aspectRatio: '4/3', borderRadius: '8px', backgroundColor: '#F0F0F0' }}>
             <Image
               src={photoUrl}
               alt={title}
               fill
               className="object-cover"
-              sizes="80px"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              quality={85}
             />
           </div>
         )}

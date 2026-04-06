@@ -61,11 +61,13 @@ describe('RoomCard', () => {
     expect(link).toHaveAttribute('href', '/room/test-uuid')
   })
 
-  it('shows advert_title when available', () => {
+  it('shows advert_title when available and address below', () => {
     const room = makeRoom({ advert_title: 'Lovely Double Room with Garden View' })
     render(<RoomCard room={room} />)
 
     expect(screen.getByText('Lovely Double Room with Garden View')).toBeInTheDocument()
+    // Should show full address below since advert_title doesn't contain the property address
+    expect(screen.getByText('64 Alexandra Road, PL4 7EG')).toBeInTheDocument()
   })
 
   it('constructs title from room type and property name when no advert_title', () => {
@@ -73,15 +75,17 @@ describe('RoomCard', () => {
     render(<RoomCard room={room} />)
 
     expect(screen.getByText(/Double Room.*64 Alexandra Road/)).toBeInTheDocument()
+    // Should show city + postcode below (not full address, since title already has it)
+    expect(screen.getByText('Plymouth, PL4 7EG')).toBeInTheDocument()
   })
 
-  it('truncates description to ~80 chars', () => {
+  it('does not show truncated description (removed per design)', () => {
     const longDesc = '<p>' + 'A'.repeat(100) + '</p>'
     const room = makeRoom({ room_description: longDesc })
     render(<RoomCard room={room} />)
 
-    const desc = screen.getByText(/A{10,}\.\.\./)
-    expect(desc.textContent!.length).toBeLessThanOrEqual(83) // 80 chars + "..."
+    // Description is no longer rendered on cards
+    expect(screen.queryByText(/A{10,}/)).not.toBeInTheDocument()
   })
 
   it('shows first 3 amenities', () => {

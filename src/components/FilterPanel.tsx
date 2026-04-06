@@ -2,17 +2,6 @@
 
 import type { AreaFilter, PriceRange, AvailabilityFilter, SortOption } from '@/lib/types'
 
-interface FilterPanelProps {
-  area: AreaFilter
-  onAreaChange: (v: AreaFilter) => void
-  priceRange: PriceRange
-  onPriceRangeChange: (v: PriceRange) => void
-  availabilityFilter: AvailabilityFilter
-  onAvailabilityFilterChange: (v: AvailabilityFilter) => void
-  sort: SortOption
-  onSortChange: (v: SortOption) => void
-}
-
 function PillGroup<T extends string>({
   options,
   value,
@@ -26,7 +15,7 @@ function PillGroup<T extends string>({
 }) {
   return (
     <div className="flex flex-col gap-2">
-      <span className="text-xs font-medium uppercase tracking-wide" style={{ color: '#888888' }}>
+      <span className="text-xs uppercase tracking-wider font-semibold mb-2" style={{ color: '#6b7280' }}>
         {label}
       </span>
       <div className="flex flex-wrap gap-2">
@@ -35,11 +24,15 @@ function PillGroup<T extends string>({
             key={opt.value}
             type="button"
             onClick={() => onChange(opt.value)}
-            className="rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-200"
+            className={
+              value === opt.value
+                ? 'rounded-full px-4 py-2 font-medium text-sm text-white transition-colors'
+                : 'rounded-full px-4 py-2 font-medium text-sm border transition-colors hover:border-gray-400'
+            }
             style={
               value === opt.value
-                ? { backgroundColor: '#2D3038', color: '#FFFFFF' }
-                : { backgroundColor: '#F0F0F0', color: '#666666' }
+                ? { backgroundColor: '#1a1a2e', color: '#FFFFFF' }
+                : { backgroundColor: '#FFFFFF', color: '#374151', borderColor: '#e5e7eb' }
             }
           >
             {opt.label}
@@ -50,7 +43,16 @@ function PillGroup<T extends string>({
   )
 }
 
-export default function FilterPanel(props: FilterPanelProps) {
+export default function FilterPanel(props: {
+  area: AreaFilter
+  onAreaChange: (v: AreaFilter) => void
+  priceRange: PriceRange
+  onPriceRangeChange: (v: PriceRange) => void
+  availabilityFilter: AvailabilityFilter
+  onAvailabilityFilterChange: (v: AvailabilityFilter) => void
+  sort: SortOption
+  onSortChange: (v: SortOption) => void
+}) {
   return (
     <div className="flex flex-col gap-5">
       <PillGroup
@@ -91,14 +93,14 @@ export default function FilterPanel(props: FilterPanelProps) {
 
       {/* Sort */}
       <div className="flex flex-col gap-2">
-        <span className="text-xs font-medium uppercase tracking-wide" style={{ color: '#888888' }}>
+        <span className="text-xs uppercase tracking-wider font-semibold mb-2" style={{ color: '#6b7280' }}>
           Sort by
         </span>
         <select
           value={props.sort}
           onChange={(e) => props.onSortChange(e.target.value as SortOption)}
-          className="w-fit rounded-full border px-4 py-1.5 text-sm font-medium"
-          style={{ borderColor: '#F0F0F0', backgroundColor: '#FFFFFF', color: '#2D3038' }}
+          className="w-fit rounded-full border px-4 py-2 text-sm font-medium"
+          style={{ borderColor: '#e5e7eb', backgroundColor: '#FFFFFF', color: '#374151' }}
         >
           <option value="price_asc">Price: low to high</option>
           <option value="price_desc">Price: high to low</option>

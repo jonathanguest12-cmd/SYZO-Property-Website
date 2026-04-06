@@ -1,76 +1,54 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import type { RoomWithProperty } from '@/lib/types'
+import { formatAvailableFrom, isAvailableNow, roomTypeLabel } from '@/lib/format'
 
-function formatDate(dateStr: string): { text: string; isNow: boolean } {
-  const date = new Date(dateStr)
-  const now = new Date()
-  now.setHours(0, 0, 0, 0)
-  if (date <= now) return { text: 'Available Now', isNow: true }
-  return {
-    text: date.toLocaleDateString('en-GB', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    }),
-    isNow: false,
+function getRoomTitle(room: RoomWithProperty): { title: string; subtitle: string } {
+  const address = room.property_name
+  const postcode = room.property_postcode
+  const city = room.property_city
+
+  // If advert_title exists and does NOT contain the property address, use it with full address below
+  if (room.advert_title && !room.advert_title.includes(address)) {
+    return {
+      title: room.advert_title,
+      subtitle: `${address}, ${postcode}`,
+    }
   }
-}
 
-function roomTypeLabel(roomType: string): string {
-  if (roomType === 'doubleRoom') return 'Double Room'
-  if (roomType === 'singleRoom') return 'Single Room'
-  return 'Room'
-}
-
-function stripHtml(html: string): string {
-  return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim()
-}
-
-function truncate(text: string, maxLength: number): string {
-  if (text.length <= maxLength) return text
-  return text.slice(0, maxLength).trimEnd() + '...'
-}
-
-function getRoomTitle(room: RoomWithProperty): string {
-  if (room.advert_title) return room.advert_title
+  // If advert_title is null/empty OR contains the address text, construct a clean title
   const type = roomTypeLabel(room.room_type)
-  return `${type} \u2014 ${room.property_name}`
+  return {
+    title: `${type} \u2014 ${room.property_name}`,
+    subtitle: `${city}, ${postcode}`,
+  }
 }
 
 export default function RoomCard({ room }: { room: RoomWithProperty }) {
   const photoUrl = room.photo_urls.length > 0 ? room.photo_urls[0] : null
-  const availability = formatDate(room.available_from)
-  const description = room.room_description ? truncate(stripHtml(room.room_description), 80) : null
+  const availText = formatAvailableFrom(room.available_from)
+  const availNow = isAvailableNow(room.available_from)
   const amenities = room.room_amenities.slice(0, 3)
-  const title = getRoomTitle(room)
+  const { title, subtitle } = getRoomTitle(room)
 
   return (
     <Link
       href={`/room/${room.id}`}
-      className="group flex flex-col overflow-hidden bg-white transition-all duration-200"
+      className="group flex flex-col overflow-hidden bg-white rounded-xl transition-all duration-200 hover:-translate-y-1 hover:shadow-lg"
       style={{
-        borderRadius: '12px',
         boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.transform = 'translateY(-2px)'
-        e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.1)'
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.transform = 'translateY(0)'
-        e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.06)'
       }}
     >
       {/* Image */}
-      <div className="relative aspect-[4/3] w-full overflow-hidden" style={{ backgroundColor: '#F0F0F0' }}>
+      <div className="relative w-full overflow-hidden" style={{ aspectRatio: '4/3', backgroundColor: '#F0F0F0' }}>
         {photoUrl ? (
           <Image
             src={photoUrl}
             alt={`${room.property_name} - ${room.name}`}
             fill
-            className="object-cover transition-transform duration-200 group-hover:scale-105"
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            quality={85}
           />
         ) : (
           <div className="flex h-full items-center justify-center" style={{ color: '#888888' }}>
@@ -92,7 +70,7 @@ export default function RoomCard({ room }: { room: RoomWithProperty }) {
           {title}
         </h3>
         <p className="text-sm truncate" style={{ color: '#888888' }}>
-          {room.property_name}, {room.property_postcode}
+          {subtitle}
         </p>
 
         {/* Rent + Bills */}
@@ -113,13 +91,6 @@ export default function RoomCard({ room }: { room: RoomWithProperty }) {
           </span>
         </div>
 
-        {/* Description */}
-        {description && (
-          <p className="text-sm leading-relaxed" style={{ color: '#888888' }}>
-            {description}
-          </p>
-        )}
-
         {/* Amenities */}
         {amenities.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
@@ -139,13 +110,13 @@ export default function RoomCard({ room }: { room: RoomWithProperty }) {
         <div className="mt-auto flex items-center justify-between pt-2">
           <span
             className="text-sm font-medium"
-            style={{ color: availability.isNow ? '#2E7D32' : '#888888' }}
+            style={{ color: availNow ? '#2E7D32' : '#888888' }}
           >
-            {availability.text}
+            {availText}
           </span>
           <span
             className="inline-flex items-center rounded-full px-4 py-1.5 text-sm font-medium text-white"
-            style={{ backgroundColor: '#2D3038' }}
+            style={{ backgroundColor: '#1a1a2e' }}
           >
             View Room
           </span>

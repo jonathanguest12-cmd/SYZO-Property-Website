@@ -122,11 +122,11 @@ export default function RoomBrowser({ rooms, initialArea = 'all' }: RoomBrowserP
   }, [filtered])
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+    <div className="mx-auto w-full max-w-7xl px-4 py-6 md:px-8">
       {/* Results bar */}
       <div className="flex items-center justify-between">
         <p className="text-sm" style={{ color: '#888888' }}>
-          <span className="font-semibold" style={{ color: '#2D3038' }}>{filtered.length}</span>{' '}
+          <span className="text-xl font-bold" style={{ color: '#2D3038' }}>{filtered.length}</span>{' '}
           room{filtered.length !== 1 ? 's' : ''} available
         </p>
 

@@ -55,8 +55,10 @@ describe('RoomBrowser', () => {
     await user.click(plymouthButton)
 
     // Should show 1 room
-    expect(screen.getByText('64 Alexandra Road, PL4 7EG')).toBeInTheDocument()
-    expect(screen.queryByText('10 Beach Road, PL4 7EG')).not.toBeInTheDocument()
+    // When no advert_title, title is "Double Room - PropertyName" and subtitle is "City, Postcode"
+    expect(screen.getByText(/Plymouth, PL4 7EG/)).toBeInTheDocument()
+    // The Newquay room card should be filtered out (Newquay text still appears in filter pills)
+    expect(screen.queryByText(/Newquay, PL4 7EG/)).not.toBeInTheDocument()
   })
 
   it('shows empty state when no results', () => {
@@ -82,7 +84,7 @@ describe('RoomBrowser', () => {
   it('respects initialArea', () => {
     render(<RoomBrowser rooms={rooms} initialArea="newquay" />)
     expect(screen.getAllByText(/10 Beach Road/).length).toBeGreaterThan(0)
-    expect(screen.queryByText('64 Alexandra Road, PL4 7EG')).not.toBeInTheDocument()
+    expect(screen.queryByText(/Plymouth, PL4 7EG/)).not.toBeInTheDocument()
   })
 
   it('shows active filter count badge', async () => {
