@@ -42,7 +42,7 @@ export default async function PropertyPage({
       <Link
         href="/"
         className="inline-flex items-center gap-1 text-sm font-medium mb-6 transition-colors duration-200"
-        style={{ color: '#888888' }}
+        style={{ color: '#6b7280' }}
       >
         &larr; Back to all rooms
       </Link>
@@ -50,7 +50,10 @@ export default async function PropertyPage({
       {/* Property header */}
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Photo */}
-        <div className="relative w-full overflow-hidden rounded-xl" style={{ aspectRatio: '4/3', backgroundColor: '#F0F0F0' }}>
+        <div
+          className="relative w-full overflow-hidden rounded-2xl"
+          style={{ aspectRatio: '4/3', backgroundColor: '#e8e4df' }}
+        >
           {mainPhoto ? (
             <Image
               src={mainPhoto}
@@ -62,8 +65,8 @@ export default async function PropertyPage({
               priority
             />
           ) : (
-            <div className="flex h-full items-center justify-center" style={{ color: '#888888' }}>
-              No photo
+            <div className="flex h-full items-center justify-center" style={{ color: '#6b7280' }}>
+              No photo available
             </div>
           )}
         </div>
@@ -71,23 +74,30 @@ export default async function PropertyPage({
         {/* Info */}
         <div className="flex flex-col gap-4">
           <div>
-            <h1 className="text-2xl font-bold" style={{ color: '#2D3038' }}>{propertyName}</h1>
-            <p className="text-gray-500">{city}</p>
+            <h1
+              className="text-3xl font-normal"
+              style={{ color: '#1a1a2e', fontFamily: 'var(--font-display)' }}
+            >
+              {propertyName}
+            </h1>
+            <p style={{ color: '#6b7280' }}>{city}</p>
           </div>
 
           {headline && (
-            <p style={{ color: '#2D3038' }}>{headline}</p>
+            <p style={{ color: '#1a1a2e' }}>{headline}</p>
           )}
 
           {amenities.length > 0 && (
             <div>
-              <h2 className="text-sm font-bold mb-2" style={{ color: '#2D3038' }}>Amenities</h2>
+              <h2 className="text-xs uppercase tracking-[0.15em] font-semibold mb-2" style={{ color: '#6b7280' }}>
+                Amenities
+              </h2>
               <div className="flex flex-wrap gap-2">
                 {amenities.map((a) => (
                   <span
                     key={a}
-                    className="inline-flex items-center rounded-full px-3 py-1 text-sm font-medium"
-                    style={{ backgroundColor: '#F0F0F0', color: '#2D3038' }}
+                    className="inline-flex items-center rounded-md px-3 py-1.5 text-sm"
+                    style={{ backgroundColor: '#f5f3f0', color: '#1a1a2e' }}
                   >
                     {a}
                   </span>
@@ -97,7 +107,7 @@ export default async function PropertyPage({
           )}
 
           {first && (
-            <div className="flex gap-4 text-sm" style={{ color: '#888888' }}>
+            <div className="flex gap-4 text-sm" style={{ color: '#6b7280' }}>
               {first.property_bedrooms != null && (
                 <span>{first.property_bedrooms} bed{first.property_bedrooms !== 1 ? 's' : ''}</span>
               )}
@@ -110,13 +120,22 @@ export default async function PropertyPage({
         </div>
       </div>
 
-      {/* Property images gallery — skip first (drawing) */}
+      {/* Property images gallery */}
       {images.length > 1 && (
-        <div className="mt-6">
-          <h2 className="text-lg font-bold mb-3" style={{ color: '#2D3038' }}>Photos</h2>
+        <div className="mt-8">
+          <h2
+            className="text-2xl font-normal mb-4"
+            style={{ color: '#1a1a2e', fontFamily: 'var(--font-display)' }}
+          >
+            Photos
+          </h2>
           <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
             {images.slice(1).map((img, idx) => (
-              <div key={idx} className="relative overflow-hidden rounded-xl" style={{ aspectRatio: '4/3', backgroundColor: '#F0F0F0' }}>
+              <div
+                key={idx}
+                className="relative overflow-hidden rounded-xl"
+                style={{ aspectRatio: '4/3', backgroundColor: '#e8e4df' }}
+              >
                 <Image
                   src={img.url}
                   alt={img.title || `Photo ${idx + 1}`}
@@ -132,14 +151,17 @@ export default async function PropertyPage({
       )}
 
       {/* Available rooms */}
-      <div className="mt-8">
-        <h2 className="text-lg font-bold mb-4" style={{ color: '#2D3038' }}>
+      <div className="mt-10">
+        <h2
+          className="text-2xl font-normal mb-4"
+          style={{ color: '#1a1a2e', fontFamily: 'var(--font-display)' }}
+        >
           Available Rooms ({rooms.length})
         </h2>
         {rooms.length === 0 ? (
-          <p style={{ color: '#888888' }}>No rooms currently available at this property.</p>
+          <p style={{ color: '#6b7280' }}>No rooms currently available at this property.</p>
         ) : (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 md:gap-8">
             {rooms.map((room) => (
               <RoomCard key={room.id} room={room} />
             ))}

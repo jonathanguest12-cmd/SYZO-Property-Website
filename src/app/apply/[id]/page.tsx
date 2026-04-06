@@ -8,7 +8,6 @@ import {
 } from '@/lib/queries'
 import type { RoomWithProperty } from '@/lib/types'
 
-// UUID v4 pattern
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 function getRoomTitle(room: RoomWithProperty): string {
@@ -31,52 +30,71 @@ function RoomSummary({ room }: { room: RoomWithProperty }) {
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-16 sm:px-6">
-      {/* Room context */}
+      {/* Room context card */}
       <div
         className="flex gap-4 rounded-xl p-4 mb-8"
-        style={{ backgroundColor: '#FFFFFF', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}
+        style={{ backgroundColor: '#ffffff', border: '1px solid #e8e4df' }}
       >
         {photoUrl && (
-          <div className="relative flex-shrink-0 overflow-hidden" style={{ width: '80px', aspectRatio: '4/3', borderRadius: '8px', backgroundColor: '#F0F0F0' }}>
+          <div
+            className="relative flex-shrink-0 overflow-hidden rounded-lg"
+            style={{ width: '80px', aspectRatio: '4/3', backgroundColor: '#e8e4df' }}
+          >
             <Image
               src={photoUrl}
               alt={title}
               fill
               className="object-cover"
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              sizes="80px"
               quality={85}
             />
           </div>
         )}
         <div className="flex flex-col gap-1">
-          <h2 className="font-bold" style={{ color: '#2D3038' }}>{title}</h2>
-          <p className="text-sm" style={{ color: '#888888' }}>
+          <h2 className="font-semibold" style={{ color: '#1a1a2e' }}>{title}</h2>
+          <p className="text-sm" style={{ color: '#6b7280' }}>
             {room.property_name} &middot; {room.property_city}
           </p>
-          <p className="text-lg font-bold" style={{ color: '#2D3038' }}>
-            &pound;{Math.round(room.rent_pcm)} /month
+          <p style={{ color: '#1a1a2e' }}>
+            <span className="text-xl" style={{ fontFamily: 'var(--font-display)' }}>
+              &pound;{Math.round(room.rent_pcm)}
+            </span>
+            <span className="text-sm ml-1" style={{ color: '#6b7280' }}>/month</span>
           </p>
         </div>
       </div>
 
       {/* Application form placeholder */}
       <div className="text-center">
-        <h1 className="text-2xl font-extrabold" style={{ color: '#2D3038' }}>
+        <h1
+          className="text-3xl font-normal"
+          style={{ color: '#1a1a2e', fontFamily: 'var(--font-display)' }}
+        >
           Apply to Rent
         </h1>
         <div
           className="mt-6 rounded-xl p-8"
-          style={{ backgroundColor: '#FFFFFF', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}
+          style={{ backgroundColor: '#ffffff', border: '1px solid #e8e4df' }}
         >
-          <p style={{ color: '#888888' }}>
+          <p style={{ color: '#6b7280' }}>
             The application form is coming soon. In the meantime, please
             contact us to express your interest.
+          </p>
+          <p className="mt-4 text-sm" style={{ color: '#6b7280' }}>
+            Call{' '}
+            <a href="tel:01174504898" className="font-medium underline underline-offset-2" style={{ color: '#1a1a2e' }}>
+              0117 450 4898
+            </a>
+            {' '}or email{' '}
+            <a href="mailto:hello@syzo.co" className="font-medium underline underline-offset-2" style={{ color: '#1a1a2e' }}>
+              hello@syzo.co
+            </a>
           </p>
         </div>
         <Link
           href={`/room/${room.id}`}
           className="mt-6 inline-block text-sm font-medium transition-colors duration-200"
-          style={{ color: '#888888' }}
+          style={{ color: '#6b7280' }}
         >
           &larr; Back to Room
         </Link>
@@ -102,15 +120,20 @@ export default async function ApplyPage({
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-16 sm:px-6 text-center">
-      <h1 className="text-2xl font-extrabold" style={{ color: '#2D3038' }}>Room No Longer Available</h1>
-      <p className="mt-4" style={{ color: '#888888' }}>
+      <h1
+        className="text-3xl font-normal"
+        style={{ color: '#1a1a2e', fontFamily: 'var(--font-display)' }}
+      >
+        Room No Longer Available
+      </h1>
+      <p className="mt-4" style={{ color: '#6b7280' }}>
         Sorry, the room you were looking at is no longer listed. Browse our
         other available rooms below.
       </p>
       <Link
         href="/"
-        className="mt-6 inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-semibold text-white transition-opacity duration-200 hover:opacity-90"
-        style={{ backgroundColor: '#2D3038' }}
+        className="mt-6 inline-flex items-center justify-center rounded-xl px-6 py-3.5 text-sm font-semibold text-white transition-colors duration-200"
+        style={{ backgroundColor: '#1a1a2e' }}
       >
         Browse Available Rooms
       </Link>

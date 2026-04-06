@@ -55,9 +55,7 @@ describe('RoomBrowser', () => {
     await user.click(plymouthButton)
 
     // Should show 1 room
-    // When no advert_title, title is "Double Room - PropertyName" and subtitle is "City, Postcode"
     expect(screen.getByText(/Plymouth, PL4 7EG/)).toBeInTheDocument()
-    // The Newquay room card should be filtered out (Newquay text still appears in filter pills)
     expect(screen.queryByText(/Newquay, PL4 7EG/)).not.toBeInTheDocument()
   })
 
@@ -76,7 +74,6 @@ describe('RoomBrowser', () => {
     )!
     await user.click(propertiesButton)
 
-    // In property view, should see property names
     expect(screen.getByText('64 Alexandra Road')).toBeInTheDocument()
     expect(screen.getByText('10 Beach Road')).toBeInTheDocument()
   })
@@ -90,8 +87,6 @@ describe('RoomBrowser', () => {
   it('shows active filter count badge', async () => {
     render(<RoomBrowser rooms={rooms} initialArea="plymouth" />)
 
-    // Should show badge with count 1 since area is set
-    // The badge is inside the Filters button
     const filtersButton = screen.getByText('Filters').closest('button')!
     expect(filtersButton.textContent).toContain('1')
   })
@@ -107,7 +102,7 @@ describe('RoomBrowser', () => {
     const select = screen.getByDisplayValue('Price: low to high')
     await user.selectOptions(select, 'price_desc')
 
-    const viewRoomButtons = screen.getAllByText('View Room')
-    expect(viewRoomButtons).toHaveLength(2)
+    const viewRoomLinks = screen.getAllByText(/View Room/)
+    expect(viewRoomLinks).toHaveLength(2)
   })
 })

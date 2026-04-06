@@ -13,11 +13,16 @@ export default function PhotoGallery({ photos, alt }: PhotoGalleryProps) {
 
   if (photos.length === 0) {
     return (
-      <div
-        className="relative w-full overflow-hidden rounded-xl"
-        style={{ aspectRatio: '16/9', backgroundColor: '#F0F0F0' }}
-      >
-        <div className="flex h-full items-center justify-center" style={{ color: '#888888' }}>
+      <div className="mx-auto max-w-4xl">
+        <div
+          className="relative w-full overflow-hidden rounded-2xl flex items-center justify-center"
+          style={{
+            aspectRatio: '3/2',
+            maxHeight: '500px',
+            background: 'linear-gradient(to bottom right, #e8e4df, #d4cfc8)',
+            color: '#6b7280',
+          }}
+        >
           No photo available
         </div>
       </div>
@@ -27,18 +32,18 @@ export default function PhotoGallery({ photos, alt }: PhotoGalleryProps) {
   const mainPhoto = photos[selectedIndex]
 
   return (
-    <div>
+    <div className="mx-auto max-w-4xl">
       {/* Main photo */}
       <div
-        className="relative w-full overflow-hidden rounded-xl"
-        style={{ aspectRatio: '16/9', backgroundColor: '#F0F0F0' }}
+        className="relative w-full overflow-hidden rounded-2xl"
+        style={{ aspectRatio: '3/2', maxHeight: '500px', backgroundColor: '#e8e4df' }}
       >
         <Image
           src={mainPhoto.url}
           alt={mainPhoto.title || alt}
           fill
           className="object-cover"
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          sizes="(max-width: 768px) 100vw, 896px"
           quality={85}
           priority
         />
@@ -54,9 +59,9 @@ export default function PhotoGallery({ photos, alt }: PhotoGalleryProps) {
               onClick={() => setSelectedIndex(idx)}
               className="relative flex-shrink-0 overflow-hidden rounded-lg transition-all duration-200"
               style={{
-                width: '80px',
-                height: '60px',
-                backgroundColor: '#F0F0F0',
+                width: '64px',
+                height: '64px',
+                backgroundColor: '#e8e4df',
                 outline: idx === selectedIndex ? '2px solid #1a1a2e' : '2px solid transparent',
                 outlineOffset: '2px',
                 opacity: idx === selectedIndex ? 1 : 0.7,
@@ -67,7 +72,7 @@ export default function PhotoGallery({ photos, alt }: PhotoGalleryProps) {
                 alt={photo.title || `Photo ${idx + 1}`}
                 fill
                 className="object-cover"
-                sizes="80px"
+                sizes="64px"
                 quality={85}
               />
             </button>

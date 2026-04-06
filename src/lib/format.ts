@@ -13,7 +13,7 @@ export function formatAvailableFrom(value: string | null | undefined): string {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
     if (date <= today) return 'Available Now'
-    return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+    return `Available from ${date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`
   }
   return value.replace(/!/g, '').trim()
 }

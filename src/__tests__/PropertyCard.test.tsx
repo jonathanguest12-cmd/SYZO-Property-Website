@@ -27,7 +27,7 @@ describe('PropertyCard', () => {
     expect(screen.getByText('64 Alexandra Road')).toBeInTheDocument()
     expect(screen.getByText('Plymouth')).toBeInTheDocument()
     expect(screen.getByText('2 rooms available')).toBeInTheDocument()
-    expect(screen.getByText('View Property')).toBeInTheDocument()
+    expect(screen.getByText(/View Property/)).toBeInTheDocument()
   })
 
   it('shows price range', () => {
@@ -37,7 +37,6 @@ describe('PropertyCard', () => {
     ]
     render(<PropertyCard propertyRef="PROP-1" rooms={rooms} />)
 
-    // Uses en-dash between prices
     expect(screen.getByText(/450/)).toBeInTheDocument()
     expect(screen.getByText(/600/)).toBeInTheDocument()
   })

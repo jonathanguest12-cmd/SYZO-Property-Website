@@ -29,7 +29,7 @@ describe('RoomCard', () => {
     expect(screen.getByText('Plymouth')).toBeInTheDocument()
     expect(screen.getByText(/550/)).toBeInTheDocument()
     expect(screen.getByText('BILLS INC.')).toBeInTheDocument()
-    expect(screen.getByText('View Room')).toBeInTheDocument()
+    expect(screen.getByText(/View Room/)).toBeInTheDocument()
   })
 
   it('shows "Available Now" for past dates', () => {
@@ -50,7 +50,7 @@ describe('RoomCard', () => {
     const room = makeRoom({ photo_urls: [] })
     render(<RoomCard room={room} />)
 
-    expect(screen.getByText('No photo')).toBeInTheDocument()
+    expect(screen.getByText('No photo available')).toBeInTheDocument()
   })
 
   it('links to room detail page', () => {
@@ -66,7 +66,6 @@ describe('RoomCard', () => {
     render(<RoomCard room={room} />)
 
     expect(screen.getByText('Lovely Double Room with Garden View')).toBeInTheDocument()
-    // Should show full address below since advert_title doesn't contain the property address
     expect(screen.getByText('64 Alexandra Road, PL4 7EG')).toBeInTheDocument()
   })
 
@@ -75,7 +74,6 @@ describe('RoomCard', () => {
     render(<RoomCard room={room} />)
 
     expect(screen.getByText(/Double Room.*64 Alexandra Road/)).toBeInTheDocument()
-    // Should show city + postcode below (not full address, since title already has it)
     expect(screen.getByText('Plymouth, PL4 7EG')).toBeInTheDocument()
   })
 
@@ -84,7 +82,6 @@ describe('RoomCard', () => {
     const room = makeRoom({ room_description: longDesc })
     render(<RoomCard room={room} />)
 
-    // Description is no longer rendered on cards
     expect(screen.queryByText(/A{10,}/)).not.toBeInTheDocument()
   })
 

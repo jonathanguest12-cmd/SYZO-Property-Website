@@ -15,7 +15,7 @@ function PillGroup<T extends string>({
 }) {
   return (
     <div className="flex flex-col gap-2">
-      <span className="text-xs uppercase tracking-wider font-semibold mb-2" style={{ color: '#6b7280' }}>
+      <span className="text-xs uppercase tracking-[0.15em] font-semibold mb-2" style={{ color: '#6b7280' }}>
         {label}
       </span>
       <div className="flex flex-wrap gap-2">
@@ -24,16 +24,18 @@ function PillGroup<T extends string>({
             key={opt.value}
             type="button"
             onClick={() => onChange(opt.value)}
-            className={
-              value === opt.value
-                ? 'rounded-full px-4 py-2 font-medium text-sm text-white transition-colors'
-                : 'rounded-full px-4 py-2 font-medium text-sm border transition-colors hover:border-gray-400'
-            }
+            className="rounded-full px-4 py-2 font-medium text-sm transition-colors"
             style={
               value === opt.value
-                ? { backgroundColor: '#1a1a2e', color: '#FFFFFF' }
-                : { backgroundColor: '#FFFFFF', color: '#374151', borderColor: '#e5e7eb' }
+                ? { backgroundColor: '#1a1a2e', color: '#ffffff' }
+                : { backgroundColor: '#ffffff', color: '#6b7280', border: '1px solid #e8e4df' }
             }
+            onMouseEnter={(e) => {
+              if (value !== opt.value) e.currentTarget.style.borderColor = '#c49a6c'
+            }}
+            onMouseLeave={(e) => {
+              if (value !== opt.value) e.currentTarget.style.borderColor = '#e8e4df'
+            }}
           >
             {opt.label}
           </button>
@@ -93,14 +95,14 @@ export default function FilterPanel(props: {
 
       {/* Sort */}
       <div className="flex flex-col gap-2">
-        <span className="text-xs uppercase tracking-wider font-semibold mb-2" style={{ color: '#6b7280' }}>
+        <span className="text-xs uppercase tracking-[0.15em] font-semibold mb-2" style={{ color: '#6b7280' }}>
           Sort by
         </span>
         <select
           value={props.sort}
           onChange={(e) => props.onSortChange(e.target.value as SortOption)}
-          className="w-fit rounded-full border px-4 py-2 text-sm font-medium"
-          style={{ borderColor: '#e5e7eb', backgroundColor: '#FFFFFF', color: '#374151' }}
+          className="w-fit rounded-full px-4 py-2 text-sm font-medium"
+          style={{ border: '1px solid #e8e4df', backgroundColor: '#ffffff', color: '#6b7280' }}
         >
           <option value="price_asc">Price: low to high</option>
           <option value="price_desc">Price: high to low</option>
