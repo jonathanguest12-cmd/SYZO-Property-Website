@@ -115,33 +115,30 @@ export default function RoomBrowser({ rooms, initialArea = 'all' }: RoomBrowserP
   }, [filtered])
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 py-8 md:px-8">
-      {/* Results bar */}
-      <div className="flex items-center justify-between">
-        <p className="text-sm" style={{ color: '#6b7280' }}>
-          <span
-            className="text-2xl"
-            style={{ color: '#1a1a2e', fontFamily: 'var(--font-display)' }}
-          >
+    <div className="mx-auto w-full max-w-7xl px-4 py-6 md:px-8 md:py-8">
+      {/* Controls bar */}
+      <div className="flex items-center justify-between gap-4">
+        <p className="text-sm" style={{ color: '#6B7280' }}>
+          <span className="text-lg font-bold tabular-nums" style={{ color: '#2D3038' }}>
             {filtered.length}
           </span>{' '}
           room{filtered.length !== 1 ? 's' : ''} available
         </p>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           {/* View toggle */}
           <div
-            className="inline-flex rounded-full p-0.5"
-            style={{ border: '1px solid #e8e4df', backgroundColor: '#ffffff' }}
+            className="inline-flex rounded-lg p-0.5"
+            style={{ backgroundColor: '#EEEDEA' }}
           >
             <button
               type="button"
               onClick={() => setView('rooms')}
-              className="rounded-full px-3 py-1.5 text-sm font-medium transition-all duration-200"
+              className="rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200"
               style={
                 view === 'rooms'
-                  ? { backgroundColor: '#1a1a2e', color: '#ffffff' }
-                  : { color: '#6b7280' }
+                  ? { backgroundColor: '#ffffff', color: '#2D3038', boxShadow: '0 1px 2px rgba(0,0,0,0.06)' }
+                  : { color: '#6B7280' }
               }
             >
               Rooms
@@ -149,11 +146,11 @@ export default function RoomBrowser({ rooms, initialArea = 'all' }: RoomBrowserP
             <button
               type="button"
               onClick={() => setView('properties')}
-              className="rounded-full px-3 py-1.5 text-sm font-medium transition-all duration-200"
+              className="rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200"
               style={
                 view === 'properties'
-                  ? { backgroundColor: '#1a1a2e', color: '#ffffff' }
-                  : { color: '#6b7280' }
+                  ? { backgroundColor: '#ffffff', color: '#2D3038', boxShadow: '0 1px 2px rgba(0,0,0,0.06)' }
+                  : { color: '#6B7280' }
               }
             >
               Properties
@@ -164,18 +161,18 @@ export default function RoomBrowser({ rooms, initialArea = 'all' }: RoomBrowserP
           <button
             type="button"
             onClick={() => setShowFilters((v) => !v)}
-            className="inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-200"
+            className="inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-sm font-medium transition-all duration-200"
             style={
               showFilters || activeFilterCount > 0
-                ? { backgroundColor: '#1a1a2e', color: '#ffffff' }
-                : { backgroundColor: '#ffffff', color: '#6b7280', border: '1px solid #e8e4df' }
+                ? { backgroundColor: '#2D3038', color: '#ffffff' }
+                : { backgroundColor: '#EEEDEA', color: '#6B7280' }
             }
           >
             Filters
             {activeFilterCount > 0 && (
               <span
                 className="inline-flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold"
-                style={{ backgroundColor: '#ffffff', color: '#1a1a2e' }}
+                style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: '#ffffff' }}
               >
                 {activeFilterCount}
               </span>
@@ -187,8 +184,8 @@ export default function RoomBrowser({ rooms, initialArea = 'all' }: RoomBrowserP
       {/* Filter panel */}
       {showFilters && (
         <div
-          className="mt-4 rounded-xl p-5"
-          style={{ backgroundColor: '#ffffff', border: '1px solid #e8e4df' }}
+          className="mt-4 rounded-xl bg-white p-5"
+          style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}
         >
           <FilterPanel
             area={area}
@@ -205,18 +202,18 @@ export default function RoomBrowser({ rooms, initialArea = 'all' }: RoomBrowserP
 
       {/* Grid */}
       {filtered.length === 0 ? (
-        <div className="mt-12 flex flex-col items-center gap-2 text-center">
-          <p className="text-lg font-bold" style={{ color: '#1a1a2e' }}>No rooms match your filters</p>
-          <p className="text-sm" style={{ color: '#6b7280' }}>Try adjusting your search criteria</p>
+        <div className="mt-16 flex flex-col items-center gap-2 text-center">
+          <p className="text-lg font-semibold" style={{ color: '#2D3038' }}>No rooms match your filters</p>
+          <p className="text-sm" style={{ color: '#9CA3AF' }}>Try adjusting your search criteria</p>
         </div>
       ) : view === 'rooms' ? (
-        <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 md:gap-8">
+        <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 md:gap-6">
           {filtered.map((room) => (
             <RoomCard key={room.id} room={room} />
           ))}
         </div>
       ) : (
-        <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 md:gap-8">
+        <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 md:gap-6">
           {Array.from(propertyGroups.entries()).map(([ref, groupRooms]) => (
             <PropertyCard key={ref} propertyRef={ref} rooms={groupRooms} />
           ))}

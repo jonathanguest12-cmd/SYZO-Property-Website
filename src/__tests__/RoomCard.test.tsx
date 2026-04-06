@@ -28,7 +28,7 @@ describe('RoomCard', () => {
 
     expect(screen.getByText('Plymouth')).toBeInTheDocument()
     expect(screen.getByText(/550/)).toBeInTheDocument()
-    expect(screen.getByText('BILLS INC.')).toBeInTheDocument()
+    expect(screen.getByText('Bills inc.')).toBeInTheDocument()
     expect(screen.getByText(/View Room/)).toBeInTheDocument()
   })
 
@@ -39,11 +39,11 @@ describe('RoomCard', () => {
     expect(screen.getByText('Available Now')).toBeInTheDocument()
   })
 
-  it('shows "BILLS EXTRA" when bills not included', () => {
+  it('shows "Bills extra" when bills not included', () => {
     const room = makeRoom({ bills_included: false })
     render(<RoomCard room={room} />)
 
-    expect(screen.getByText('BILLS EXTRA')).toBeInTheDocument()
+    expect(screen.getByText('Bills extra')).toBeInTheDocument()
   })
 
   it('shows placeholder when no photos', () => {

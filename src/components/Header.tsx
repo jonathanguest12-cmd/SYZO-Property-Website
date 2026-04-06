@@ -9,52 +9,49 @@ export default function Header() {
 
   useEffect(() => {
     function onScroll() {
-      setScrolled(window.scrollY > 80)
+      setScrolled(window.scrollY > 20)
     }
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
   return (
-    <>
-      {/* Static logo — part of page flow */}
-      <div className="px-6 pt-6 md:px-8">
-        <div className="mx-auto max-w-7xl">
-          <Link href="/" className="inline-flex items-center">
-            <Image
-              src="/SYZO-logo.png"
-              alt="SYZO"
-              width={56}
-              height={56}
-              priority
-              className="h-14 w-auto"
-            />
+    <header
+      className="sticky top-0 z-50 transition-all duration-300"
+      style={{
+        backgroundColor: scrolled ? 'rgba(247, 246, 243, 0.95)' : 'transparent',
+        backdropFilter: scrolled ? 'blur(12px)' : 'none',
+        borderBottom: scrolled ? '1px solid rgba(45, 48, 56, 0.06)' : '1px solid transparent',
+      }}
+    >
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5 md:px-8">
+        <Link href="/" className="inline-flex items-center">
+          <Image
+            src="/SYZO-logo.png"
+            alt="SYZO"
+            width={48}
+            height={48}
+            priority
+            className="h-10 w-auto"
+          />
+        </Link>
+        <nav className="flex items-center gap-8">
+          <Link
+            href="/"
+            className="text-sm font-medium tracking-wide transition-colors duration-200"
+            style={{ color: '#2D3038' }}
+          >
+            Rooms
           </Link>
-        </div>
+          <a
+            href="tel:01174504898"
+            className="text-sm font-medium tracking-wide transition-colors duration-200"
+            style={{ color: '#6B7280' }}
+          >
+            0117 450 4898
+          </a>
+        </nav>
       </div>
-
-      {/* Sticky header — fades in on scroll */}
-      <header
-        className="fixed top-0 left-0 right-0 z-50 transition-opacity duration-300"
-        style={{
-          opacity: scrolled ? 1 : 0,
-          pointerEvents: scrolled ? 'auto' : 'none',
-          backgroundColor: 'rgba(26, 26, 46, 0.95)',
-          backdropFilter: 'blur(4px)',
-        }}
-      >
-        <div className="mx-auto flex max-w-7xl items-center px-6 py-3 md:px-8">
-          <Link href="/" className="inline-flex items-center">
-            <Image
-              src="/SYZO-logo.png"
-              alt="SYZO"
-              width={32}
-              height={32}
-              className="h-8 w-auto"
-            />
-          </Link>
-        </div>
-      </header>
-    </>
+    </header>
   )
 }

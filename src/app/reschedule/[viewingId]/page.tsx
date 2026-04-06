@@ -9,27 +9,24 @@ export default async function ReschedulePage({
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-16 sm:px-6 text-center">
-      <h1
-        className="text-3xl font-normal"
-        style={{ color: '#1a1a2e', fontFamily: 'var(--font-display)' }}
-      >
+      <h1 className="text-2xl font-bold tracking-tight md:text-3xl" style={{ color: '#2D3038' }}>
         Reschedule Viewing
       </h1>
-      <p className="mt-4" style={{ color: '#6b7280' }}>
+      <p className="mt-4 text-sm" style={{ color: '#9CA3AF' }}>
         Viewing reference: {viewingId}
       </p>
       <div
-        className="mt-8 rounded-xl p-8"
-        style={{ backgroundColor: '#ffffff', border: '1px solid #e8e4df' }}
+        className="mt-8 rounded-xl bg-white p-8"
+        style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}
       >
-        <p style={{ color: '#6b7280' }}>
+        <p style={{ color: '#6B7280' }}>
           The rescheduling feature is coming soon.
         </p>
       </div>
       <Link
         href="/"
-        className="mt-6 inline-block text-sm transition-colors duration-200"
-        style={{ color: '#6b7280' }}
+        className="mt-6 inline-block text-sm font-medium transition-colors duration-200 hover:opacity-70"
+        style={{ color: '#6B7280' }}
       >
         &larr; Back to all rooms
       </Link>

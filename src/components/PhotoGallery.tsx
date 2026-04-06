@@ -15,15 +15,15 @@ export default function PhotoGallery({ photos, alt }: PhotoGalleryProps) {
     return (
       <div className="mx-auto max-w-4xl">
         <div
-          className="relative w-full overflow-hidden rounded-2xl flex items-center justify-center"
+          className="relative w-full overflow-hidden rounded-xl flex items-center justify-center"
           style={{
             aspectRatio: '3/2',
             maxHeight: '500px',
-            background: 'linear-gradient(to bottom right, #e8e4df, #d4cfc8)',
-            color: '#6b7280',
+            background: 'linear-gradient(135deg, #E5E3DF, #D8D5D0)',
+            color: '#9CA3AF',
           }}
         >
-          No photo available
+          No photos available
         </div>
       </div>
     )
@@ -35,8 +35,8 @@ export default function PhotoGallery({ photos, alt }: PhotoGalleryProps) {
     <div className="mx-auto max-w-4xl">
       {/* Main photo */}
       <div
-        className="relative w-full overflow-hidden rounded-2xl"
-        style={{ aspectRatio: '3/2', maxHeight: '500px', backgroundColor: '#e8e4df' }}
+        className="relative w-full overflow-hidden rounded-xl"
+        style={{ aspectRatio: '3/2', maxHeight: '500px', backgroundColor: '#E5E3DF' }}
       >
         <Image
           src={mainPhoto.url}
@@ -47,11 +47,20 @@ export default function PhotoGallery({ photos, alt }: PhotoGalleryProps) {
           quality={85}
           priority
         />
+        {/* Photo counter */}
+        {photos.length > 1 && (
+          <span
+            className="absolute bottom-3 right-3 rounded-md px-2.5 py-1 text-xs font-medium"
+            style={{ backgroundColor: 'rgba(0,0,0,0.5)', color: '#ffffff' }}
+          >
+            {selectedIndex + 1} / {photos.length}
+          </span>
+        )}
       </div>
 
       {/* Thumbnail strip */}
       {photos.length > 1 && (
-        <div className="mt-3 flex gap-2 overflow-x-auto pb-2">
+        <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
           {photos.map((photo, idx) => (
             <button
               key={idx}
@@ -59,12 +68,12 @@ export default function PhotoGallery({ photos, alt }: PhotoGalleryProps) {
               onClick={() => setSelectedIndex(idx)}
               className="relative flex-shrink-0 overflow-hidden rounded-lg transition-all duration-200"
               style={{
-                width: '64px',
-                height: '64px',
-                backgroundColor: '#e8e4df',
-                outline: idx === selectedIndex ? '2px solid #1a1a2e' : '2px solid transparent',
+                width: '72px',
+                height: '52px',
+                backgroundColor: '#E5E3DF',
+                outline: idx === selectedIndex ? '2px solid #2D3038' : '2px solid transparent',
                 outlineOffset: '2px',
-                opacity: idx === selectedIndex ? 1 : 0.7,
+                opacity: idx === selectedIndex ? 1 : 0.6,
               }}
             >
               <Image
@@ -72,7 +81,7 @@ export default function PhotoGallery({ photos, alt }: PhotoGalleryProps) {
                 alt={photo.title || `Photo ${idx + 1}`}
                 fill
                 className="object-cover"
-                sizes="64px"
+                sizes="72px"
                 quality={85}
               />
             </button>

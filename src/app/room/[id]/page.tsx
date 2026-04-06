@@ -33,7 +33,7 @@ function FormattedDescription({ html }: { html: string }) {
       elements.push(
         <ul key={key++} className="list-disc pl-5 space-y-1">
           {currentBullets.map((item, i) => (
-            <li key={i} className="leading-relaxed" style={{ color: '#6b7280' }}>{item}</li>
+            <li key={i} className="leading-relaxed" style={{ color: '#6B7280' }}>{item}</li>
           ))}
         </ul>
       )
@@ -57,21 +57,21 @@ function FormattedDescription({ html }: { html: string }) {
     if (line.length < 60 && (line.endsWith(':') || line.endsWith(';'))) {
       flushBullets()
       elements.push(
-        <p key={key++} className="font-semibold" style={{ color: '#1a1a2e' }}>{line}</p>
+        <p key={key++} className="font-semibold" style={{ color: '#2D3038' }}>{line}</p>
       )
       continue
     }
 
     flushBullets()
     elements.push(
-      <p key={key++} className="leading-relaxed" style={{ color: '#6b7280' }}>{line}</p>
+      <p key={key++} className="leading-relaxed" style={{ color: '#6B7280' }}>{line}</p>
     )
   }
 
   flushBullets()
 
   return (
-    <div className="max-w-prose space-y-4">
+    <div className="max-w-prose space-y-3">
       {elements}
     </div>
   )
@@ -125,12 +125,12 @@ export default async function RoomDetailPage({
 
   return (
     <>
-      <div className="mx-auto w-full max-w-7xl px-4 py-8 md:px-8">
+      <div className="mx-auto w-full max-w-7xl px-4 py-6 md:px-8 md:py-8">
         {/* Back link */}
         <Link
           href="/"
-          className="inline-flex items-center gap-1 text-sm font-medium mb-6 transition-colors duration-200"
-          style={{ color: '#6b7280' }}
+          className="inline-flex items-center gap-1.5 text-sm font-medium mb-6 transition-colors duration-200 hover:opacity-70"
+          style={{ color: '#6B7280' }}
         >
           &larr; Back to all rooms
         </Link>
@@ -141,57 +141,58 @@ export default async function RoomDetailPage({
         {/* Two-column layout */}
         <div className="mt-8 grid gap-8 lg:grid-cols-12">
           {/* LEFT column */}
-          <div className="flex flex-col gap-6 lg:col-span-7">
-            {/* Title */}
+          <div className="flex flex-col gap-5 lg:col-span-7">
+            {/* Title block */}
             <div>
               <h1
-                className="text-3xl font-normal"
-                style={{ color: '#1a1a2e', fontFamily: 'var(--font-display)' }}
+                className="text-2xl font-bold tracking-tight md:text-3xl"
+                style={{ color: '#2D3038' }}
               >
                 {title}
               </h1>
-              <p className="mt-1" style={{ color: '#6b7280' }}>
+              <p className="mt-1.5 text-sm" style={{ color: '#9CA3AF' }}>
                 {room.property_name}, {room.property_city}, {room.property_postcode}
               </p>
             </div>
 
-            {/* Card 1: Letting Details */}
-            <div
-              className="rounded-xl p-6"
-              style={{ backgroundColor: '#ffffff', border: '1px solid #e8e4df' }}
-            >
-              <h2 className="text-lg font-semibold mb-4" style={{ color: '#1a1a2e' }}>
+            {/* Letting Details */}
+            <div className="rounded-xl bg-white p-6" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+              <h2 className="text-sm font-semibold uppercase tracking-[0.1em] mb-4" style={{ color: '#9CA3AF' }}>
                 Letting Details
               </h2>
-              <div className="flex flex-col divide-y" style={{ borderColor: '#e8e4df' }}>
+              <div className="flex flex-col divide-y" style={{ borderColor: '#F0EFEC' }}>
                 <div className="flex items-center justify-between py-3">
-                  <span className="text-sm" style={{ color: '#6b7280' }}>Rent</span>
-                  <span className="text-2xl" style={{ color: '#1a1a2e', fontFamily: 'var(--font-display)' }}>
-                    &pound;{Math.round(room.rent_pcm)}<span className="text-sm ml-1" style={{ color: '#6b7280', fontFamily: 'var(--font-body)' }}>/month</span>
+                  <span className="text-sm" style={{ color: '#6B7280' }}>Rent</span>
+                  <span className="text-xl font-bold tabular-nums" style={{ color: '#2D3038' }}>
+                    &pound;{Math.round(room.rent_pcm)}<span className="text-sm font-normal ml-1" style={{ color: '#9CA3AF' }}>/month</span>
                   </span>
                 </div>
                 <div className="flex items-center justify-between py-3">
-                  <span className="text-sm" style={{ color: '#6b7280' }}>Bills</span>
+                  <span className="text-sm" style={{ color: '#6B7280' }}>Bills</span>
                   <span
-                    className="text-sm font-semibold"
-                    style={{ color: room.bills_included ? '#2d6a4f' : '#b45309' }}
+                    className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold"
+                    style={
+                      room.bills_included
+                        ? { backgroundColor: '#F0FAF0', color: '#16A34A' }
+                        : { backgroundColor: '#FEF9EF', color: '#B45309' }
+                    }
                   >
                     {room.bills_included ? 'Included' : 'Not included'}
                   </span>
                 </div>
                 <div className="flex items-center justify-between py-3">
-                  <span className="text-sm" style={{ color: '#6b7280' }}>Available</span>
+                  <span className="text-sm" style={{ color: '#6B7280' }}>Available</span>
                   <span
                     className="text-sm font-semibold"
-                    style={{ color: availNow ? '#2d6a4f' : '#6b7280' }}
+                    style={{ color: availNow ? '#16A34A' : '#6B7280' }}
                   >
                     {availText}
                   </span>
                 </div>
                 {room.room_type && (
                   <div className="flex items-center justify-between py-3">
-                    <span className="text-sm" style={{ color: '#6b7280' }}>Room type</span>
-                    <span className="text-sm font-medium" style={{ color: '#1a1a2e' }}>
+                    <span className="text-sm" style={{ color: '#6B7280' }}>Room type</span>
+                    <span className="text-sm font-medium" style={{ color: '#2D3038' }}>
                       {roomTypeLabel(room.room_type)}
                     </span>
                   </div>
@@ -199,34 +200,28 @@ export default async function RoomDetailPage({
               </div>
             </div>
 
-            {/* Card 2: About This Room */}
+            {/* About This Room */}
             {room.advert_description && (
-              <div
-                className="rounded-xl p-6"
-                style={{ backgroundColor: '#ffffff', border: '1px solid #e8e4df' }}
-              >
-                <h2 className="text-lg font-semibold mb-4" style={{ color: '#1a1a2e' }}>
+              <div className="rounded-xl bg-white p-6" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+                <h2 className="text-sm font-semibold uppercase tracking-[0.1em] mb-4" style={{ color: '#9CA3AF' }}>
                   About This Room
                 </h2>
                 <FormattedDescription html={room.advert_description} />
               </div>
             )}
 
-            {/* Card 3: Room Amenities */}
+            {/* Room Amenities */}
             {room.room_amenities.length > 0 && (
-              <div
-                className="rounded-xl p-6"
-                style={{ backgroundColor: '#ffffff', border: '1px solid #e8e4df' }}
-              >
-                <h2 className="text-lg font-semibold mb-4" style={{ color: '#1a1a2e' }}>
+              <div className="rounded-xl bg-white p-6" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+                <h2 className="text-sm font-semibold uppercase tracking-[0.1em] mb-4" style={{ color: '#9CA3AF' }}>
                   Room Amenities
                 </h2>
                 <div className="flex flex-wrap gap-2">
                   {room.room_amenities.map((a) => (
                     <span
                       key={a}
-                      className="inline-flex items-center rounded-md px-3 py-1.5 text-sm"
-                      style={{ backgroundColor: '#f5f3f0', color: '#1a1a2e' }}
+                      className="inline-flex items-center rounded-full px-3 py-1.5 text-sm font-medium"
+                      style={{ backgroundColor: '#F7F6F3', color: '#2D3038' }}
                     >
                       {a}
                     </span>
@@ -235,21 +230,18 @@ export default async function RoomDetailPage({
               </div>
             )}
 
-            {/* Card 4: Property Features */}
+            {/* Property Features */}
             {room.property_amenities.length > 0 && (
-              <div
-                className="rounded-xl p-6"
-                style={{ backgroundColor: '#ffffff', border: '1px solid #e8e4df' }}
-              >
-                <h2 className="text-lg font-semibold mb-4" style={{ color: '#1a1a2e' }}>
+              <div className="rounded-xl bg-white p-6" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+                <h2 className="text-sm font-semibold uppercase tracking-[0.1em] mb-4" style={{ color: '#9CA3AF' }}>
                   Property Features
                 </h2>
                 <div className="flex flex-wrap gap-2">
                   {room.property_amenities.map((a) => (
                     <span
                       key={a}
-                      className="inline-flex items-center rounded-md px-3 py-1.5 text-sm"
-                      style={{ backgroundColor: '#f5f3f0', color: '#1a1a2e' }}
+                      className="inline-flex items-center rounded-full px-3 py-1.5 text-sm font-medium"
+                      style={{ backgroundColor: '#F7F6F3', color: '#2D3038' }}
                     >
                       {a}
                     </span>
@@ -258,28 +250,25 @@ export default async function RoomDetailPage({
               </div>
             )}
 
-            {/* House rules */}
+            {/* House Rules */}
             {(room.property_pets_allowed !== null || room.property_smoking_allowed !== null) && (
-              <div
-                className="rounded-xl p-6"
-                style={{ backgroundColor: '#ffffff', border: '1px solid #e8e4df' }}
-              >
-                <h2 className="text-lg font-semibold mb-4" style={{ color: '#1a1a2e' }}>
+              <div className="rounded-xl bg-white p-6" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+                <h2 className="text-sm font-semibold uppercase tracking-[0.1em] mb-4" style={{ color: '#9CA3AF' }}>
                   House Rules
                 </h2>
                 <div className="flex flex-wrap gap-2">
                   {room.property_pets_allowed !== null && (
                     <span
-                      className="inline-flex items-center rounded-md px-3 py-1.5 text-sm"
-                      style={{ backgroundColor: '#f5f3f0', color: '#1a1a2e' }}
+                      className="inline-flex items-center rounded-full px-3 py-1.5 text-sm font-medium"
+                      style={{ backgroundColor: '#F7F6F3', color: '#2D3038' }}
                     >
                       {room.property_pets_allowed ? 'Pets allowed' : 'No pets'}
                     </span>
                   )}
                   {room.property_smoking_allowed !== null && (
                     <span
-                      className="inline-flex items-center rounded-md px-3 py-1.5 text-sm"
-                      style={{ backgroundColor: '#f5f3f0', color: '#1a1a2e' }}
+                      className="inline-flex items-center rounded-full px-3 py-1.5 text-sm font-medium"
+                      style={{ backgroundColor: '#F7F6F3', color: '#2D3038' }}
                     >
                       {room.property_smoking_allowed ? 'Smoking allowed' : 'No smoking'}
                     </span>
@@ -292,39 +281,49 @@ export default async function RoomDetailPage({
           {/* RIGHT column: Sticky CTA */}
           <div className="lg:col-span-5">
             <div
-              className="sticky top-24 flex flex-col gap-4 rounded-xl p-6"
-              style={{ backgroundColor: '#ffffff', border: '1px solid #e8e4df' }}
+              className="sticky top-24 flex flex-col gap-4 rounded-xl bg-white p-6"
+              style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}
             >
-              <p style={{ color: '#1a1a2e' }}>
-                <span className="text-4xl" style={{ fontFamily: 'var(--font-display)' }}>
+              <div>
+                <p className="text-3xl font-bold tabular-nums" style={{ color: '#2D3038' }}>
                   &pound;{Math.round(room.rent_pcm)}
+                  <span className="text-base font-normal ml-1" style={{ color: '#9CA3AF' }}>/month</span>
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <span
+                  className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold"
+                  style={
+                    room.bills_included
+                      ? { backgroundColor: '#F0FAF0', color: '#16A34A' }
+                      : { backgroundColor: '#FEF9EF', color: '#B45309' }
+                  }
+                >
+                  {room.bills_included ? 'Bills included' : 'Bills not included'}
                 </span>
-                <span className="text-base ml-1" style={{ color: '#6b7280' }}>/month</span>
-              </p>
-              <p
-                className="text-sm font-semibold"
-                style={{ color: room.bills_included ? '#2d6a4f' : '#b45309' }}
-              >
-                {room.bills_included ? 'Bills included' : 'Bills not included'}
-              </p>
-              <p
-                className="text-sm font-semibold"
-                style={{ color: availNow ? '#2d6a4f' : '#6b7280' }}
-              >
-                {availText}
-              </p>
+                <span
+                  className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold"
+                  style={
+                    availNow
+                      ? { backgroundColor: '#F0FAF0', color: '#16A34A' }
+                      : { backgroundColor: '#F7F6F3', color: '#6B7280' }
+                  }
+                >
+                  {availText}
+                </span>
+              </div>
               <Link
                 href={`/apply/${room.id}`}
-                className="mt-2 w-full inline-flex items-center justify-center rounded-xl px-6 py-3.5 text-base font-semibold text-white transition-colors duration-200"
-                style={{ backgroundColor: '#1a1a2e' }}
-                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#2d2d44' }}
-                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#1a1a2e' }}
+                className="mt-2 w-full inline-flex items-center justify-center rounded-lg px-6 py-3.5 text-base font-semibold text-white transition-all duration-200"
+                style={{ backgroundColor: '#2D3038' }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#3D404A' }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#2D3038' }}
               >
                 Apply to Rent
               </Link>
-              <p className="text-center text-sm" style={{ color: '#6b7280' }}>
+              <p className="text-center text-sm" style={{ color: '#9CA3AF' }}>
                 or call{' '}
-                <a href="tel:01174504898" className="font-medium underline underline-offset-2" style={{ color: '#1a1a2e' }}>
+                <a href="tel:01174504898" className="font-medium underline underline-offset-2" style={{ color: '#2D3038' }}>
                   0117 450 4898
                 </a>
               </p>
@@ -334,10 +333,10 @@ export default async function RoomDetailPage({
 
         {/* Shared spaces gallery */}
         {sharedSpacePhotos.length > 0 && (
-          <div className="mt-12">
+          <div className="mt-14">
             <h2
-              className="text-2xl font-normal mb-4"
-              style={{ color: '#1a1a2e', fontFamily: 'var(--font-display)' }}
+              className="text-sm font-semibold uppercase tracking-[0.1em] mb-5"
+              style={{ color: '#9CA3AF' }}
             >
               Shared Spaces
             </h2>
@@ -345,8 +344,8 @@ export default async function RoomDetailPage({
               {sharedSpacePhotos.map((img, idx) => (
                 <div
                   key={idx}
-                  className="relative overflow-hidden rounded-xl"
-                  style={{ aspectRatio: '4/3', backgroundColor: '#e8e4df' }}
+                  className="relative overflow-hidden rounded-lg"
+                  style={{ aspectRatio: '4/3', backgroundColor: '#E5E3DF' }}
                 >
                   <Image
                     src={img.url}
@@ -364,10 +363,10 @@ export default async function RoomDetailPage({
 
         {/* Other rooms */}
         {otherRooms.length > 0 && (
-          <div className="mt-12">
+          <div className="mt-14">
             <h2
-              className="text-2xl font-normal mb-4"
-              style={{ color: '#1a1a2e', fontFamily: 'var(--font-display)' }}
+              className="text-sm font-semibold uppercase tracking-[0.1em] mb-5"
+              style={{ color: '#9CA3AF' }}
             >
               Other Rooms at {room.property_name}
             </h2>
@@ -376,16 +375,15 @@ export default async function RoomDetailPage({
                 <Link
                   key={otherRoom.id}
                   href={`/room/${otherRoom.id}`}
-                  className="flex flex-shrink-0 gap-4 rounded-xl p-4 transition-all duration-200 hover:shadow-lg"
+                  className="flex flex-shrink-0 gap-4 rounded-xl bg-white p-4 transition-shadow duration-200 hover:shadow-md"
                   style={{
-                    backgroundColor: '#ffffff',
-                    border: '1px solid #e8e4df',
                     width: '280px',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
                   }}
                 >
                   <div
                     className="relative flex-shrink-0 overflow-hidden rounded-lg"
-                    style={{ width: '80px', height: '60px', backgroundColor: '#e8e4df' }}
+                    style={{ width: '80px', height: '60px', backgroundColor: '#E5E3DF' }}
                   >
                     {otherRoom.photo_urls[0] ? (
                       <Image
@@ -397,23 +395,23 @@ export default async function RoomDetailPage({
                         quality={85}
                       />
                     ) : (
-                      <div className="flex h-full items-center justify-center text-xs" style={{ color: '#6b7280' }}>
+                      <div className="flex h-full items-center justify-center text-xs" style={{ color: '#9CA3AF' }}>
                         No photo
                       </div>
                     )}
                   </div>
                   <div className="flex flex-col gap-1">
-                    <p className="font-semibold text-sm" style={{ color: '#1a1a2e' }}>{otherRoom.name}</p>
-                    <p className="text-lg" style={{ color: '#1a1a2e', fontFamily: 'var(--font-display)' }}>
+                    <p className="font-semibold text-sm" style={{ color: '#2D3038' }}>{otherRoom.name}</p>
+                    <p className="text-lg font-bold tabular-nums" style={{ color: '#2D3038' }}>
                       &pound;{Math.round(otherRoom.rent_pcm)}
-                      <span className="text-xs ml-1" style={{ color: '#6b7280', fontFamily: 'var(--font-body)' }}>/month</span>
+                      <span className="text-xs font-normal ml-1" style={{ color: '#9CA3AF' }}>/month</span>
                     </p>
-                    <p
+                    <span
                       className="text-xs font-semibold"
-                      style={{ color: otherRoom.bills_included ? '#2d6a4f' : '#b45309' }}
+                      style={{ color: otherRoom.bills_included ? '#16A34A' : '#B45309' }}
                     >
                       {otherRoom.bills_included ? 'Bills inc.' : 'Bills extra'}
-                    </p>
+                    </span>
                   </div>
                 </Link>
               ))}
@@ -424,20 +422,23 @@ export default async function RoomDetailPage({
 
       {/* Mobile sticky CTA */}
       <div
-        className="fixed bottom-0 left-0 right-0 z-40 p-4 lg:hidden"
-        style={{ backgroundColor: '#ffffff', boxShadow: '0 -2px 12px rgba(0,0,0,0.1)' }}
+        className="fixed bottom-0 left-0 right-0 z-40 bg-white p-4 lg:hidden"
+        style={{ boxShadow: '0 -1px 8px rgba(0,0,0,0.06)' }}
       >
         <div className="flex items-center justify-between gap-4">
-          <p style={{ color: '#1a1a2e' }}>
-            <span className="text-2xl" style={{ fontFamily: 'var(--font-display)' }}>
+          <div>
+            <p className="text-xl font-bold tabular-nums" style={{ color: '#2D3038' }}>
               &pound;{Math.round(room.rent_pcm)}
-            </span>
-            <span className="text-sm ml-1" style={{ color: '#6b7280' }}>/mo</span>
-          </p>
+              <span className="text-sm font-normal ml-1" style={{ color: '#9CA3AF' }}>/mo</span>
+            </p>
+            <p className="text-xs font-medium" style={{ color: availNow ? '#16A34A' : '#6B7280' }}>
+              {availText}
+            </p>
+          </div>
           <Link
             href={`/apply/${room.id}`}
-            className="inline-flex items-center justify-center rounded-xl px-6 py-3 text-sm font-semibold text-white"
-            style={{ backgroundColor: '#1a1a2e' }}
+            className="inline-flex items-center justify-center rounded-lg px-6 py-3 text-sm font-semibold text-white"
+            style={{ backgroundColor: '#2D3038' }}
           >
             Apply to Rent
           </Link>

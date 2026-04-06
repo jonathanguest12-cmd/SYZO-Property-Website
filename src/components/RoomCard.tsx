@@ -32,43 +32,38 @@ export default function RoomCard({ room }: { room: RoomWithProperty }) {
   return (
     <Link
       href={`/room/${room.id}`}
-      className="group flex flex-col overflow-hidden rounded-2xl transition-all duration-200 hover:-translate-y-1"
+      className="group flex flex-col overflow-hidden rounded-xl bg-white transition-shadow duration-300"
       style={{
-        backgroundColor: '#ffffff',
-        border: '1px solid #e8e4df',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+        boxShadow: '0 1px 2px rgba(0,0,0,0.04), 0 1px 4px rgba(0,0,0,0.02)',
       }}
-      onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 10px 25px rgba(0,0,0,0.08)' }}
-      onMouseLeave={(e) => { e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)' }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04)'
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,0.04), 0 1px 4px rgba(0,0,0,0.02)'
+      }}
     >
       {/* Image */}
-      <div className="relative w-full overflow-hidden rounded-t-2xl" style={{ maxHeight: '200px' }}>
+      <div className="relative w-full overflow-hidden" style={{ maxHeight: '200px' }}>
         {photoUrl ? (
-          <>
-            <div style={{ aspectRatio: '4/3', maxHeight: '200px' }}>
-              <Image
-                src={photoUrl}
-                alt={`${room.property_name} - ${room.name}`}
-                fill
-                className="object-cover transition-transform duration-300 group-hover:scale-105"
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                quality={85}
-              />
-            </div>
-            {/* Gradient overlay */}
-            <div
-              className="absolute inset-0"
-              style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.2), transparent)' }}
+          <div style={{ aspectRatio: '16/10', maxHeight: '200px' }}>
+            <Image
+              src={photoUrl}
+              alt={`${room.property_name} - ${room.name}`}
+              fill
+              className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              quality={85}
             />
-          </>
+          </div>
         ) : (
           <div
             className="flex items-center justify-center text-sm"
             style={{
-              aspectRatio: '4/3',
+              aspectRatio: '16/10',
               maxHeight: '200px',
-              background: 'linear-gradient(to bottom right, #e8e4df, #d4cfc8)',
-              color: '#6b7280',
+              background: 'linear-gradient(135deg, #E5E3DF, #D8D5D0)',
+              color: '#6B7280',
             }}
           >
             No photo available
@@ -76,37 +71,40 @@ export default function RoomCard({ room }: { room: RoomWithProperty }) {
         )}
         {/* City badge */}
         <span
-          className="absolute left-3 top-3 rounded-full px-3 py-1 text-xs font-semibold tracking-wide uppercase"
-          style={{ backgroundColor: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(4px)', color: '#1a1a2e' }}
+          className="absolute left-3 top-3 rounded-full px-2.5 py-1 text-[11px] font-semibold tracking-wide uppercase"
+          style={{ backgroundColor: 'rgba(255,255,255,0.92)', color: '#2D3038' }}
         >
           {room.property_city}
         </span>
       </div>
 
       {/* Content */}
-      <div className="flex flex-1 flex-col gap-2 p-5">
-        <h3 className="text-base font-semibold leading-snug" style={{ color: '#1a1a2e' }}>
-          {title}
-        </h3>
-        <p className="text-sm truncate" style={{ color: '#6b7280' }}>
-          {subtitle}
-        </p>
+      <div className="flex flex-1 flex-col gap-3 p-5">
+        {/* Title */}
+        <div>
+          <h3 className="text-[15px] font-semibold leading-snug" style={{ color: '#2D3038' }}>
+            {title}
+          </h3>
+          <p className="mt-0.5 text-sm truncate" style={{ color: '#9CA3AF' }}>
+            {subtitle}
+          </p>
+        </div>
 
         {/* Rent + Bills */}
-        <div className="flex items-center gap-2">
-          <span className="text-2xl" style={{ color: '#1a1a2e', fontFamily: 'var(--font-display)' }}>
+        <div className="flex items-baseline gap-2">
+          <span className="text-xl font-bold tabular-nums" style={{ color: '#2D3038' }}>
             &pound;{Math.round(room.rent_pcm)}
           </span>
-          <span className="text-sm" style={{ color: '#6b7280' }}>/month</span>
+          <span className="text-sm" style={{ color: '#9CA3AF' }}>/month</span>
           <span
-            className="ml-auto inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold"
+            className="ml-auto inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold"
             style={
               room.bills_included
-                ? { backgroundColor: '#ecf5ee', color: '#2d6a4f' }
-                : { backgroundColor: '#fef6e7', color: '#b45309' }
+                ? { backgroundColor: '#F0FAF0', color: '#16A34A' }
+                : { backgroundColor: '#FEF9EF', color: '#B45309' }
             }
           >
-            {room.bills_included ? 'BILLS INC.' : 'BILLS EXTRA'}
+            {room.bills_included ? 'Bills inc.' : 'Bills extra'}
           </span>
         </div>
 
@@ -116,8 +114,8 @@ export default function RoomCard({ room }: { room: RoomWithProperty }) {
             {amenities.map((a) => (
               <span
                 key={a}
-                className="inline-flex items-center rounded-md px-2 py-1 text-xs"
-                style={{ backgroundColor: '#f5f3f0', color: '#6b7280' }}
+                className="inline-flex items-center rounded-md px-2 py-0.5 text-xs"
+                style={{ backgroundColor: '#F7F6F3', color: '#6B7280' }}
               >
                 {a}
               </span>
@@ -125,17 +123,20 @@ export default function RoomCard({ room }: { room: RoomWithProperty }) {
           </div>
         )}
 
-        {/* Available date + View Room link */}
-        <div className="mt-auto flex items-center justify-between pt-2">
+        {/* Available + CTA */}
+        <div
+          className="mt-auto flex items-center justify-between pt-3"
+          style={{ borderTop: '1px solid #F0EFEC' }}
+        >
           <span
             className="text-sm font-medium"
-            style={{ color: availNow ? '#2d6a4f' : '#6b7280' }}
+            style={{ color: availNow ? '#16A34A' : '#6B7280' }}
           >
             {availText}
           </span>
           <span
-            className="text-sm font-semibold transition-colors duration-200"
-            style={{ color: '#1a1a2e' }}
+            className="text-sm font-semibold transition-all duration-200 group-hover:translate-x-0.5"
+            style={{ color: '#2D3038' }}
           >
             View Room &rarr;
           </span>
