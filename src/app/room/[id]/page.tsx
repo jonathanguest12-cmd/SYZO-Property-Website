@@ -14,21 +14,14 @@ import {
   roomTypeLabel,
   parseAdvertDescription,
   isIllustrationPhoto,
+  stripHtml,
 } from '@/lib/format'
+import { processDescription } from '@/lib/process-description'
 import PhotoGallery from '@/components/PhotoGallery'
 import ExpandableText from '@/components/ExpandableText'
 
-// Import processed descriptions cache (build-time generated)
-let descriptionCache: Record<string, any> = {}
-try {
-  descriptionCache = require('@/data/processed-descriptions.json')
-} catch {
-  // Cache doesn't exist yet — will fall back to raw parsing
-}
-
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
-/** Render plain text with paragraph breaks, bullets, and short headings */
 function TextBlock({ text }: { text: string }) {
   const lines = text.split(/\n/)
   const elements: React.ReactNode[] = []
@@ -51,25 +44,20 @@ function TextBlock({ text }: { text: string }) {
   for (const rawLine of lines) {
     const line = rawLine.trim()
     if (!line) { flushBullets(); continue }
-
     const bulletMatch = line.match(/^[-\u2022\u2013~]\s*(.*)/)
     if (bulletMatch) { currentBullets.push(bulletMatch[1]); continue }
-
     if (line.length < 60 && (line.endsWith(':') || line.endsWith(';'))) {
       flushBullets()
       elements.push(<p key={key++} className="text-sm font-semibold" style={{ color: '#2D3038' }}>{line}</p>)
       continue
     }
-
     flushBullets()
     elements.push(<p key={key++} className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{line}</p>)
   }
-
   flushBullets()
   return <div className="space-y-2.5">{elements}</div>
 }
 
-/** Green checkmark list item */
 function CheckItem({ text }: { text: string }) {
   return (
     <li className="flex items-start gap-2.5 text-sm" style={{ color: '#6B7280' }}>
@@ -81,19 +69,15 @@ function CheckItem({ text }: { text: string }) {
   )
 }
 
-/** Card wrapper */
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="rounded-xl bg-white p-6" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-      <h2 className="text-sm font-semibold uppercase tracking-[0.1em] mb-4" style={{ color: '#9CA3AF' }}>
-        {title}
-      </h2>
+      <h2 className="text-sm font-semibold uppercase tracking-[0.1em] mb-4" style={{ color: '#9CA3AF' }}>{title}</h2>
       {children}
     </div>
   )
 }
 
-/** Extract letting details from additional_info JSONB */
 function getLettingDetails(room: RoomWithProperty) {
   const info = room.additional_info ?? {}
   const prop = info.property ?? {}
@@ -105,22 +89,18 @@ function getLettingDetails(room: RoomWithProperty) {
   }
 }
 
-/** Deduplicate photos by URL, merge room + property, skip illustrations */
 function buildGalleryPhotos(room: RoomWithProperty): { url: string; title: string }[] {
   const roomPhotos = (room.photo_urls ?? []).map((url) => ({ url, title: 'Room' }))
   const propImages = room.property_images ?? []
   const propertyPhotos = propImages.filter((img) => !isIllustrationPhoto(img.title || ''))
-
   const all = [...roomPhotos, ...propertyPhotos]
   const seen = new Set<string>()
   return all.filter((p) => {
-    // Deduplicate by full URL and by filename
     const filename = p.url.split('/').pop() || p.url
     if (seen.has(p.url) || seen.has(filename)) return false
     seen.add(p.url)
     seen.add(filename)
-    // Skip thumbnails
-    if (/thumb|small|150x/i.test(p.url)) return false
+    if (/thumb|small|150x|100x/i.test(p.url)) return false
     return true
   })
 }
@@ -133,11 +113,7 @@ async function resolveRoom(id: string): Promise<RoomWithProperty | null> {
   return fetchRoomBySpareRoomId(id)
 }
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ id: string }>
-}): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params
   const room = await resolveRoom(id)
   if (!room) return { title: 'Room Not Found - SYZO' }
@@ -147,148 +123,112 @@ export async function generateMetadata({
   }
 }
 
-export default async function RoomDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>
-}) {
+export default async function RoomDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const room = await resolveRoom(id)
   if (!room) notFound()
 
-  const otherRooms = (await fetchRoomsForProperty(room.property_ref)).filter(
-    (r) => r.id !== room.id
-  )
+  const otherRooms = (await fetchRoomsForProperty(room.property_ref)).filter((r) => r.id !== room.id)
 
   const availText = formatAvailableFrom(room.available_from)
   const availNow = isAvailableNow(room.available_from)
   const letting = getLettingDetails(room)
   const galleryPhotos = buildGalleryPhotos(room)
 
-  // Try Claude-processed cache first, fall back to raw parsing
-  const cached = descriptionCache[room.id] ?? null
-  const parsed = !cached && room.advert_description ? parseAdvertDescription(room.advert_description) : null
-
   const hasEnSuite = room.room_amenities.some(
     (a) => a.toLowerCase().includes('en-suite') || a.toLowerCase().includes('ensuite')
   )
 
-  // Build description content from either source
-  const overview = cached?.property_overview ?? parsed?.description ?? null
-  const roomDesc = cached?.room_description ?? null
-  const whatsIncluded: string[] = cached?.whats_included ?? parsed?.whatsIncluded ?? []
-  const localArea = cached?.local_area ?? null
+  // Process description: try Claude API first, fall back to raw parsing
+  const processed = room.advert_description
+    ? await processDescription(room.id, room.advert_description, {
+        address: room.property_name,
+        city: room.property_city,
+        rent: Math.round(room.rent_pcm),
+        billsIncluded: room.bills_included,
+      })
+    : null
+
+  // Fall back to raw parsing if Claude API didn't return results
+  const parsed = !processed && room.advert_description ? parseAdvertDescription(room.advert_description) : null
+
+  // Unified content from whichever source
+  const overview = processed?.property_overview ?? parsed?.description ?? null
+  const roomDesc = processed?.room_description ?? null
+  const whatsIncluded: string[] = processed?.whats_included ?? parsed?.whatsIncluded ?? []
+  const localArea = processed?.local_area ?? null
   const localSections = parsed?.sections ?? []
-  const depositInfo = cached?.deposit_info ?? parsed?.depositInfo ?? null
+  const hasLocalArea = localArea ? (localArea.shops || localArea.transport || localArea.healthcare || localArea.leisure) : localSections.length > 0
+  const depositInfo = processed?.deposit_info ?? parsed?.depositInfo ?? null
 
   return (
     <>
       <div className="mx-auto w-full max-w-7xl px-4 py-6 md:px-8 md:py-8">
-        {/* Back link */}
-        <Link
-          href="/"
-          className="inline-flex items-center gap-1.5 text-sm font-medium mb-6 transition-colors duration-200 hover:opacity-70"
-          style={{ color: '#6B7280' }}
-        >
+        <Link href="/" className="inline-flex items-center gap-1.5 text-sm font-medium mb-6 transition-colors duration-200 hover:opacity-70" style={{ color: '#6B7280' }}>
           &larr; Back to all rooms
         </Link>
 
-        {/* Two-column layout: LEFT = photos + CTA + other rooms (sticky), RIGHT = content cards */}
         <div className="grid gap-8 lg:grid-cols-12">
-
-          {/* LEFT column: Photos + Apply + Other Rooms + Location (sticky on desktop) */}
+          {/* LEFT: Photos + Apply + Other Rooms (sticky) */}
           <div className="lg:col-span-5">
             <div className="lg:sticky lg:top-20 flex flex-col gap-5">
               <PhotoGallery photos={galleryPhotos} alt={room.property_name} />
 
-              {/* Apply to Rent — desktop only */}
               <div className="hidden lg:block">
-                <Link
-                  href={`/apply/${room.id}`}
-                  className="btn-primary w-full inline-flex items-center justify-center rounded-lg px-6 py-3.5 text-base font-semibold text-white"
-                >
+                <Link href={`/apply/${room.id}`} className="btn-primary w-full inline-flex items-center justify-center rounded-lg px-6 py-3.5 text-base font-semibold text-white">
                   Apply to Rent
                 </Link>
               </div>
 
-              {/* Other rooms at this property */}
+              {/* Other rooms — bigger, more impactful cards */}
               {otherRooms.length > 0 && (
                 <div className="hidden lg:block">
                   <h3 className="text-xs font-semibold uppercase tracking-[0.1em] mb-3" style={{ color: '#9CA3AF' }}>
                     Other Rooms at {room.property_name}
                   </h3>
-                  <div className="flex flex-col gap-2">
-                    {otherRooms.map((otherRoom) => (
-                      <Link
-                        key={otherRoom.id}
-                        href={`/room/${otherRoom.id}`}
-                        className="flex gap-3 rounded-lg bg-white p-3 transition-shadow duration-200 hover:shadow-md"
-                        style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}
-                      >
-                        <div
-                          className="relative flex-shrink-0 overflow-hidden rounded-md"
-                          style={{ width: '56px', height: '42px', backgroundColor: '#E5E3DF' }}
-                        >
-                          {otherRoom.photo_urls[0] ? (
-                            <Image
-                              src={otherRoom.photo_urls[0]}
-                              alt={otherRoom.name}
-                              fill
-                              className="object-cover"
-                              sizes="56px"
-                              quality={85}
-                            />
-                          ) : (
-                            <div className="flex h-full items-center justify-center text-[10px]" style={{ color: '#9CA3AF' }}>
-                              No photo
+                  <div className="flex flex-col gap-3">
+                    {otherRooms.map((r) => {
+                      const rAvail = formatAvailableFrom(r.available_from)
+                      const rAvailNow = isAvailableNow(r.available_from)
+                      return (
+                        <Link key={r.id} href={`/room/${r.id}`} className="overflow-hidden rounded-xl bg-white transition-shadow duration-200 hover:shadow-md" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+                          <div className="relative w-full overflow-hidden" style={{ height: '120px', backgroundColor: '#E5E3DF' }}>
+                            {r.photo_urls[0] ? (
+                              <Image src={r.photo_urls[0]} alt={r.name} fill className="object-cover" sizes="300px" quality={85} loading="lazy" />
+                            ) : (
+                              <div className="flex h-full items-center justify-center" style={{ color: '#9CA3AF' }}>
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z" /><path d="M9 21V12h6v9" /></svg>
+                              </div>
+                            )}
+                          </div>
+                          <div className="p-3 flex flex-col gap-1.5">
+                            <p className="font-semibold text-sm" style={{ color: '#2D3038' }}>{r.name}</p>
+                            <div className="flex items-baseline gap-2">
+                              <span className="text-lg font-bold tabular-nums" style={{ color: '#2D3038' }}>
+                                &pound;{Math.round(r.rent_pcm)}
+                              </span>
+                              <span className="text-xs" style={{ color: '#9CA3AF' }}>/month</span>
+                              <span className="ml-auto inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold" style={r.bills_included ? { backgroundColor: '#F0FAF0', color: '#16A34A' } : { backgroundColor: '#FEF9EF', color: '#B45309' }}>
+                                {r.bills_included ? 'Bills inc.' : 'Bills extra'}
+                              </span>
                             </div>
-                          )}
-                        </div>
-                        <div className="flex flex-col gap-0.5 min-w-0">
-                          <p className="font-medium text-xs truncate" style={{ color: '#2D3038' }}>{otherRoom.name}</p>
-                          <p className="text-sm font-bold tabular-nums" style={{ color: '#2D3038' }}>
-                            &pound;{Math.round(otherRoom.rent_pcm)}
-                            <span className="text-[10px] font-normal ml-0.5" style={{ color: '#9CA3AF' }}>/mo</span>
-                          </p>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Location map */}
-              {room.property_postcode && (
-                <div className="hidden lg:block">
-                  <h3 className="text-xs font-semibold uppercase tracking-[0.1em] mb-3" style={{ color: '#9CA3AF' }}>
-                    Location
-                  </h3>
-                  <div className="overflow-hidden rounded-lg" style={{ aspectRatio: '4/3' }}>
-                    <iframe
-                      src={`https://maps.google.com/maps?q=${encodeURIComponent(room.property_postcode)}&output=embed`}
-                      width="100%"
-                      height="100%"
-                      style={{ border: 0 }}
-                      loading="lazy"
-                      referrerPolicy="no-referrer-when-downgrade"
-                      title={`Map of ${room.property_postcode}`}
-                    />
+                            <p className="text-xs font-medium" style={{ color: rAvailNow ? '#16A34A' : '#6B7280' }}>
+                              {rAvail}
+                            </p>
+                          </div>
+                        </Link>
+                      )
+                    })}
                   </div>
                 </div>
               )}
             </div>
           </div>
 
-          {/* RIGHT column: Content cards */}
+          {/* RIGHT: Content cards */}
           <div className="flex flex-col gap-5 lg:col-span-7">
-            {/* Title block */}
             <div>
-              <h1
-                className="text-2xl font-bold tracking-tight md:text-3xl"
-                style={{ color: '#2D3038' }}
-              >
-                {room.property_name}
-              </h1>
+              <h1 className="text-2xl font-bold tracking-tight md:text-3xl" style={{ color: '#2D3038' }}>{room.property_name}</h1>
               <p className="mt-1.5 text-sm" style={{ color: '#9CA3AF' }}>
                 {room.property_city}, {room.property_postcode}
                 {room.room_type && ` \u00B7 ${roomTypeLabel(room.room_type)}`}
@@ -296,21 +236,16 @@ export default async function RoomDetailPage({
               </p>
             </div>
 
-            {/* Card 1: Letting Details */}
+            {/* 1. Letting Details */}
             <Card title="Letting Details">
               <div className="flex flex-col divide-y" style={{ borderColor: '#F0EFEC' }}>
                 <div className="flex items-center justify-between py-3">
                   <span className="text-sm" style={{ color: '#6B7280' }}>Rent</span>
-                  <span className="text-xl font-bold tabular-nums" style={{ color: '#2D3038' }}>
-                    &pound;{Math.round(room.rent_pcm)}<span className="text-sm font-normal ml-1" style={{ color: '#9CA3AF' }}>pcm</span>
-                  </span>
+                  <span className="text-xl font-bold tabular-nums" style={{ color: '#2D3038' }}>&pound;{Math.round(room.rent_pcm)}<span className="text-sm font-normal ml-1" style={{ color: '#9CA3AF' }}>pcm</span></span>
                 </div>
                 <div className="flex items-center justify-between py-3">
                   <span className="text-sm" style={{ color: '#6B7280' }}>Bills</span>
-                  <span
-                    className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold"
-                    style={room.bills_included ? { backgroundColor: '#F0FAF0', color: '#16A34A' } : { backgroundColor: '#FEF9EF', color: '#B45309' }}
-                  >
+                  <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold" style={room.bills_included ? { backgroundColor: '#F0FAF0', color: '#16A34A' } : { backgroundColor: '#FEF9EF', color: '#B45309' }}>
                     {room.bills_included ? 'Included' : 'Not included'}
                   </span>
                 </div>
@@ -323,12 +258,10 @@ export default async function RoomDetailPage({
                 {room.room_type && (
                   <div className="flex items-center justify-between py-3">
                     <span className="text-sm" style={{ color: '#6B7280' }}>Room type</span>
-                    <span className="text-sm font-medium" style={{ color: '#2D3038' }}>
-                      {roomTypeLabel(room.room_type)}{hasEnSuite ? ' (en-suite)' : ''}
-                    </span>
+                    <span className="text-sm font-medium" style={{ color: '#2D3038' }}>{roomTypeLabel(room.room_type)}{hasEnSuite ? ' (en-suite)' : ''}</span>
                   </div>
                 )}
-                {letting.minTenancy != null && (
+                {letting.minTenancy && (
                   <div className="flex items-center justify-between py-3">
                     <span className="text-sm" style={{ color: '#6B7280' }}>Min. tenancy</span>
                     <span className="text-sm font-medium" style={{ color: '#2D3038' }}>{letting.minTenancy}</span>
@@ -337,115 +270,84 @@ export default async function RoomDetailPage({
                 {letting.couplesWelcome !== null && (
                   <div className="flex items-center justify-between py-3">
                     <span className="text-sm" style={{ color: '#6B7280' }}>Couples</span>
-                    <span className="text-sm font-medium" style={{ color: '#2D3038' }}>
-                      {letting.couplesWelcome ? 'Welcome' : 'Single occupancy only'}
-                    </span>
+                    <span className="text-sm font-medium" style={{ color: '#2D3038' }}>{letting.couplesWelcome ? 'Welcome' : 'Single occupancy only'}</span>
                   </div>
                 )}
                 <div className="flex items-center justify-between py-3">
                   <span className="text-sm" style={{ color: '#6B7280' }}>Available</span>
-                  <span className="text-sm font-semibold" style={{ color: availNow ? '#16A34A' : '#6B7280' }}>
-                    {availText}
-                  </span>
+                  <span className="text-sm font-semibold" style={{ color: availNow ? '#16A34A' : '#6B7280' }}>{availText}</span>
                 </div>
               </div>
             </Card>
 
-            {/* Card 2: Property Features (moved up) */}
+            {/* 2. Property Features (green pills) */}
             {room.property_amenities.length > 0 && (
               <Card title="Property Features">
                 <div className="flex flex-wrap gap-2">
                   {room.property_amenities.map((a) => (
-                    <span
-                      key={a}
-                      className="inline-flex items-center rounded-full px-3 py-1.5 text-sm font-medium"
-                      style={{ backgroundColor: '#ECFDF5', color: '#047857' }}
-                    >
-                      {a}
-                    </span>
+                    <span key={a} className="inline-flex items-center rounded-full px-3 py-1.5 text-sm font-medium" style={{ backgroundColor: '#ECFDF5', color: '#047857' }}>{a}</span>
                   ))}
                 </div>
               </Card>
             )}
 
-            {/* Card 3: Property Overview */}
+            {/* 3. About This Property */}
             {overview && (
-              <Card title="Property Overview">
-                <ExpandableText maxHeight={200}>
-                  <TextBlock text={overview} />
-                </ExpandableText>
+              <Card title="About This Property">
+                {processed ? (
+                  <p className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{overview}</p>
+                ) : (
+                  <ExpandableText maxHeight={200}><TextBlock text={overview} /></ExpandableText>
+                )}
               </Card>
             )}
 
-            {/* Card 4: Room Description (Claude-processed only) */}
+            {/* 4. About This Room (Claude-processed only) */}
             {roomDesc && (
-              <Card title="Room Description">
+              <Card title="About This Room">
                 <p className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{roomDesc}</p>
               </Card>
             )}
 
-            {/* Card 5: What's Included */}
+            {/* 5. What's Included */}
             {whatsIncluded.length > 0 && (
               <Card title="What&apos;s Included">
                 <ul className="space-y-2">
-                  {whatsIncluded.map((item, i) => (
-                    <CheckItem key={i} text={item} />
-                  ))}
+                  {whatsIncluded.map((item, i) => <CheckItem key={i} text={item} />)}
                 </ul>
               </Card>
             )}
 
-            {/* Card 6: Local Area */}
-            {(localArea || localSections.length > 0) && (
+            {/* 6. Local Area */}
+            {hasLocalArea && (
               <Card title="Local Area">
                 {localArea ? (
                   <div className="space-y-4">
-                    {localArea.shops && (
-                      <div>
-                        <p className="text-sm font-semibold mb-1" style={{ color: '#2D3038' }}>Shops &amp; Leisure</p>
-                        <p className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{localArea.shops}</p>
-                      </div>
-                    )}
-                    {localArea.transport && (
-                      <div>
-                        <p className="text-sm font-semibold mb-1" style={{ color: '#2D3038' }}>Transport</p>
-                        <p className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{localArea.transport}</p>
-                      </div>
-                    )}
-                    {localArea.healthcare && (
-                      <div>
-                        <p className="text-sm font-semibold mb-1" style={{ color: '#2D3038' }}>Healthcare</p>
-                        <p className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{localArea.healthcare}</p>
-                      </div>
-                    )}
-                    {localArea.leisure && (
-                      <div>
-                        <p className="text-sm font-semibold mb-1" style={{ color: '#2D3038' }}>Leisure</p>
-                        <p className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{localArea.leisure}</p>
-                      </div>
-                    )}
+                    {localArea.shops && <div><p className="text-sm font-semibold mb-1" style={{ color: '#2D3038' }}>Shops &amp; Leisure</p><p className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{localArea.shops}</p></div>}
+                    {localArea.transport && <div><p className="text-sm font-semibold mb-1" style={{ color: '#2D3038' }}>Transport</p><p className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{localArea.transport}</p></div>}
+                    {localArea.healthcare && <div><p className="text-sm font-semibold mb-1" style={{ color: '#2D3038' }}>Healthcare</p><p className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{localArea.healthcare}</p></div>}
+                    {localArea.leisure && <div><p className="text-sm font-semibold mb-1" style={{ color: '#2D3038' }}>Leisure</p><p className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{localArea.leisure}</p></div>}
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {localSections.map((section, idx) => (
-                      <div key={idx}>
-                        <p className="text-sm font-semibold mb-1" style={{ color: '#2D3038' }}>{section.title}</p>
-                        <TextBlock text={section.content} />
-                      </div>
-                    ))}
+                    {localSections.map((s, i) => <div key={i}><p className="text-sm font-semibold mb-1" style={{ color: '#2D3038' }}>{s.title}</p><TextBlock text={s.content} /></div>)}
                   </div>
                 )}
               </Card>
             )}
 
-            {/* Card 7: Deposit Information */}
+            {/* 7. Deposit Information */}
             {depositInfo && (
               <Card title="Deposit Information">
-                <TextBlock text={depositInfo} />
+                {processed ? (
+                  <p className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{depositInfo}</p>
+                ) : (
+                  <TextBlock text={depositInfo} />
+                )}
               </Card>
             )}
 
-            {/* Card 8: House Rules */}
+            {/* 8. House Rules */}
             {(room.property_pets_allowed !== null || room.property_smoking_allowed !== null) && (
               <Card title="House Rules">
                 <div className="flex flex-wrap gap-2">
@@ -463,54 +365,36 @@ export default async function RoomDetailPage({
               </Card>
             )}
 
-            {/* Mobile-only: Other rooms + location */}
+            {/* 9. Location Map (last card) */}
+            {room.property_postcode && (
+              <Card title="Location">
+                <div className="overflow-hidden rounded-lg" style={{ aspectRatio: '16/9' }}>
+                  <iframe
+                    src={`https://maps.google.com/maps?q=${encodeURIComponent(room.property_postcode)}&output=embed`}
+                    width="100%" height="100%" style={{ border: 0 }}
+                    loading="lazy" referrerPolicy="no-referrer-when-downgrade"
+                    title={`Map of ${room.property_postcode}`}
+                  />
+                </div>
+              </Card>
+            )}
+
+            {/* Mobile: Other rooms */}
             {otherRooms.length > 0 && (
               <div className="lg:hidden">
                 <Card title={`Other Rooms at ${room.property_name}`}>
                   <div className="flex gap-3 overflow-x-auto pb-1">
-                    {otherRooms.map((otherRoom) => (
-                      <Link
-                        key={otherRoom.id}
-                        href={`/room/${otherRoom.id}`}
-                        className="flex flex-shrink-0 gap-3 rounded-lg bg-white p-3"
-                        style={{ width: '220px', border: '1px solid #F0EFEC' }}
-                      >
-                        <div
-                          className="relative flex-shrink-0 overflow-hidden rounded-md"
-                          style={{ width: '56px', height: '42px', backgroundColor: '#E5E3DF' }}
-                        >
-                          {otherRoom.photo_urls[0] ? (
-                            <Image src={otherRoom.photo_urls[0]} alt={otherRoom.name} fill className="object-cover" sizes="56px" quality={85} />
-                          ) : (
-                            <div className="flex h-full items-center justify-center text-[10px]" style={{ color: '#9CA3AF' }}>No photo</div>
-                          )}
+                    {otherRooms.map((r) => (
+                      <Link key={r.id} href={`/room/${r.id}`} className="flex-shrink-0 overflow-hidden rounded-lg" style={{ width: '200px', border: '1px solid #F0EFEC' }}>
+                        <div className="relative w-full" style={{ height: '100px', backgroundColor: '#E5E3DF' }}>
+                          {r.photo_urls[0] ? <Image src={r.photo_urls[0]} alt={r.name} fill className="object-cover" sizes="200px" quality={85} loading="lazy" /> : null}
                         </div>
-                        <div className="flex flex-col gap-0.5">
-                          <p className="font-medium text-xs" style={{ color: '#2D3038' }}>{otherRoom.name}</p>
-                          <p className="text-sm font-bold tabular-nums" style={{ color: '#2D3038' }}>
-                            &pound;{Math.round(otherRoom.rent_pcm)}<span className="text-[10px] font-normal ml-0.5" style={{ color: '#9CA3AF' }}>/mo</span>
-                          </p>
+                        <div className="p-2.5">
+                          <p className="font-semibold text-xs" style={{ color: '#2D3038' }}>{r.name}</p>
+                          <p className="text-sm font-bold tabular-nums" style={{ color: '#2D3038' }}>&pound;{Math.round(r.rent_pcm)}<span className="text-[10px] font-normal ml-0.5" style={{ color: '#9CA3AF' }}>/mo</span></p>
                         </div>
                       </Link>
                     ))}
-                  </div>
-                </Card>
-              </div>
-            )}
-
-            {room.property_postcode && (
-              <div className="lg:hidden">
-                <Card title="Location">
-                  <div className="overflow-hidden rounded-lg" style={{ aspectRatio: '16/9' }}>
-                    <iframe
-                      src={`https://maps.google.com/maps?q=${encodeURIComponent(room.property_postcode)}&output=embed`}
-                      width="100%"
-                      height="100%"
-                      style={{ border: 0 }}
-                      loading="lazy"
-                      referrerPolicy="no-referrer-when-downgrade"
-                      title={`Map of ${room.property_postcode}`}
-                    />
                   </div>
                 </Card>
               </div>
@@ -520,27 +404,13 @@ export default async function RoomDetailPage({
       </div>
 
       {/* Mobile sticky CTA */}
-      <div
-        className="fixed bottom-0 left-0 right-0 z-40 bg-white p-4 lg:hidden"
-        style={{ boxShadow: '0 -1px 8px rgba(0,0,0,0.06)' }}
-      >
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white p-4 lg:hidden" style={{ boxShadow: '0 -1px 8px rgba(0,0,0,0.06)' }}>
         <div className="flex items-center justify-between gap-4">
           <div>
-            <p className="text-xl font-bold tabular-nums" style={{ color: '#2D3038' }}>
-              &pound;{Math.round(room.rent_pcm)}
-              <span className="text-sm font-normal ml-1" style={{ color: '#9CA3AF' }}>/mo</span>
-            </p>
-            <p className="text-xs font-medium" style={{ color: availNow ? '#16A34A' : '#6B7280' }}>
-              {availText}
-            </p>
+            <p className="text-xl font-bold tabular-nums" style={{ color: '#2D3038' }}>&pound;{Math.round(room.rent_pcm)}<span className="text-sm font-normal ml-1" style={{ color: '#9CA3AF' }}>/mo</span></p>
+            <p className="text-xs font-medium" style={{ color: availNow ? '#16A34A' : '#6B7280' }}>{availText}</p>
           </div>
-          <Link
-            href={`/apply/${room.id}`}
-            className="inline-flex items-center justify-center rounded-lg px-6 py-3 text-sm font-semibold text-white"
-            style={{ backgroundColor: '#2D3038' }}
-          >
-            Apply to Rent
-          </Link>
+          <Link href={`/apply/${room.id}`} className="inline-flex items-center justify-center rounded-lg px-6 py-3 text-sm font-semibold text-white" style={{ backgroundColor: '#2D3038' }}>Apply to Rent</Link>
         </div>
       </div>
     </>
