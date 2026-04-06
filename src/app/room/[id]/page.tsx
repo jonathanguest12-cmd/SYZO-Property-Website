@@ -175,12 +175,10 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
         <div className="grid gap-8 lg:grid-cols-12">
           {/* LEFT: Photos + Apply + Other Rooms (sticky, fits viewport) */}
           <div className="lg:col-span-5">
-            <div className="lg:sticky lg:top-20 flex flex-col gap-4" style={{ maxHeight: 'calc(100vh - 100px)', overflowY: 'auto' }}>
-              <div style={{ maxHeight: '350px' }}>
-                <PhotoGallery photos={galleryPhotos} alt={room.property_name} />
-              </div>
+            <div className="lg:sticky lg:top-20 flex flex-col gap-5" style={{ maxHeight: 'calc(100vh - 100px)', overflowY: 'auto' }}>
+              <PhotoGallery photos={galleryPhotos} alt={room.property_name} />
 
-              <div className="hidden lg:block">
+              <div className="hidden lg:block mt-1">
                 <Link href={`/apply/${room.id}`} className="btn-primary w-full inline-flex items-center justify-center rounded-lg px-6 py-3.5 text-base font-semibold text-white">
                   Apply to Rent
                 </Link>
@@ -225,11 +223,11 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
           {/* RIGHT: Content cards */}
           <div className="flex flex-col gap-5 lg:col-span-7">
             <div>
-              <div className="flex items-start justify-between gap-4">
+              <div className="flex items-end justify-between gap-4">
                 <h1 className="text-2xl font-bold tracking-tight md:text-3xl" style={{ color: '#2D3038' }}>{room.property_name}</h1>
                 <Link
                   href={`/property/${room.property_ref}`}
-                  className="flex-shrink-0 text-sm underline underline-offset-2 transition-colors duration-200 hover:opacity-70 mt-1"
+                  className="flex-shrink-0 text-sm underline underline-offset-2 transition-colors duration-200 hover:opacity-70 pb-0.5"
                   style={{ color: '#9CA3AF' }}
                 >
                   View property page

@@ -110,7 +110,7 @@ export default function PhotoGallery({ photos, alt }: PhotoGalleryProps) {
         {/* Main photo with arrows */}
         <div
           className="relative w-full overflow-hidden rounded-xl group/gallery cursor-pointer"
-          style={{ aspectRatio: '4/3', backgroundColor: '#E5E3DF' }}
+          style={{ aspectRatio: '4/3', maxHeight: '340px', backgroundColor: '#E5E3DF' }}
           onClick={() => setLightboxOpen(true)}
         >
           <Image
@@ -193,7 +193,7 @@ export default function PhotoGallery({ photos, alt }: PhotoGalleryProps) {
       {lightboxOpen && (
         <div
           className="fixed inset-0 z-[100] flex items-center justify-center"
-          style={{ backgroundColor: 'rgba(0,0,0,0.9)' }}
+          style={{ backgroundColor: 'rgba(0,0,0,0.95)' }}
           onClick={() => setLightboxOpen(false)}
         >
           {/* Close button */}
