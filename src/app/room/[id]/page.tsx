@@ -92,10 +92,11 @@ function getLettingDetails(room: RoomWithProperty) {
   const info = room.additional_info ?? {}
   const prop = info.property ?? {}
 
+  const minMonths = prop.minimumMonthsRental ?? null
   return {
-    deposit: info.depositAmount ?? info.deposit ?? prop.deposit ?? null,
-    maxTenants: info.maximumTenants ?? prop.maximumOccupants ?? null,
-    minTenancy: info.minimumTenancy ?? info.minTenancy ?? null,
+    deposit: info.depositAmountRequired ?? null,
+    minTenancy: minMonths != null && minMonths > 0 ? `${minMonths} months` : null,
+    couplesWelcome: info.couplesWelcome ?? null,
   }
 }
 
@@ -237,14 +238,6 @@ export default async function RoomDetailPage({
                     </span>
                   </div>
                 )}
-                {letting.maxTenants != null && (
-                  <div className="flex items-center justify-between py-3">
-                    <span className="text-sm" style={{ color: '#6B7280' }}>Max. tenants</span>
-                    <span className="text-sm font-medium" style={{ color: '#2D3038' }}>
-                      {letting.maxTenants}
-                    </span>
-                  </div>
-                )}
                 {letting.minTenancy != null && (
                   <div className="flex items-center justify-between py-3">
                     <span className="text-sm" style={{ color: '#6B7280' }}>Min. tenancy</span>
@@ -298,7 +291,7 @@ export default async function RoomDetailPage({
             )}
 
             {/* Card 4: House Rules */}
-            {(room.property_pets_allowed !== null || room.property_smoking_allowed !== null || letting.maxTenants != null) && (
+            {(room.property_pets_allowed !== null || room.property_smoking_allowed !== null || letting.couplesWelcome !== null) && (
               <div className="rounded-xl bg-white p-6" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
                 <h2 className="text-sm font-semibold uppercase tracking-[0.1em] mb-4" style={{ color: '#9CA3AF' }}>
                   House Rules
@@ -320,12 +313,12 @@ export default async function RoomDetailPage({
                       {room.property_smoking_allowed ? 'Smoking allowed' : 'No smoking'}
                     </span>
                   )}
-                  {letting.maxTenants != null && (
+                  {letting.couplesWelcome !== null && (
                     <span
                       className="inline-flex items-center rounded-full px-3 py-1.5 text-sm font-medium"
                       style={{ backgroundColor: '#F7F6F3', color: '#2D3038' }}
                     >
-                      Max {letting.maxTenants} occupant{Number(letting.maxTenants) !== 1 ? 's' : ''}
+                      {letting.couplesWelcome ? 'Couples welcome' : 'Single occupancy'}
                     </span>
                   )}
                 </div>
