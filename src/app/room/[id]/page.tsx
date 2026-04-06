@@ -314,10 +314,7 @@ export default async function RoomDetailPage({
               </div>
               <Link
                 href={`/apply/${room.id}`}
-                className="mt-2 w-full inline-flex items-center justify-center rounded-lg px-6 py-3.5 text-base font-semibold text-white transition-all duration-200"
-                style={{ backgroundColor: '#2D3038' }}
-                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#3D404A' }}
-                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#2D3038' }}
+                className="btn-primary mt-2 w-full inline-flex items-center justify-center rounded-lg px-6 py-3.5 text-base font-semibold text-white"
               >
                 Apply to Rent
               </Link>

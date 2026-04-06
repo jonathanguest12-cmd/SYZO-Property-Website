@@ -33,16 +33,7 @@ export default function PropertyCard({
   return (
     <Link
       href={`/property/${propertyRef}`}
-      className="group flex flex-col overflow-hidden rounded-xl bg-white transition-shadow duration-300"
-      style={{
-        boxShadow: '0 1px 2px rgba(0,0,0,0.04), 0 1px 4px rgba(0,0,0,0.02)',
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04)'
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,0.04), 0 1px 4px rgba(0,0,0,0.02)'
-      }}
+      className="group flex flex-col overflow-hidden rounded-xl bg-white card-hover"
     >
       {/* Image */}
       <div className="relative w-full overflow-hidden" style={{ maxHeight: '200px' }}>

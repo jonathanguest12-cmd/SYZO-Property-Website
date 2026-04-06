@@ -24,18 +24,12 @@ function PillGroup<T extends string>({
             key={opt.value}
             type="button"
             onClick={() => onChange(opt.value)}
-            className="rounded-lg px-3.5 py-2 font-medium text-sm transition-all duration-200"
+            className={`rounded-lg px-3.5 py-2 font-medium text-sm transition-all duration-200 ${value !== opt.value ? 'pill-hover' : ''}`}
             style={
               value === opt.value
                 ? { backgroundColor: '#2D3038', color: '#ffffff' }
                 : { backgroundColor: '#F7F6F3', color: '#6B7280' }
             }
-            onMouseEnter={(e) => {
-              if (value !== opt.value) e.currentTarget.style.backgroundColor = '#EEEDEA'
-            }}
-            onMouseLeave={(e) => {
-              if (value !== opt.value) e.currentTarget.style.backgroundColor = '#F7F6F3'
-            }}
           >
             {opt.label}
           </button>
