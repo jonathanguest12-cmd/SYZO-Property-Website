@@ -27,6 +27,7 @@ describe('PropertyCard', () => {
     expect(screen.getByText('64 Alexandra Road')).toBeInTheDocument()
     expect(screen.getByText('Plymouth')).toBeInTheDocument()
     expect(screen.getByText('2 rooms available')).toBeInTheDocument()
+    expect(screen.getByText('View Property')).toBeInTheDocument()
   })
 
   it('shows price range', () => {

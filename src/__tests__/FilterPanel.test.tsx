@@ -6,14 +6,10 @@ describe('FilterPanel', () => {
   const defaultProps = {
     area: 'all' as const,
     onAreaChange: jest.fn(),
-    roomType: 'any' as const,
-    onRoomTypeChange: jest.fn(),
-    minPrice: '',
-    onMinPriceChange: jest.fn(),
-    maxPrice: '',
-    onMaxPriceChange: jest.fn(),
-    availableFrom: '',
-    onAvailableFromChange: jest.fn(),
+    priceRange: 'any' as const,
+    onPriceRangeChange: jest.fn(),
+    availabilityFilter: 'any' as const,
+    onAvailabilityFilterChange: jest.fn(),
     sort: 'price_asc' as const,
     onSortChange: jest.fn(),
   }
@@ -28,14 +24,15 @@ describe('FilterPanel', () => {
     expect(screen.getByText('All')).toBeInTheDocument()
     expect(screen.getByText('Plymouth')).toBeInTheDocument()
     expect(screen.getByText('Newquay')).toBeInTheDocument()
-    expect(screen.getByText('Any')).toBeInTheDocument()
-    expect(screen.getByText('Single')).toBeInTheDocument()
-    expect(screen.getByText('Double')).toBeInTheDocument()
-    expect(screen.getByPlaceholderText('Min')).toBeInTheDocument()
-    expect(screen.getByPlaceholderText('Max')).toBeInTheDocument()
+    // Price pills
+    expect(screen.getByText(/Under/)).toBeInTheDocument()
+    expect(screen.getByText(/650\+/)).toBeInTheDocument()
+    // Availability pills
+    expect(screen.getByText('Available Now')).toBeInTheDocument()
+    expect(screen.getByText('Within 1 month')).toBeInTheDocument()
   })
 
-  it('calls onAreaChange when area toggle clicked', async () => {
+  it('calls onAreaChange when area pill clicked', async () => {
     const user = userEvent.setup()
     render(<FilterPanel {...defaultProps} />)
 
@@ -43,12 +40,20 @@ describe('FilterPanel', () => {
     expect(defaultProps.onAreaChange).toHaveBeenCalledWith('plymouth')
   })
 
-  it('calls onRoomTypeChange when room type toggle clicked', async () => {
+  it('calls onPriceRangeChange when price pill clicked', async () => {
     const user = userEvent.setup()
     render(<FilterPanel {...defaultProps} />)
 
-    await user.click(screen.getByText('Double'))
-    expect(defaultProps.onRoomTypeChange).toHaveBeenCalledWith('double')
+    await user.click(screen.getByText(/Under/))
+    expect(defaultProps.onPriceRangeChange).toHaveBeenCalledWith('under_450')
+  })
+
+  it('calls onAvailabilityFilterChange when availability pill clicked', async () => {
+    const user = userEvent.setup()
+    render(<FilterPanel {...defaultProps} />)
+
+    await user.click(screen.getByText('Available Now'))
+    expect(defaultProps.onAvailabilityFilterChange).toHaveBeenCalledWith('now')
   })
 
   it('calls onSortChange when sort changes', async () => {

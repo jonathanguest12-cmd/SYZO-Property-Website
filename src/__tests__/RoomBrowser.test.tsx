@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import RoomBrowser from '@/components/RoomBrowser'
 import { makeRoom } from './helpers'
@@ -43,7 +43,11 @@ describe('RoomBrowser', () => {
     const user = userEvent.setup()
     render(<RoomBrowser rooms={rooms} />)
 
-    // Find the Plymouth button in the area filter (toggle group)
+    // Open filters first
+    const filtersButton = screen.getByText('Filters')
+    await user.click(filtersButton)
+
+    // Find the Plymouth button in the area filter
     const buttons = screen.getAllByRole('button')
     const plymouthButton = buttons.find(
       (b) => b.textContent === 'Plymouth'
@@ -51,21 +55,8 @@ describe('RoomBrowser', () => {
     await user.click(plymouthButton)
 
     // Should show 1 room
-    expect(screen.getByText('64 Alexandra Road')).toBeInTheDocument()
-    expect(screen.queryByText('10 Beach Road')).not.toBeInTheDocument()
-  })
-
-  it('filters by room type', async () => {
-    const user = userEvent.setup()
-    render(<RoomBrowser rooms={rooms} />)
-
-    // Find the Single button in the room type filter
-    const buttons = screen.getAllByRole('button')
-    const singleButton = buttons.find((b) => b.textContent === 'Single')!
-    await user.click(singleButton)
-
-    expect(screen.getByText('10 Beach Road')).toBeInTheDocument()
-    expect(screen.queryByText('64 Alexandra Road')).not.toBeInTheDocument()
+    expect(screen.getByText('64 Alexandra Road, PL4 7EG')).toBeInTheDocument()
+    expect(screen.queryByText('10 Beach Road, PL4 7EG')).not.toBeInTheDocument()
   })
 
   it('shows empty state when no results', () => {
@@ -90,18 +81,31 @@ describe('RoomBrowser', () => {
 
   it('respects initialArea', () => {
     render(<RoomBrowser rooms={rooms} initialArea="newquay" />)
-    expect(screen.getByText('10 Beach Road')).toBeInTheDocument()
-    expect(screen.queryByText('64 Alexandra Road')).not.toBeInTheDocument()
+    expect(screen.getAllByText(/10 Beach Road/).length).toBeGreaterThan(0)
+    expect(screen.queryByText('64 Alexandra Road, PL4 7EG')).not.toBeInTheDocument()
+  })
+
+  it('shows active filter count badge', async () => {
+    render(<RoomBrowser rooms={rooms} initialArea="plymouth" />)
+
+    // Should show badge with count 1 since area is set
+    // The badge is inside the Filters button
+    const filtersButton = screen.getByText('Filters').closest('button')!
+    expect(filtersButton.textContent).toContain('1')
   })
 
   it('sorts by price descending', async () => {
     const user = userEvent.setup()
     render(<RoomBrowser rooms={rooms} />)
 
+    // Open filters
+    const filtersButton = screen.getByText('Filters')
+    await user.click(filtersButton)
+
     const select = screen.getByDisplayValue('Price: low to high')
     await user.selectOptions(select, 'price_desc')
 
-    const cards = screen.getAllByText('Apply to Rent')
-    expect(cards).toHaveLength(2)
+    const viewRoomButtons = screen.getAllByText('View Room')
+    expect(viewRoomButtons).toHaveLength(2)
   })
 })

@@ -42,6 +42,9 @@ export interface RoomWithProperty {
   bills_included: boolean
   broadband_included: boolean
   room_description: string | null
+  // Advert data from additional_info
+  advert_title: string | null
+  advert_description: string | null
   // Property data (from additional_info.property)
   property_ref: string
   property_name: string
@@ -62,6 +65,7 @@ export interface RoomWithProperty {
 }
 
 export type AreaFilter = 'all' | 'plymouth' | 'newquay'
-export type RoomTypeFilter = 'any' | 'single' | 'double'
+export type PriceRange = 'any' | 'under_450' | '450_550' | '550_650' | 'over_650'
+export type AvailabilityFilter = 'any' | 'now' | 'within_1_month' | 'within_3_months'
 export type SortOption = 'price_asc' | 'price_desc' | 'available_soonest'
 export type ViewMode = 'rooms' | 'properties'

@@ -12,6 +12,8 @@ export function makeRoom(overrides: Partial<RoomWithProperty> = {}): RoomWithPro
     bills_included: true,
     broadband_included: true,
     room_description: '<p>A nice room</p>',
+    advert_title: null,
+    advert_description: null,
     property_ref: 'PROP-1',
     property_name: '64 Alexandra Road',
     property_city: 'Plymouth',

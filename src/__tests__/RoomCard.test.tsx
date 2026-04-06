@@ -26,12 +26,10 @@ describe('RoomCard', () => {
     const room = makeRoom()
     render(<RoomCard room={room} />)
 
-    expect(screen.getByText('64 Alexandra Road')).toBeInTheDocument()
     expect(screen.getByText('Plymouth')).toBeInTheDocument()
     expect(screen.getByText(/550/)).toBeInTheDocument()
-    expect(screen.getByText('Double')).toBeInTheDocument()
-    expect(screen.getByText('Bills Inc.')).toBeInTheDocument()
-    expect(screen.getByText('Apply to Rent')).toBeInTheDocument()
+    expect(screen.getByText('BILLS INC.')).toBeInTheDocument()
+    expect(screen.getByText('View Room')).toBeInTheDocument()
   })
 
   it('shows "Available Now" for past dates', () => {
@@ -41,18 +39,11 @@ describe('RoomCard', () => {
     expect(screen.getByText('Available Now')).toBeInTheDocument()
   })
 
-  it('shows "Bills Extra" when bills not included', () => {
+  it('shows "BILLS EXTRA" when bills not included', () => {
     const room = makeRoom({ bills_included: false })
     render(<RoomCard room={room} />)
 
-    expect(screen.getByText('Bills Extra')).toBeInTheDocument()
-  })
-
-  it('shows "Single" badge for single rooms', () => {
-    const room = makeRoom({ room_type: 'singleRoom' })
-    render(<RoomCard room={room} />)
-
-    expect(screen.getByText('Single')).toBeInTheDocument()
+    expect(screen.getByText('BILLS EXTRA')).toBeInTheDocument()
   })
 
   it('shows placeholder when no photos', () => {
@@ -62,11 +53,44 @@ describe('RoomCard', () => {
     expect(screen.getByText('No photo')).toBeInTheDocument()
   })
 
-  it('links to apply page', () => {
+  it('links to room detail page', () => {
     const room = makeRoom({ id: 'test-uuid' })
     render(<RoomCard room={room} />)
 
-    const link = screen.getByText('Apply to Rent')
-    expect(link.closest('a')).toHaveAttribute('href', '/apply/test-uuid')
+    const link = screen.getByRole('link')
+    expect(link).toHaveAttribute('href', '/room/test-uuid')
+  })
+
+  it('shows advert_title when available', () => {
+    const room = makeRoom({ advert_title: 'Lovely Double Room with Garden View' })
+    render(<RoomCard room={room} />)
+
+    expect(screen.getByText('Lovely Double Room with Garden View')).toBeInTheDocument()
+  })
+
+  it('constructs title from room type and property name when no advert_title', () => {
+    const room = makeRoom({ advert_title: null, room_type: 'doubleRoom', property_name: '64 Alexandra Road' })
+    render(<RoomCard room={room} />)
+
+    expect(screen.getByText(/Double Room.*64 Alexandra Road/)).toBeInTheDocument()
+  })
+
+  it('truncates description to ~80 chars', () => {
+    const longDesc = '<p>' + 'A'.repeat(100) + '</p>'
+    const room = makeRoom({ room_description: longDesc })
+    render(<RoomCard room={room} />)
+
+    const desc = screen.getByText(/A{10,}\.\.\./)
+    expect(desc.textContent!.length).toBeLessThanOrEqual(83) // 80 chars + "..."
+  })
+
+  it('shows first 3 amenities', () => {
+    const room = makeRoom({ room_amenities: ['Desk', 'Wardrobe', 'Lamp', 'Chair'] })
+    render(<RoomCard room={room} />)
+
+    expect(screen.getByText('Desk')).toBeInTheDocument()
+    expect(screen.getByText('Wardrobe')).toBeInTheDocument()
+    expect(screen.getByText('Lamp')).toBeInTheDocument()
+    expect(screen.queryByText('Chair')).not.toBeInTheDocument()
   })
 })

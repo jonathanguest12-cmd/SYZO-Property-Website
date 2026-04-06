@@ -4,7 +4,8 @@ import { useState, useMemo } from 'react'
 import type {
   RoomWithProperty,
   AreaFilter,
-  RoomTypeFilter,
+  PriceRange,
+  AvailabilityFilter,
   SortOption,
   ViewMode,
 } from '@/lib/types'
@@ -17,14 +18,58 @@ interface RoomBrowserProps {
   initialArea?: AreaFilter
 }
 
+function matchesPriceRange(rent: number, range: PriceRange): boolean {
+  switch (range) {
+    case 'any':
+      return true
+    case 'under_450':
+      return rent < 450
+    case '450_550':
+      return rent >= 450 && rent <= 550
+    case '550_650':
+      return rent >= 550 && rent <= 650
+    case 'over_650':
+      return rent > 650
+    default:
+      return true
+  }
+}
+
+function matchesAvailability(dateStr: string, filter: AvailabilityFilter): boolean {
+  if (filter === 'any') return true
+  const date = new Date(dateStr)
+  const now = new Date()
+  now.setHours(0, 0, 0, 0)
+
+  if (filter === 'now') {
+    return date <= now
+  }
+
+  const cutoff = new Date(now)
+  if (filter === 'within_1_month') {
+    cutoff.setMonth(cutoff.getMonth() + 1)
+  } else if (filter === 'within_3_months') {
+    cutoff.setMonth(cutoff.getMonth() + 3)
+  }
+  return date <= cutoff
+}
+
 export default function RoomBrowser({ rooms, initialArea = 'all' }: RoomBrowserProps) {
   const [area, setArea] = useState<AreaFilter>(initialArea)
-  const [roomType, setRoomType] = useState<RoomTypeFilter>('any')
-  const [minPrice, setMinPrice] = useState('')
-  const [maxPrice, setMaxPrice] = useState('')
-  const [availableFrom, setAvailableFrom] = useState('')
+  const [priceRange, setPriceRange] = useState<PriceRange>('any')
+  const [availabilityFilter, setAvailabilityFilter] = useState<AvailabilityFilter>('any')
   const [sort, setSort] = useState<SortOption>('price_asc')
   const [view, setView] = useState<ViewMode>('rooms')
+  const [showFilters, setShowFilters] = useState(false)
+
+  // Count active filters (excluding defaults)
+  const activeFilterCount = useMemo(() => {
+    let count = 0
+    if (area !== 'all') count++
+    if (priceRange !== 'any') count++
+    if (availabilityFilter !== 'any') count++
+    return count
+  }, [area, priceRange, availabilityFilter])
 
   const filtered = useMemo(() => {
     let result = rooms
@@ -36,33 +81,19 @@ export default function RoomBrowser({ rooms, initialArea = 'all' }: RoomBrowserP
       )
     }
 
-    // Room type filter
-    if (roomType === 'single') {
-      result = result.filter((r) => r.room_type === 'singleRoom')
-    } else if (roomType === 'double') {
-      result = result.filter((r) => r.room_type === 'doubleRoom')
-    }
+    // Price range filter
+    result = result.filter((r) => matchesPriceRange(r.rent_pcm, priceRange))
 
-    // Price range
-    if (minPrice) {
-      const min = Number(minPrice)
-      result = result.filter((r) => r.rent_pcm >= min)
-    }
-    if (maxPrice) {
-      const max = Number(maxPrice)
-      result = result.filter((r) => r.rent_pcm <= max)
-    }
+    // Availability filter
+    result = result.filter((r) => matchesAvailability(r.available_from, availabilityFilter))
 
-    // Available from
-    if (availableFrom) {
-      const fromDate = new Date(availableFrom)
-      result = result.filter((r) => new Date(r.available_from) <= fromDate)
-    }
-
-    // Sort
+    // Sort: default groups by property_ref, then by rent within group
     result = [...result].sort((a, b) => {
       switch (sort) {
         case 'price_asc':
+          if (a.property_ref !== b.property_ref) {
+            return a.property_ref.localeCompare(b.property_ref)
+          }
           return a.rent_pcm - b.rent_pcm
         case 'price_desc':
           return b.rent_pcm - a.rent_pcm
@@ -77,7 +108,7 @@ export default function RoomBrowser({ rooms, initialArea = 'all' }: RoomBrowserP
     })
 
     return result
-  }, [rooms, area, roomType, minPrice, maxPrice, availableFrom, sort])
+  }, [rooms, area, priceRange, availabilityFilter, sort])
 
   // Group by property for property view
   const propertyGroups = useMemo(() => {
@@ -92,61 +123,87 @@ export default function RoomBrowser({ rooms, initialArea = 'all' }: RoomBrowserP
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-      {/* Filter bar */}
-      <FilterPanel
-        area={area}
-        onAreaChange={setArea}
-        roomType={roomType}
-        onRoomTypeChange={setRoomType}
-        minPrice={minPrice}
-        onMinPriceChange={setMinPrice}
-        maxPrice={maxPrice}
-        onMaxPriceChange={setMaxPrice}
-        availableFrom={availableFrom}
-        onAvailableFromChange={setAvailableFrom}
-        sort={sort}
-        onSortChange={setSort}
-      />
-
       {/* Results bar */}
-      <div className="mt-6 flex items-center justify-between">
-        <p className="text-sm text-gray-600">
-          <span className="font-semibold text-gray-900">{filtered.length}</span>{' '}
+      <div className="flex items-center justify-between">
+        <p className="text-sm" style={{ color: '#888888' }}>
+          <span className="font-semibold" style={{ color: '#2D3038' }}>{filtered.length}</span>{' '}
           room{filtered.length !== 1 ? 's' : ''} available
         </p>
 
-        {/* View toggle */}
-        <div className="inline-flex rounded-lg border border-gray-200 bg-gray-50 p-0.5">
+        <div className="flex items-center gap-3">
+          {/* View toggle */}
+          <div className="inline-flex rounded-full p-0.5" style={{ backgroundColor: '#F0F0F0' }}>
+            <button
+              type="button"
+              onClick={() => setView('rooms')}
+              className="rounded-full px-3 py-1.5 text-sm font-medium transition-all duration-200"
+              style={
+                view === 'rooms'
+                  ? { backgroundColor: '#2D3038', color: '#FFFFFF' }
+                  : { color: '#666666' }
+              }
+            >
+              Rooms
+            </button>
+            <button
+              type="button"
+              onClick={() => setView('properties')}
+              className="rounded-full px-3 py-1.5 text-sm font-medium transition-all duration-200"
+              style={
+                view === 'properties'
+                  ? { backgroundColor: '#2D3038', color: '#FFFFFF' }
+                  : { color: '#666666' }
+              }
+            >
+              Properties
+            </button>
+          </div>
+
+          {/* Filters toggle button */}
           <button
             type="button"
-            onClick={() => setView('rooms')}
-            className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-              view === 'rooms'
-                ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
+            onClick={() => setShowFilters((v) => !v)}
+            className="inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-200"
+            style={
+              showFilters || activeFilterCount > 0
+                ? { backgroundColor: '#2D3038', color: '#FFFFFF' }
+                : { backgroundColor: '#F0F0F0', color: '#666666' }
+            }
           >
-            Rooms
-          </button>
-          <button
-            type="button"
-            onClick={() => setView('properties')}
-            className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-              view === 'properties'
-                ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Properties
+            Filters
+            {activeFilterCount > 0 && (
+              <span
+                className="inline-flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold"
+                style={{ backgroundColor: '#FFFFFF', color: '#2D3038' }}
+              >
+                {activeFilterCount}
+              </span>
+            )}
           </button>
         </div>
       </div>
 
+      {/* Filter panel (collapsible) */}
+      {showFilters && (
+        <div className="mt-4 rounded-xl p-5" style={{ backgroundColor: '#FFFFFF', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+          <FilterPanel
+            area={area}
+            onAreaChange={setArea}
+            priceRange={priceRange}
+            onPriceRangeChange={setPriceRange}
+            availabilityFilter={availabilityFilter}
+            onAvailabilityFilterChange={setAvailabilityFilter}
+            sort={sort}
+            onSortChange={setSort}
+          />
+        </div>
+      )}
+
       {/* Grid */}
       {filtered.length === 0 ? (
         <div className="mt-12 flex flex-col items-center gap-2 text-center">
-          <p className="text-lg font-medium text-gray-900">No rooms match your filters</p>
-          <p className="text-sm text-gray-500">Try adjusting your search criteria</p>
+          <p className="text-lg font-bold" style={{ color: '#2D3038' }}>No rooms match your filters</p>
+          <p className="text-sm" style={{ color: '#888888' }}>Try adjusting your search criteria</p>
         </div>
       ) : view === 'rooms' ? (
         <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
