@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo, useEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import Image from 'next/image'
 
 interface PhotoGalleryProps {
@@ -76,14 +77,19 @@ export default function PhotoGallery({ photos, alt }: PhotoGalleryProps) {
     return () => window.removeEventListener('keydown', handleKey)
   }, [lightboxOpen, goNext, goPrev])
 
-  // Prevent body scroll when lightbox is open
+  // Prevent body scroll and hide header when lightbox is open
   useEffect(() => {
     if (lightboxOpen) {
       document.body.style.overflow = 'hidden'
+      document.body.classList.add('lightbox-open')
     } else {
       document.body.style.overflow = ''
+      document.body.classList.remove('lightbox-open')
     }
-    return () => { document.body.style.overflow = '' }
+    return () => {
+      document.body.style.overflow = ''
+      document.body.classList.remove('lightbox-open')
+    }
   }, [lightboxOpen])
 
   if (uniquePhotos.length === 0) {
@@ -189,8 +195,8 @@ export default function PhotoGallery({ photos, alt }: PhotoGalleryProps) {
         )}
       </div>
 
-      {/* Lightbox overlay */}
-      {lightboxOpen && (
+      {/* Lightbox overlay — portalled to body to escape stacking context */}
+      {lightboxOpen && createPortal(
         <div
           className="fixed inset-0 z-[100] flex items-center justify-center"
           style={{ backgroundColor: '#000' }}
@@ -257,7 +263,8 @@ export default function PhotoGallery({ photos, alt }: PhotoGalleryProps) {
               </button>
             </>
           )}
-        </div>
+        </div>,
+        document.body
       )}
     </>
   )

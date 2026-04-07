@@ -49,6 +49,11 @@ body {
   background-color: #3D404A;
 }
 
+/* Hide header when lightbox is open */
+body.lightbox-open header {
+  visibility: hidden;
+}
+
 /* Filter pill hover */
 .pill-hover {
   transition: background-color 0.2s ease;
