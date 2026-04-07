@@ -119,7 +119,7 @@ export default function PhotoGallery({ photos, alt }: PhotoGalleryProps) {
             fill
             quality={85}
             className="object-cover"
-            sizes="(max-width: 768px) 100vw, 500px"
+            sizes="(max-width: 768px) 100vw, 700px"
             priority={safeIndex === 0}
           />
 
