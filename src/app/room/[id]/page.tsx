@@ -174,7 +174,7 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
 
         <div className="grid gap-8 lg:grid-cols-12">
           {/* LEFT: Photos + Apply + Other Rooms (sticky, fits viewport) */}
-          <div className="lg:col-span-7">
+          <div className="lg:col-span-5">
             <div className="lg:sticky lg:top-20 flex flex-col gap-5" style={{ maxHeight: 'calc(100vh - 100px)', overflowY: 'auto' }}>
               <PhotoGallery photos={galleryPhotos} alt={room.property_name} />
 
@@ -221,7 +221,7 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
           </div>
 
           {/* RIGHT: Content cards */}
-          <div className="flex flex-col gap-5 lg:col-span-5">
+          <div className="flex flex-col gap-5 lg:col-span-7">
             <div>
               <div className="flex items-end justify-between gap-4">
                 <h1 className="text-2xl font-bold tracking-tight md:text-3xl" style={{ color: '#2D3038' }}>{room.property_name}</h1>

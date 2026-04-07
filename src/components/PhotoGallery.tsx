@@ -119,7 +119,7 @@ export default function PhotoGallery({ photos, alt }: PhotoGalleryProps) {
             fill
             quality={85}
             className="object-cover"
-            sizes="(max-width: 768px) 100vw, 700px"
+            sizes="(max-width: 768px) 100vw, 500px"
             priority={safeIndex === 0}
           />
 
@@ -193,14 +193,14 @@ export default function PhotoGallery({ photos, alt }: PhotoGalleryProps) {
       {lightboxOpen && (
         <div
           className="fixed inset-0 z-[100] flex items-center justify-center"
-          style={{ backgroundColor: 'rgba(0,0,0,0.95)' }}
+          style={{ backgroundColor: '#000' }}
           onClick={() => setLightboxOpen(false)}
         >
           {/* Close button */}
           <button
             type="button"
-            onClick={() => setLightboxOpen(false)}
-            className="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-full transition-opacity duration-200 hover:opacity-80"
+            onClick={(e) => { e.stopPropagation(); setLightboxOpen(false) }}
+            className="absolute top-4 right-4 z-10 flex h-10 w-10 items-center justify-center rounded-full transition-opacity duration-200 hover:opacity-80"
             style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: '#fff' }}
             aria-label="Close lightbox"
           >
@@ -212,7 +212,7 @@ export default function PhotoGallery({ photos, alt }: PhotoGalleryProps) {
 
           {/* Photo counter */}
           {hasMultiple && (
-            <span className="absolute top-5 left-5 text-sm font-medium" style={{ color: 'rgba(255,255,255,0.7)' }}>
+            <span className="absolute top-5 left-5 z-10 text-sm font-medium" style={{ color: 'rgba(255,255,255,0.7)' }}>
               {safeIndex + 1} / {uniquePhotos.length}
             </span>
           )}
@@ -240,7 +240,7 @@ export default function PhotoGallery({ photos, alt }: PhotoGalleryProps) {
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); goPrev() }}
-                className="absolute left-4 top-1/2 -translate-y-1/2 flex h-12 w-12 items-center justify-center rounded-full transition-opacity duration-200 hover:opacity-80"
+                className="absolute left-4 top-1/2 -translate-y-1/2 z-10 flex h-12 w-12 items-center justify-center rounded-full transition-opacity duration-200 hover:opacity-80"
                 style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: '#fff' }}
                 aria-label="Previous photo"
               >
@@ -249,7 +249,7 @@ export default function PhotoGallery({ photos, alt }: PhotoGalleryProps) {
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); goNext() }}
-                className="absolute right-4 top-1/2 -translate-y-1/2 flex h-12 w-12 items-center justify-center rounded-full transition-opacity duration-200 hover:opacity-80"
+                className="absolute right-4 top-1/2 -translate-y-1/2 z-10 flex h-12 w-12 items-center justify-center rounded-full transition-opacity duration-200 hover:opacity-80"
                 style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: '#fff' }}
                 aria-label="Next photo"
               >
