@@ -43,7 +43,7 @@ export default function PropertyCard({
               src={photoUrl}
               alt={first.property_name}
               fill
-              unoptimized
+              quality={80}
               className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             />

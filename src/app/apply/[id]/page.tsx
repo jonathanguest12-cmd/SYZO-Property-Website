@@ -44,7 +44,7 @@ function RoomSummary({ room }: { room: RoomWithProperty }) {
               src={photoUrl}
               alt={title}
               fill
-              unoptimized
+              quality={75}
               className="object-cover"
               sizes="80px"
             />

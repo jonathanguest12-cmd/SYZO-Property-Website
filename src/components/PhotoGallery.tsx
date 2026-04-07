@@ -117,7 +117,7 @@ export default function PhotoGallery({ photos, alt }: PhotoGalleryProps) {
             src={mainPhoto.url}
             alt={mainPhoto.title || alt}
             fill
-            unoptimized
+            quality={85}
             className="object-cover"
             sizes="(max-width: 768px) 100vw, 500px"
             priority={safeIndex === 0}
@@ -178,7 +178,7 @@ export default function PhotoGallery({ photos, alt }: PhotoGalleryProps) {
                   src={photo.url}
                   alt={photo.title || `Photo ${idx + 1}`}
                   fill
-                  unoptimized
+                  quality={70}
                   className="object-cover"
                   sizes="56px"
                   loading="lazy"
@@ -227,7 +227,7 @@ export default function PhotoGallery({ photos, alt }: PhotoGalleryProps) {
               src={mainPhoto.url}
               alt={mainPhoto.title || alt}
               fill
-              unoptimized
+              quality={90}
               className="object-contain"
               sizes="90vw"
               priority

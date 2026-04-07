@@ -59,9 +59,9 @@ export default async function PropertyPage({
               src={mainPhoto}
               alt={propertyName}
               fill
-              unoptimized
+              quality={85}
               className="object-cover"
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              sizes="(max-width: 768px) 100vw, 50vw"
               priority
             />
           ) : (
@@ -134,9 +134,9 @@ export default async function PropertyPage({
                   src={img.url}
                   alt={img.title || `Photo ${idx + 1}`}
                   fill
-                  unoptimized
+                  quality={80}
                   className="object-cover"
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                 />
               </div>
             ))}

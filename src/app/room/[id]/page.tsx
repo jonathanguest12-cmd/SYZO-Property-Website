@@ -195,7 +195,7 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
                       <Link key={r.id} href={`/room/${r.id}`} className="flex gap-3 rounded-lg bg-white p-2.5 transition-shadow duration-200 hover:shadow-md" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
                         <div className="relative flex-shrink-0 overflow-hidden rounded-md" style={{ width: '100px', height: '75px', backgroundColor: '#E5E3DF' }}>
                           {r.photo_urls[0] ? (
-                            <Image src={r.photo_urls[0]} alt={r.name} fill unoptimized className="object-cover" sizes="100px" loading="lazy" />
+                            <Image src={r.photo_urls[0]} alt={r.name} fill quality={75} className="object-cover" sizes="100px" loading="lazy" />
                           ) : (
                             <div className="flex h-full items-center justify-center" style={{ color: '#9CA3AF' }}>
                               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z" /><path d="M9 21V12h6v9" /></svg>
@@ -391,7 +391,7 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
                     {otherRooms.map((r) => (
                       <Link key={r.id} href={`/room/${r.id}`} className="flex-shrink-0 overflow-hidden rounded-lg" style={{ width: '200px', border: '1px solid #F0EFEC' }}>
                         <div className="relative w-full" style={{ height: '100px', backgroundColor: '#E5E3DF' }}>
-                          {r.photo_urls[0] ? <Image src={r.photo_urls[0]} alt={r.name} fill unoptimized className="object-cover" sizes="200px" loading="lazy" /> : null}
+                          {r.photo_urls[0] ? <Image src={r.photo_urls[0]} alt={r.name} fill quality={75} className="object-cover" sizes="200px" loading="lazy" /> : null}
                         </div>
                         <div className="p-2.5">
                           <p className="font-semibold text-xs" style={{ color: '#2D3038' }}>{r.name}</p>
