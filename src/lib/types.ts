@@ -14,6 +14,9 @@ export interface RoomRow {
   room_description: string | null
   house_rules: string | null
   additional_info: Record<string, any>
+  description_about_property: string | null
+  description_about_room: string | null
+  descriptions_processed_at: string | null
 }
 
 export interface PropertyRow {
@@ -64,6 +67,10 @@ export interface RoomWithProperty {
   spareroom_listing_id: string | null
   /** Raw COHO additional_info JSONB for detail page fields */
   additional_info: Record<string, any>
+  /** Pre-processed description from n8n/Claude pipeline */
+  description_about_property: string | null
+  description_about_room: string | null
+  descriptions_processed_at: string | null
 }
 
 export type AreaFilter = 'all' | 'plymouth' | 'newquay'

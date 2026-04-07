@@ -5,6 +5,7 @@ import type { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
 import {
+  fetchAllRooms,
   fetchRoomById,
   fetchRoomBySpareRoomId,
   fetchRoomsForProperty,
@@ -16,13 +17,16 @@ import {
   roomTypeLabel,
   parseAdvertDescription,
   isIllustrationPhoto,
-  stripHtml,
 } from '@/lib/format'
-import { processDescription } from '@/lib/process-description'
 import PhotoGallery from '@/components/PhotoGallery'
 import ExpandableText from '@/components/ExpandableText'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+export async function generateStaticParams() {
+  const rooms = await fetchAllRooms()
+  return rooms.map((room) => ({ id: room.id }))
+}
 
 function TextBlock({ text }: { text: string }) {
   const lines = text.split(/\n/)
@@ -141,29 +145,17 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
     (a) => a.toLowerCase().includes('en-suite') || a.toLowerCase().includes('ensuite')
   )
 
-  // Process description: try Claude API first, fall back to raw parsing
-  const processed = room.advert_description
-    ? await processDescription(room.id, room.advert_description, {
-        address: room.property_name,
-        city: room.property_city,
-        rent: Math.round(room.rent_pcm),
-        billsIncluded: room.bills_included,
-        roomName: room.name || 'this room',
-        roomType: roomTypeLabel(room.room_type),
-      })
-    : null
+  // Read pre-processed descriptions from Supabase (populated by n8n pipeline)
+  // Fall back to raw HTML parsing if descriptions haven't been processed yet
+  const hasProcessed = !!(room.description_about_property || room.description_about_room)
+  const parsed = !hasProcessed && room.advert_description ? parseAdvertDescription(room.advert_description) : null
 
-  // Fall back to raw parsing if Claude API didn't return results
-  const parsed = !processed && room.advert_description ? parseAdvertDescription(room.advert_description) : null
-
-  // Unified content from whichever source
-  const overview = processed?.property_overview ?? parsed?.description ?? null
-  const roomDesc = processed?.room_description ?? null
-  const whatsIncluded: string[] = processed?.whats_included ?? parsed?.whatsIncluded ?? []
-  const localArea = processed?.local_area ?? null
+  const overview = room.description_about_property ?? parsed?.description ?? null
+  const roomDesc = room.description_about_room ?? null
+  const whatsIncluded: string[] = parsed?.whatsIncluded ?? []
   const localSections = parsed?.sections ?? []
-  const hasLocalArea = localArea ? (localArea.shops || localArea.transport || localArea.healthcare || localArea.leisure) : localSections.length > 0
-  const depositInfo = processed?.deposit_info ?? parsed?.depositInfo ?? null
+  const hasLocalArea = localSections.length > 0
+  const depositInfo = parsed?.depositInfo ?? null
 
   return (
     <>
@@ -298,7 +290,7 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
             {/* 3. About This Property */}
             {overview && (
               <Card title="About This Property">
-                {processed ? (
+                {hasProcessed ? (
                   <p className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{overview}</p>
                 ) : (
                   <ExpandableText maxHeight={200}><TextBlock text={overview} /></ExpandableText>
@@ -306,7 +298,7 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
               </Card>
             )}
 
-            {/* 4. About This Room (Claude-processed only) */}
+            {/* 4. About This Room */}
             {roomDesc && (
               <Card title="About This Room">
                 <p className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{roomDesc}</p>
@@ -325,29 +317,16 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
             {/* 6. Local Area */}
             {hasLocalArea && (
               <Card title="Local Area">
-                {localArea ? (
-                  <div className="space-y-4">
-                    {localArea.shops && <div><p className="text-sm font-semibold mb-1" style={{ color: '#2D3038' }}>Shops &amp; Leisure</p><p className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{localArea.shops}</p></div>}
-                    {localArea.transport && <div><p className="text-sm font-semibold mb-1" style={{ color: '#2D3038' }}>Transport</p><p className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{localArea.transport}</p></div>}
-                    {localArea.healthcare && <div><p className="text-sm font-semibold mb-1" style={{ color: '#2D3038' }}>Healthcare</p><p className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{localArea.healthcare}</p></div>}
-                    {localArea.leisure && <div><p className="text-sm font-semibold mb-1" style={{ color: '#2D3038' }}>Leisure</p><p className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{localArea.leisure}</p></div>}
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {localSections.map((s, i) => <div key={i}><p className="text-sm font-semibold mb-1" style={{ color: '#2D3038' }}>{s.title}</p><TextBlock text={s.content} /></div>)}
-                  </div>
-                )}
+                <div className="space-y-4">
+                  {localSections.map((s, i) => <div key={i}><p className="text-sm font-semibold mb-1" style={{ color: '#2D3038' }}>{s.title}</p><TextBlock text={s.content} /></div>)}
+                </div>
               </Card>
             )}
 
             {/* 7. Deposit Information */}
             {depositInfo && (
               <Card title="Deposit Information">
-                {processed ? (
-                  <p className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{depositInfo}</p>
-                ) : (
-                  <TextBlock text={depositInfo} />
-                )}
+                <TextBlock text={depositInfo} />
               </Card>
             )}
 

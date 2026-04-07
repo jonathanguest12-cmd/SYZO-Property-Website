@@ -43,6 +43,9 @@ export function mapRoomToRoomWithProperty(row: RoomRow): RoomWithProperty {
     advert_title: row.additional_info?.advertTitle ?? null,
     advert_description: row.additional_info?.advertDescription ?? null,
     additional_info: row.additional_info ?? {},
+    description_about_property: row.description_about_property ?? null,
+    description_about_room: row.description_about_room ?? null,
+    descriptions_processed_at: row.descriptions_processed_at ?? null,
   }
 }
 
