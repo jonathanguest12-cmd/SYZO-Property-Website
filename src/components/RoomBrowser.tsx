@@ -119,12 +119,6 @@ export default function RoomBrowser({ rooms, initialArea = 'all' }: RoomBrowserP
       {/* Controls bar */}
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <p className="text-sm" style={{ color: '#6B7280' }}>
-            <span className="text-lg font-bold tabular-nums" style={{ color: '#2D3038' }}>
-              {filtered.length}
-            </span>{' '}
-            room{filtered.length !== 1 ? 's' : ''} available
-          </p>
           {/* City filter — inline text links */}
           <div className="hidden sm:flex items-center gap-1 text-sm">
             {([['all', 'All'], ['plymouth', 'Plymouth'], ['newquay', 'Newquay']] as const).map(([value, label]) => (
@@ -143,6 +137,12 @@ export default function RoomBrowser({ rooms, initialArea = 'all' }: RoomBrowserP
               </button>
             ))}
           </div>
+          <p className="text-sm" style={{ color: '#6B7280' }}>
+            <span className="text-lg font-bold tabular-nums" style={{ color: '#2D3038' }}>
+              {filtered.length}
+            </span>{' '}
+            room{filtered.length !== 1 ? 's' : ''} available
+          </p>
         </div>
 
         <div className="flex items-center gap-2">
