@@ -110,7 +110,7 @@ export default function PhotoGallery({ photos, alt }: PhotoGalleryProps) {
         {/* Main photo with arrows */}
         <div
           className="relative w-full overflow-hidden rounded-xl group/gallery cursor-pointer"
-          style={{ aspectRatio: '4/3', maxHeight: '340px', backgroundColor: '#E5E3DF' }}
+          style={{ aspectRatio: '4/3', backgroundColor: '#E5E3DF' }}
           onClick={() => setLightboxOpen(true)}
         >
           <Image

@@ -42,9 +42,9 @@ export default function RoomCard({ room }: { room: RoomWithProperty }) {
       className="group flex flex-col overflow-hidden rounded-xl bg-white card-hover"
     >
       {/* Image */}
-      <div className="relative w-full overflow-hidden" style={{ maxHeight: '200px' }}>
+      <div className="relative w-full overflow-hidden">
         {photoUrl ? (
-          <div style={{ aspectRatio: '16/10', maxHeight: '200px' }}>
+          <div style={{ aspectRatio: '16/10' }}>
             <Image
               src={photoUrl}
               alt={`${room.property_name} - ${room.name}`}
@@ -59,7 +59,6 @@ export default function RoomCard({ room }: { room: RoomWithProperty }) {
             className="flex flex-col items-center justify-center gap-2"
             style={{
               aspectRatio: '16/10',
-              maxHeight: '200px',
               background: 'linear-gradient(145deg, #E8E6E2, #DDD9D4)',
               color: '#9CA3AF',
             }}
