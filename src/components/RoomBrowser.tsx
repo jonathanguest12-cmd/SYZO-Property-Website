@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { useSearchParams } from 'next/navigation'
 import type {
   RoomWithProperty,
   AreaFilter,
@@ -55,12 +56,14 @@ function matchesAvailability(dateStr: string, filter: AvailabilityFilter): boole
   return date <= cutoff
 }
 
-export default function RoomBrowser({ rooms, initialArea = 'all', initialView = 'rooms' }: RoomBrowserProps) {
+export default function RoomBrowser({ rooms, initialArea = 'all', initialView }: RoomBrowserProps) {
+  const searchParams = useSearchParams()
+  const resolvedView = initialView ?? (searchParams.get('view') === 'properties' ? 'properties' : 'rooms')
   const [area, setArea] = useState<AreaFilter>(initialArea)
   const [priceRange, setPriceRange] = useState<PriceRange>('any')
   const [availabilityFilter, setAvailabilityFilter] = useState<AvailabilityFilter>('any')
   const [sort, setSort] = useState<SortOption>('price_asc')
-  const [view, setView] = useState<ViewMode>(initialView)
+  const [view, setView] = useState<ViewMode>(resolvedView)
   const [showFilters, setShowFilters] = useState(false)
 
   const activeFilterCount = useMemo(() => {

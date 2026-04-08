@@ -1,17 +1,10 @@
 import { Suspense } from 'react'
 import { fetchAllRooms } from '@/lib/queries'
 import RoomBrowser from '@/components/RoomBrowser'
-import type { ViewMode } from '@/lib/types'
 
 export const revalidate = 3600
 
-export default async function HomePage({
-  searchParams,
-}: {
-  searchParams: Promise<{ view?: string }>
-}) {
-  const params = await searchParams
-  const initialView: ViewMode = params.view === 'properties' ? 'properties' : 'rooms'
+export default async function HomePage() {
   let rooms
   try {
     rooms = await fetchAllRooms()
@@ -44,7 +37,7 @@ export default async function HomePage({
       </section>
 
       <Suspense>
-        <RoomBrowser rooms={rooms} initialView={initialView} />
+        <RoomBrowser rooms={rooms} />
       </Suspense>
     </>
   )
