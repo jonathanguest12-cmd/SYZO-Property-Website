@@ -371,6 +371,11 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
 
   const availText = formatAvailableFrom(room.available_from)
   const availNow = isAvailableNow(room.available_from)
+  const availShort = (() => {
+    if (availNow) return 'Available Now'
+    const d = new Date(room.available_from)
+    return `Available ${d.getDate()}/${d.getMonth() + 1}/${String(d.getFullYear()).slice(2)}`
+  })()
   const letting = getLettingDetails(room)
   const galleryPhotos = buildGalleryPhotos(room)
 
@@ -700,7 +705,7 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
         <div className="flex items-center justify-between gap-4">
           <div>
             <p className="text-xl font-bold tabular-nums" style={{ color: '#2D3038' }}>&pound;{Math.round(room.rent_pcm)}<span className="text-sm font-normal ml-1" style={{ color: '#9CA3AF' }}>/mo</span></p>
-            <p className="text-xs font-medium" style={{ color: availNow ? '#16A34A' : '#6B7280' }}>{availText}</p>
+            <p className="text-xs font-medium" style={{ color: availNow ? '#16A34A' : '#6B7280' }}>{availShort}</p>
           </div>
           <div className="flex gap-2 flex-1">
             <Link href={`/apply/${room.id}`} className="flex-1 flex items-center justify-center py-3 rounded-full font-semibold text-sm transition-colors hover:opacity-90"
