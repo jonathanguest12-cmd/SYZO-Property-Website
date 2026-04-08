@@ -207,6 +207,36 @@ const AMENITY_ICONS: Record<string, React.ReactNode> = {
       <path d="M4 12h16a1 1 0 0 1 1 1v3a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4v-3a1 1 0 0 1 1-1z" /><path d="M6 12V5a2 2 0 0 1 2-2h1" /><circle cx="12" cy="8" r="2" />
     </svg>
   ),
+  'Sink': (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2v5" /><path d="M9 7h6" /><path d="M4 14h16" /><path d="M18 14v2a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4v-2" /><path d="M6 14v-3a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v3" />
+    </svg>
+  ),
+  'Bills Inclusive': (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+    </svg>
+  ),
+  'Microwave': (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="4" width="20" height="15" rx="2" /><rect x="5" y="7" width="10" height="9" rx="1" /><line x1="18" y1="9" x2="18" y2="9.01" /><line x1="18" y1="12" x2="18" y2="12.01" />
+    </svg>
+  ),
+  'Oven': (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="2" width="18" height="20" rx="2" /><line x1="3" y1="8" x2="21" y2="8" /><rect x="6" y="11" width="12" height="8" rx="1" /><line x1="8" y1="5" x2="8" y2="5.01" /><line x1="12" y1="5" x2="12" y2="5.01" />
+    </svg>
+  ),
+  'Desk': (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="6" width="20" height="4" rx="1" /><line x1="4" y1="10" x2="4" y2="20" /><line x1="20" y1="10" x2="20" y2="20" /><line x1="2" y1="20" x2="22" y2="20" />
+    </svg>
+  ),
+  'Chair': (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 12V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v7" /><rect x="4" y="12" width="16" height="4" rx="1" /><line x1="6" y1="16" x2="6" y2="21" /><line x1="18" y1="16" x2="18" y2="21" />
+    </svg>
+  ),
 }
 
 const DefaultAmenityIcon = (
@@ -223,7 +253,6 @@ const SYZO_PROMISES = [
       </svg>
     ),
     title: 'One Monthly Payment',
-    description: 'Everything covered in a single monthly payment — no surprise bills.',
   },
   {
     icon: (
@@ -232,7 +261,6 @@ const SYZO_PROMISES = [
       </svg>
     ),
     title: 'Zero Deposit Option',
-    description: 'We offer a zero deposit alternative so you can move in without a large upfront cost.',
   },
   {
     icon: (
@@ -241,7 +269,6 @@ const SYZO_PROMISES = [
       </svg>
     ),
     title: 'Lightning Fast WiFi',
-    description: 'Superfast broadband set up and ready from day one — ideal for working from home.',
   },
   {
     icon: (
@@ -250,7 +277,6 @@ const SYZO_PROMISES = [
       </svg>
     ),
     title: 'Fast Response Maintenance',
-    description: 'Our in-house maintenance team visits monthly and guarantees same-day response to urgent issues.',
   },
   {
     icon: (
@@ -259,7 +285,6 @@ const SYZO_PROMISES = [
       </svg>
     ),
     title: 'Exceptional Tenant Service',
-    description: 'Your Community Manager is always on hand to ensure your home runs smoothly.',
   },
   {
     icon: (
@@ -268,7 +293,6 @@ const SYZO_PROMISES = [
       </svg>
     ),
     title: 'Bills Inclusive',
-    description: 'All household bills are included — gas, electric, water, and council tax.',
   },
 ]
 
@@ -460,7 +484,14 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
                   <span className="text-sm" style={{ color: '#9CA3AF' }}>Deposit</span>
                   <span className="text-sm font-medium text-green-600">Zero deposit option &#10003;</span>
                 </div>
-              ) : room.deposit_amount ? (
+              ) : room.deposit_type === 'depositProtectionScheme' ? (
+                <div className="flex justify-between items-center py-3 border-b" style={{ borderColor: '#F3F4F6' }}>
+                  <span className="text-sm" style={{ color: '#9CA3AF' }}>Deposit</span>
+                  <span className="text-sm font-medium" style={{ color: '#2D3038' }}>
+                    {room.deposit_amount ? <>&pound;{room.deposit_amount} (protected)</> : 'Deposit Protection Scheme'}
+                  </span>
+                </div>
+              ) : room.deposit_type === 'cashDeposit' && room.deposit_amount ? (
                 <div className="flex justify-between items-center py-3 border-b" style={{ borderColor: '#F3F4F6' }}>
                   <span className="text-sm" style={{ color: '#9CA3AF' }}>Deposit</span>
                   <span className="text-sm font-medium" style={{ color: '#2D3038' }}>
@@ -529,20 +560,15 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
 
             {/* 2c. The SYZO Promise */}
             <Card title="The SYZO Promise">
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {SYZO_PROMISES.map((promise, i) => (
-                  <div key={i} className="flex gap-3">
-                    <span className="flex-shrink-0 mt-0.5" style={{ color: '#16A34A' }}>
+                  <div key={i} className="flex items-center gap-2.5">
+                    <span className="flex-shrink-0" style={{ color: '#16A34A' }}>
                       {promise.icon}
                     </span>
-                    <div>
-                      <p className="text-sm font-semibold" style={{ color: '#2D3038' }}>
-                        {promise.title}
-                      </p>
-                      <p className="text-xs mt-0.5 leading-relaxed" style={{ color: '#6B7280' }}>
-                        {promise.description}
-                      </p>
-                    </div>
+                    <p className="text-sm font-medium" style={{ color: '#2D3038' }}>
+                      {promise.title}
+                    </p>
                   </div>
                 ))}
               </div>
