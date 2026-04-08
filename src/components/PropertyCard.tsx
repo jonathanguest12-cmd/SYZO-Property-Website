@@ -33,7 +33,7 @@ export default function PropertyCard({
   return (
     <Link
       href={`/property/${propertyRef}`}
-      className="group flex flex-col overflow-hidden rounded-xl bg-white card-hover"
+      className="group flex flex-col overflow-hidden rounded-2xl bg-white card-hover"
     >
       {/* Image */}
       <div className="relative w-full overflow-hidden">

@@ -134,12 +134,13 @@ export default function RoomBrowser({ rooms, initialArea = 'all' }: RoomBrowserP
               </button>
             ))}
           </div>
-          <p className="text-sm" style={{ color: '#6B7280' }}>
-            <span className="text-lg font-bold tabular-nums" style={{ color: '#2D3038' }}>
-              {filtered.length}
-            </span>{' '}
-            room{filtered.length !== 1 ? 's' : ''} available
-          </p>
+          <div
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold"
+            style={{ background: '#DCFCE7', color: '#15803D' }}
+          >
+            <span className="text-base font-bold tabular-nums">{filtered.length}</span>
+            <span>room{filtered.length !== 1 ? 's' : ''} available</span>
+          </div>
         </div>
 
         <div className="flex items-center gap-2">

@@ -70,7 +70,7 @@ function TextBlock({ text }: { text: string }) {
       elements.push(
         <ul key={key++} className="list-disc pl-5 space-y-1">
           {currentBullets.map((item, i) => (
-            <li key={i} className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{item}</li>
+            <li key={i} className="text-sm leading-relaxed" style={{ color: '#374151' }}>{item}</li>
           ))}
         </ul>
       )
@@ -89,7 +89,7 @@ function TextBlock({ text }: { text: string }) {
       continue
     }
     flushBullets()
-    elements.push(<p key={key++} className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{line}</p>)
+    elements.push(<p key={key++} className="text-sm leading-relaxed" style={{ color: '#374151' }}>{line}</p>)
   }
   flushBullets()
   return <div className="space-y-2.5">{elements}</div>
@@ -106,10 +106,22 @@ function CheckItem({ text }: { text: string }) {
   )
 }
 
-function Card({ title, children }: { title: string; children: React.ReactNode }) {
+function Card({ title, children, accent }: { title: string; children: React.ReactNode; accent?: boolean }) {
   return (
-    <div className="rounded-xl bg-white p-6" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-      <h2 className="text-sm font-semibold uppercase tracking-[0.1em] mb-4" style={{ color: '#9CA3AF' }}>{title}</h2>
+    <div
+      className={`rounded-2xl bg-white p-6 border ${accent ? 'border-l-4' : ''}`}
+      style={{
+        borderColor: '#E5E7EB',
+        ...(accent ? { borderLeftColor: '#16A34A' } : {}),
+        boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+      }}
+    >
+      <h2
+        className="text-sm font-semibold uppercase tracking-[0.1em] mb-4"
+        style={{ color: accent ? '#15803D' : '#6B7280' }}
+      >
+        {title}
+      </h2>
       {children}
     </div>
   )
@@ -214,7 +226,7 @@ function AmenityGrid({ amenities }: { amenities: string[] }) {
     <div className="grid grid-cols-2 gap-y-3 gap-x-4">
       {amenities.map((amenity, i) => (
         <div key={i} className="flex items-center gap-2.5">
-          <span className="w-5 h-5 flex-shrink-0" style={{ color: '#6B7280' }}>
+          <span className="w-5 h-5 flex-shrink-0" style={{ color: '#16A34A' }}>
             {AMENITY_ICONS[amenity] ?? DefaultAmenityIcon}
           </span>
           <span className="text-sm" style={{ color: '#4B5563' }}>{amenity}</span>
@@ -301,9 +313,11 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
   return (
     <>
       <div className="mx-auto w-full max-w-7xl px-4 py-6 md:px-8 md:py-8">
-        <Link href="/" className="inline-flex items-center gap-1.5 text-sm font-medium mb-6 transition-colors duration-200 hover:opacity-70" style={{ color: '#6B7280' }}>
-          &larr; Back to all rooms
-        </Link>
+        <div className="mb-6 pb-6 border-b" style={{ borderColor: '#E5E7EB' }}>
+          <Link href="/" className="inline-flex items-center gap-1.5 text-sm font-medium transition-colors duration-200 hover:opacity-70" style={{ color: '#6B7280' }}>
+            &larr; Back to all rooms
+          </Link>
+        </div>
 
         <div className="grid gap-8 lg:grid-cols-2">
           {/* LEFT: Photos + Apply + Other Rooms (sticky, fits viewport) */}
@@ -365,7 +379,7 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
             </div>
 
             {/* 1. Letting Details */}
-            <div className="rounded-xl p-5" style={{ background: '#F9FAFB' }}>
+            <div className="rounded-2xl p-6 border" style={{ background: '#FFFFFF', borderColor: '#E5E7EB', boxShadow: '0 1px 4px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04)' }}>
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-sm font-semibold uppercase tracking-[0.1em]" style={{ color: '#9CA3AF' }}>Letting Details</h2>
                 <Link
@@ -377,21 +391,21 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
                 </Link>
               </div>
               {/* Rent */}
-              <div className="flex justify-between items-center py-3 border-b border-gray-100">
+              <div className="flex justify-between items-center py-3 border-b" style={{ borderColor: '#F3F4F6' }}>
                 <span className="text-sm" style={{ color: '#9CA3AF' }}>Rent</span>
-                <span className="text-lg font-bold" style={{ color: '#2D3038' }}>
+                <span className="text-2xl font-bold" style={{ color: '#2D3038' }}>
                   &pound;{Math.round(room.rent_pcm)}
-                  <span className="text-sm font-normal text-gray-400"> pcm</span>
+                  <span className="text-sm font-normal ml-1" style={{ color: '#9CA3AF' }}>pcm</span>
                 </span>
               </div>
               {/* Deposit */}
               {room.deposit_type === 'depositReplacementScheme' ? (
-                <div className="flex justify-between items-center py-3 border-b border-gray-100">
+                <div className="flex justify-between items-center py-3 border-b" style={{ borderColor: '#F3F4F6' }}>
                   <span className="text-sm" style={{ color: '#9CA3AF' }}>Deposit</span>
                   <span className="text-sm font-medium text-green-600">Zero deposit option &#10003;</span>
                 </div>
               ) : room.deposit_amount ? (
-                <div className="flex justify-between items-center py-3 border-b border-gray-100">
+                <div className="flex justify-between items-center py-3 border-b" style={{ borderColor: '#F3F4F6' }}>
                   <span className="text-sm" style={{ color: '#9CA3AF' }}>Deposit</span>
                   <span className="text-sm font-medium" style={{ color: '#2D3038' }}>
                     &pound;{room.deposit_amount}
@@ -399,12 +413,12 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
                 </div>
               ) : null}
               {/* Bills — always included */}
-              <div className="flex justify-between items-center py-3 border-b border-gray-100">
+              <div className="flex justify-between items-center py-3 border-b" style={{ borderColor: '#F3F4F6' }}>
                 <span className="text-sm" style={{ color: '#9CA3AF' }}>Bills</span>
                 <span className="text-sm font-medium text-green-600">Included</span>
               </div>
               {/* Available */}
-              <div className="flex justify-between items-center py-3 border-b border-gray-100">
+              <div className="flex justify-between items-center py-3 border-b" style={{ borderColor: '#F3F4F6' }}>
                 <span className="text-sm" style={{ color: '#9CA3AF' }}>Available</span>
                 <span className={`text-sm font-medium ${availNow ? 'text-green-600' : ''}`}
                   style={!availNow ? { color: '#2D3038' } : undefined}>
@@ -413,14 +427,14 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
               </div>
               {/* Room type */}
               {room.room_type && (
-                <div className="flex justify-between items-center py-3 border-b border-gray-100">
+                <div className="flex justify-between items-center py-3 border-b" style={{ borderColor: '#F3F4F6' }}>
                   <span className="text-sm" style={{ color: '#9CA3AF' }}>Room type</span>
                   <span className="text-sm font-medium" style={{ color: '#2D3038' }}>{roomTypeLabel(room.room_type)}{hasEnSuite ? ' (en-suite)' : ''}</span>
                 </div>
               )}
               {/* Min. tenancy */}
               {letting.minTenancy && (
-                <div className="flex justify-between items-center py-3 border-b border-gray-100">
+                <div className="flex justify-between items-center py-3 border-b" style={{ borderColor: '#F3F4F6' }}>
                   <span className="text-sm" style={{ color: '#9CA3AF' }}>Min. tenancy</span>
                   <span className="text-sm font-medium" style={{ color: '#2D3038' }}>{letting.minTenancy}</span>
                 </div>
@@ -436,14 +450,14 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
 
             {/* 2. Home Amenities */}
             {room.property_amenities.length > 0 && (
-              <Card title="Home Amenities">
+              <Card title="Home Amenities" accent>
                 <AmenityGrid amenities={room.property_amenities} />
               </Card>
             )}
 
             {/* 2b. Room Amenities */}
             {room.room_amenities.length > 0 && (
-              <Card title="Room Amenities">
+              <Card title="Room Amenities" accent>
                 <AmenityGrid amenities={room.room_amenities} />
               </Card>
             )}
@@ -452,7 +466,7 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
             {overview && (
               <Card title="About This Property">
                 {hasProcessed ? (
-                  <p className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{overview}</p>
+                  <p className="text-sm leading-relaxed" style={{ color: '#374151' }}>{overview}</p>
                 ) : (
                   <ExpandableText maxHeight={200}><TextBlock text={overview} /></ExpandableText>
                 )}
@@ -462,7 +476,7 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
             {/* 4. About This Room */}
             {roomDesc && (
               <Card title="About This Room">
-                <p className="text-sm leading-relaxed" style={{ color: '#6B7280' }}>{roomDesc}</p>
+                <p className="text-sm leading-relaxed" style={{ color: '#374151' }}>{roomDesc}</p>
               </Card>
             )}
 
