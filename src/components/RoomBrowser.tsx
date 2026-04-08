@@ -115,19 +115,19 @@ export default function RoomBrowser({ rooms, initialArea = 'all' }: RoomBrowserP
     <div className="mx-auto w-full max-w-7xl px-4 py-6 md:px-8 md:py-8">
       {/* Controls bar */}
       <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          {/* City filter — inline text links */}
-          <div className="hidden sm:flex items-center gap-1 text-sm">
+        <div className="flex items-center gap-3">
+          {/* City filter pills */}
+          <div className="hidden sm:inline-flex rounded-lg p-0.5" style={{ backgroundColor: '#EEEDEA' }}>
             {([['all', 'All'], ['plymouth', 'Plymouth'], ['newquay', 'Newquay']] as const).map(([value, label]) => (
               <button
                 key={value}
                 type="button"
                 onClick={() => setArea(value as AreaFilter)}
-                className="px-2 py-1 rounded-md font-medium transition-all duration-200 cursor-pointer"
+                className="rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200 cursor-pointer"
                 style={
                   area === value
-                    ? { color: '#2D3038', backgroundColor: '#EEEDEA' }
-                    : { color: '#9CA3AF' }
+                    ? { backgroundColor: '#ffffff', color: '#2D3038', boxShadow: '0 1px 2px rgba(0,0,0,0.06)' }
+                    : { color: '#6B7280' }
                 }
               >
                 {label}
@@ -135,11 +135,10 @@ export default function RoomBrowser({ rooms, initialArea = 'all' }: RoomBrowserP
             ))}
           </div>
           <div
-            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold"
             style={{ background: '#DCFCE7', color: '#15803D' }}
           >
-            <span className="text-base font-bold tabular-nums">{filtered.length}</span>
-            <span>room{filtered.length !== 1 ? 's' : ''} available</span>
+            {filtered.length} room{filtered.length !== 1 ? 's' : ''} available
           </div>
         </div>
 

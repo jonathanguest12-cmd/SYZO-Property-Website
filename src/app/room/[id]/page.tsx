@@ -215,6 +215,63 @@ const DefaultAmenityIcon = (
   </svg>
 )
 
+const SYZO_PROMISES = [
+  {
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+        <rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/>
+      </svg>
+    ),
+    title: 'One Monthly Payment',
+    description: 'Everything covered in a single monthly payment — no surprise bills.',
+  },
+  {
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      </svg>
+    ),
+    title: 'Zero Deposit Option',
+    description: 'We offer a zero deposit alternative so you can move in without a large upfront cost.',
+  },
+  {
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+        <path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1" fill="currentColor"/>
+      </svg>
+    ),
+    title: 'Lightning Fast WiFi',
+    description: 'Superfast broadband set up and ready from day one — ideal for working from home.',
+  },
+  {
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+        <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+      </svg>
+    ),
+    title: 'Fast Response Maintenance',
+    description: 'Our in-house maintenance team visits monthly and guarantees same-day response to urgent issues.',
+  },
+  {
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+      </svg>
+    ),
+    title: 'Exceptional Tenant Service',
+    description: 'Your Community Manager is always on hand to ensure your home runs smoothly.',
+  },
+  {
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+    ),
+    title: 'Bills Inclusive',
+    description: 'All household bills are included — gas, electric, water, and council tax.',
+  },
+]
+
 function AmenityGrid({ amenities }: { amenities: string[] }) {
   return (
     <div className="grid grid-cols-2 gap-y-3 gap-x-4">
@@ -238,7 +295,6 @@ function getLettingDetails(room: RoomWithProperty) {
     deposit: info.depositAmountRequired ?? null,
     minTenancy: minMonths != null && minMonths > 0 ? `${minMonths} months` : null,
     couplesWelcome: info.couplesWelcome ?? null,
-    epcRating: info.epcRating ?? info.epc ?? prop.epcRating ?? null,
   }
 }
 
@@ -413,11 +469,11 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
                 </div>
               ) : null}
               {/* EPC Rating */}
-              {letting.epcRating && (
+              {room.epc_rating && (
                 <div className="flex justify-between items-center py-3 border-b" style={{ borderColor: '#F3F4F6' }}>
                   <span className="text-sm" style={{ color: '#9CA3AF' }}>EPC Rating</span>
-                  <span className="text-sm font-medium px-2 py-0.5 rounded" style={{ background: '#F3F4F6', color: '#374151' }}>
-                    {letting.epcRating}
+                  <span className="text-sm font-semibold px-2 py-0.5 rounded" style={{ background: '#F3F4F6', color: '#374151' }}>
+                    {room.epc_rating}
                   </span>
                 </div>
               )}
@@ -471,12 +527,33 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
               </Card>
             )}
 
+            {/* 2c. The SYZO Promise */}
+            <Card title="The SYZO Promise">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {SYZO_PROMISES.map((promise, i) => (
+                  <div key={i} className="flex gap-3">
+                    <span className="flex-shrink-0 mt-0.5" style={{ color: '#16A34A' }}>
+                      {promise.icon}
+                    </span>
+                    <div>
+                      <p className="text-sm font-semibold" style={{ color: '#2D3038' }}>
+                        {promise.title}
+                      </p>
+                      <p className="text-xs mt-0.5 leading-relaxed" style={{ color: '#6B7280' }}>
+                        {promise.description}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+
             {/* 3. About This Property */}
             {overview && (
               <Card title="About This Property">
                 {hasProcessed ? (
                   <div className="space-y-3">
-                    {overview.split('\n').filter(p => p.trim()).map((paragraph, i) => (
+                    {overview.split('\n\n').filter(p => p.trim()).map((paragraph, i) => (
                       <p key={i} className="text-sm leading-relaxed" style={{ color: '#374151' }}>
                         {paragraph.trim()}
                       </p>
@@ -488,18 +565,22 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
               </Card>
             )}
 
-            {/* 4. About This Room */}
-            {roomDesc && (
-              <Card title="About This Room">
+            {/* 4. About This Room — always show */}
+            <Card title="About This Room">
+              {roomDesc ? (
                 <div className="space-y-3">
-                  {roomDesc.split('\n').filter(p => p.trim()).map((paragraph, i) => (
+                  {roomDesc.split('\n\n').filter(p => p.trim()).map((paragraph, i) => (
                     <p key={i} className="text-sm leading-relaxed" style={{ color: '#374151' }}>
                       {paragraph.trim()}
                     </p>
                   ))}
                 </div>
-              </Card>
-            )}
+              ) : (
+                <p className="text-sm" style={{ color: '#9CA3AF' }}>
+                  Ask us about this room &mdash; we&apos;d love to tell you more.
+                </p>
+              )}
+            </Card>
 
             {/* 5. What's Included */}
             {whatsIncluded.length > 0 && (

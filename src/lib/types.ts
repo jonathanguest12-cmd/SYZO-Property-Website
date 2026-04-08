@@ -19,6 +19,7 @@ export interface RoomRow {
   descriptions_processed_at: string | null
   deposit_type: string | null  // "cashDeposit" | "depositReplacementScheme" | null
   deposit_amount: number | null
+  epc_rating: string | null
 }
 
 export interface PropertyRow {
@@ -75,6 +76,7 @@ export interface RoomWithProperty {
   descriptions_processed_at: string | null
   deposit_type: string | null  // "cashDeposit" | "depositReplacementScheme" | null
   deposit_amount: number | null
+  epc_rating: string | null
 }
 
 export type AreaFilter = 'all' | 'plymouth' | 'newquay'
