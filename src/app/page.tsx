@@ -3,6 +3,8 @@ import { fetchAllRooms } from '@/lib/queries'
 import RoomBrowser from '@/components/RoomBrowser'
 import type { ViewMode } from '@/lib/types'
 
+export const revalidate = 3600
+
 export default async function HomePage({
   searchParams,
 }: {
@@ -27,9 +29,9 @@ export default async function HomePage({
     <>
       {/* Hero */}
       <section className="relative" style={{ backgroundColor: '#F7F6F3' }}>
-        <div className="mx-auto max-w-7xl px-6 pt-8 pb-12 md:pt-12 md:pb-16 md:px-8">
+        <div className="mx-auto max-w-7xl px-6 pt-6 pb-4 md:pt-12 md:pb-16 md:px-8">
           <h1
-            className="text-[2rem] font-extrabold leading-tight tracking-tight md:text-6xl lg:text-[4rem]"
+            className="text-[2rem] font-extrabold leading-tight tracking-tight md:text-5xl lg:text-[4rem]"
             style={{ color: '#2D3038' }}
           >
             Premium shared living<br className="hidden md:inline" />{' '}
