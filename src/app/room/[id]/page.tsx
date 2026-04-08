@@ -401,14 +401,14 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
               <PhotoGallery photos={galleryPhotos} alt={room.property_name} />
 
               <div className="hidden lg:flex gap-3 mt-1">
-                <a href="#ask" className="flex-1 flex items-center justify-center py-3.5 rounded-full border-2 font-semibold text-sm transition-colors hover:bg-green-50"
-                  style={{ borderColor: '#16A34A', color: '#16A34A' }}>
-                  Ask a Question
-                </a>
                 <Link href={`/apply/${room.id}`} className="flex-1 flex items-center justify-center py-3.5 rounded-full font-semibold text-sm text-white transition-colors hover:opacity-90"
-                  style={{ background: '#16A34A' }}>
+                  style={{ background: '#15803D' }}>
                   Apply to Rent
                 </Link>
+                <a href="#ask" className="flex-1 flex items-center justify-center py-3.5 rounded-full border-2 font-semibold text-sm transition-colors hover:bg-green-50"
+                  style={{ borderColor: '#15803D', color: '#15803D' }}>
+                  Ask a Question
+                </a>
               </div>
 
               {/* Other rooms — compact cards */}
@@ -698,14 +698,14 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
             <p className="text-xs font-medium" style={{ color: availNow ? '#16A34A' : '#6B7280' }}>{availText}</p>
           </div>
           <div className="flex gap-2 flex-1">
-            <a href="#ask" className="flex-1 flex items-center justify-center py-3 rounded-full border-2 font-semibold text-sm transition-colors hover:bg-green-50"
-              style={{ borderColor: '#16A34A', color: '#16A34A' }}>
-              Ask a Question
-            </a>
             <Link href={`/apply/${room.id}`} className="flex-1 flex items-center justify-center py-3 rounded-full font-semibold text-sm text-white transition-colors hover:opacity-90"
-              style={{ background: '#16A34A' }}>
+              style={{ background: '#15803D' }}>
               Apply to Rent
             </Link>
+            <a href="#ask" className="flex-1 flex items-center justify-center py-3 rounded-full border-2 font-semibold text-sm transition-colors hover:bg-green-50"
+              style={{ borderColor: '#15803D', color: '#15803D' }}>
+              Ask a Question
+            </a>
           </div>
         </div>
       </div>
