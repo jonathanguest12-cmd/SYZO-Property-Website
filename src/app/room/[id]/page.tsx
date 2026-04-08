@@ -479,24 +479,17 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
                 </span>
               </div>
               {/* Deposit */}
-              {room.deposit_type === 'depositReplacementScheme' ? (
-                <div className="flex justify-between items-center py-3 border-b" style={{ borderColor: '#F3F4F6' }}>
-                  <span className="text-sm" style={{ color: '#9CA3AF' }}>Deposit</span>
-                  <span className="text-sm font-medium text-green-600">Zero deposit option &#10003;</span>
-                </div>
-              ) : room.deposit_type === 'depositProtectionScheme' ? (
-                <div className="flex justify-between items-center py-3 border-b" style={{ borderColor: '#F3F4F6' }}>
-                  <span className="text-sm" style={{ color: '#9CA3AF' }}>Deposit</span>
-                  <span className="text-sm font-medium" style={{ color: '#2D3038' }}>
-                    {room.deposit_amount ? <>&pound;{room.deposit_amount} (protected)</> : 'Deposit Protection Scheme'}
-                  </span>
-                </div>
-              ) : room.deposit_type === 'cashDeposit' && room.deposit_amount ? (
+              {room.deposit_amount ? (
                 <div className="flex justify-between items-center py-3 border-b" style={{ borderColor: '#F3F4F6' }}>
                   <span className="text-sm" style={{ color: '#9CA3AF' }}>Deposit</span>
                   <span className="text-sm font-medium" style={{ color: '#2D3038' }}>
                     &pound;{room.deposit_amount}
                   </span>
+                </div>
+              ) : room.deposit_type === 'depositReplacementScheme' ? (
+                <div className="flex justify-between items-center py-3 border-b" style={{ borderColor: '#F3F4F6' }}>
+                  <span className="text-sm" style={{ color: '#9CA3AF' }}>Deposit</span>
+                  <span className="text-sm font-medium text-green-600">Zero deposit option &#10003;</span>
                 </div>
               ) : null}
               {/* EPC Rating */}
@@ -560,13 +553,13 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
 
             {/* 2c. The SYZO Promise */}
             <Card title="The SYZO Promise">
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <div className="grid grid-cols-2 gap-3">
                 {SYZO_PROMISES.map((promise, i) => (
                   <div key={i} className="flex items-center gap-2.5">
                     <span className="flex-shrink-0" style={{ color: '#16A34A' }}>
                       {promise.icon}
                     </span>
-                    <p className="text-sm font-medium" style={{ color: '#2D3038' }}>
+                    <p className="text-sm font-medium" style={{ color: '#6B7280' }}>
                       {promise.title}
                     </p>
                   </div>
