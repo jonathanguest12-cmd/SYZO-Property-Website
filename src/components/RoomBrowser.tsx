@@ -122,45 +122,107 @@ export default function RoomBrowser({ rooms, initialArea = 'all', initialView = 
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-6 md:px-8 md:py-8">
-      {/* Controls bar */}
-      <div className="flex flex-col gap-2">
-        {/* ROW 1: Count pill + city pills (desktop) */}
-        <div className="flex items-center gap-4">
-          <div
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold"
-            style={{ background: '#DCFCE7', color: '#16A34A' }}
-          >
-            {view === 'properties'
-              ? `${propertyGroups.size} propert${propertyGroups.size !== 1 ? 'ies' : 'y'} available`
-              : `${filtered.length} room${filtered.length !== 1 ? 's' : ''} available`}
-          </div>
+      {/* Controls bar — Desktop: single row. Mobile: stacked. */}
 
-          {/* City filter pills — desktop only */}
-          <div className="hidden md:inline-flex rounded-lg p-0.5" style={{ backgroundColor: '#EEEDEA' }}>
-            {([['all', 'All'], ['plymouth', 'Plymouth'], ['newquay', 'Newquay']] as const).map(([value, label]) => (
-              <button
-                key={value}
-                type="button"
-                onClick={() => setArea(value as AreaFilter)}
-                className="rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200 cursor-pointer"
-                style={
-                  area === value
-                    ? { backgroundColor: '#ffffff', color: '#2D3038', boxShadow: '0 1px 2px rgba(0,0,0,0.06)' }
-                    : { color: '#6B7280' }
-                }
-              >
-                {label}
-              </button>
-            ))}
-          </div>
+      {/* Desktop layout (md+): one row */}
+      <div className="hidden md:flex md:items-center md:gap-4">
+        {/* City filter pills */}
+        <div className="inline-flex rounded-lg p-0.5" style={{ backgroundColor: '#EEEDEA' }}>
+          {([['all', 'All'], ['plymouth', 'Plymouth'], ['newquay', 'Newquay']] as const).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setArea(value as AreaFilter)}
+              className="rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200 cursor-pointer"
+              style={
+                area === value
+                  ? { backgroundColor: '#ffffff', color: '#2D3038', boxShadow: '0 1px 2px rgba(0,0,0,0.06)' }
+                  : { color: '#6B7280' }
+              }
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {/* Count pill */}
+        <div
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold"
+          style={{ background: '#DCFCE7', color: '#16A34A' }}
+        >
+          {view === 'properties'
+            ? `${propertyGroups.size} propert${propertyGroups.size !== 1 ? 'ies' : 'y'} available`
+            : `${filtered.length} room${filtered.length !== 1 ? 's' : ''} available`}
+        </div>
+
+        <div className="flex-1" />
+
+        {/* View toggle */}
+        <div className="inline-flex rounded-lg p-0.5" style={{ backgroundColor: '#EEEDEA' }}>
+          <button
+            type="button"
+            onClick={() => setView('rooms')}
+            className="rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200 cursor-pointer"
+            style={
+              view === 'rooms'
+                ? { backgroundColor: '#ffffff', color: '#2D3038', boxShadow: '0 1px 2px rgba(0,0,0,0.06)' }
+                : { color: '#6B7280' }
+            }
+          >
+            Rooms
+          </button>
+          <button
+            type="button"
+            onClick={() => setView('properties')}
+            className="rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200 cursor-pointer"
+            style={
+              view === 'properties'
+                ? { backgroundColor: '#ffffff', color: '#2D3038', boxShadow: '0 1px 2px rgba(0,0,0,0.06)' }
+                : { color: '#6B7280' }
+            }
+          >
+            Properties
+          </button>
+        </div>
+
+        {/* Filters */}
+        <button
+          type="button"
+          onClick={() => setShowFilters((v) => !v)}
+          className="inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-sm font-medium transition-all duration-200 cursor-pointer"
+          style={
+            showFilters || activeFilterCount > 0
+              ? { backgroundColor: '#2D3038', color: '#ffffff' }
+              : { backgroundColor: '#EEEDEA', color: '#6B7280' }
+          }
+        >
+          Filters
+          {activeFilterCount > 0 && (
+            <span
+              className="inline-flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold"
+              style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: '#ffffff' }}
+            >
+              {activeFilterCount}
+            </span>
+          )}
+        </button>
+      </div>
+
+      {/* Mobile layout (<md): stacked rows */}
+      <div className="flex flex-col gap-2 md:hidden">
+        {/* ROW 1: Count pill */}
+        <div
+          className="inline-flex items-center self-start gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold"
+          style={{ background: '#DCFCE7', color: '#16A34A' }}
+        >
+          {view === 'properties'
+            ? `${propertyGroups.size} propert${propertyGroups.size !== 1 ? 'ies' : 'y'} available`
+            : `${filtered.length} room${filtered.length !== 1 ? 's' : ''} available`}
         </div>
 
         {/* ROW 2: View toggle left, Filters right */}
         <div className="flex items-center justify-between">
-          <div
-            className="inline-flex rounded-lg p-0.5"
-            style={{ backgroundColor: '#EEEDEA' }}
-          >
+          <div className="inline-flex rounded-lg p-0.5" style={{ backgroundColor: '#EEEDEA' }}>
             <button
               type="button"
               onClick={() => setView('rooms')}
