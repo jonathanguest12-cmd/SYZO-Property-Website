@@ -1,3 +1,5 @@
+export const revalidate = 3600
+
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import Link from 'next/link'
@@ -6,6 +8,39 @@ import type { RoomWithProperty } from '@/lib/types'
 import { isAvailableNow } from '@/lib/format'
 import PhotoGallery from '@/components/PhotoGallery'
 import RoomCard from '@/components/RoomCard'
+
+export async function generateStaticParams() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    || 'https://mtrrxtwisgftkqujfqlr.supabase.co'
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    || 'sb_publishable_eh8vOh14012eMEE1KgLDXA_5XmDjiHU'
+
+  try {
+    const res = await fetch(
+      `${supabaseUrl}/rest/v1/rooms?select=additional_info&available_from=not.is.null&limit=300`,
+      {
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+        },
+        cache: 'no-store',
+      }
+    )
+
+    if (!res.ok) return []
+
+    const rooms = await res.json()
+    const refs = rooms
+      .map((r: any) => r.additional_info?.property?.reference)
+      .filter(Boolean)
+    const uniqueRefs = [...new Set<string>(refs)]
+    console.log('[generateStaticParams] pre-building', uniqueRefs.length, 'property pages')
+    return uniqueRefs.map((ref) => ({ cohoRef: ref }))
+  } catch (err) {
+    console.error('[generateStaticParams] property pages error:', err)
+    return []
+  }
+}
 
 /* ─── Shared UI components (matching room page) ─── */
 
