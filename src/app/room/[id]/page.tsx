@@ -407,11 +407,11 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
 
               <div className="hidden lg:flex gap-3 mt-1">
                 <Link href={`/apply/${room.id}`} className="flex-1 flex items-center justify-center py-3.5 rounded-full font-semibold text-sm transition-colors hover:opacity-90"
-                  style={{ background: '#DCFCE7', color: '#15803D' }}>
+                  style={{ background: '#2D3038', color: '#ffffff' }}>
                   Apply to Rent
                 </Link>
-                <a href="#ask" className="flex-1 flex items-center justify-center py-3.5 rounded-full border-2 font-semibold text-sm transition-colors hover:bg-green-50"
-                  style={{ borderColor: '#15803D', color: '#15803D' }}>
+                <a href="#ask" className="flex-1 flex items-center justify-center py-3.5 rounded-full border-2 font-semibold text-sm transition-colors hover:bg-gray-50"
+                  style={{ background: '#ffffff', borderColor: '#2D3038', color: '#2D3038' }}>
                   Ask a Question
                 </a>
               </div>
@@ -704,11 +704,11 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
           </div>
           <div className="flex gap-2 flex-1">
             <Link href={`/apply/${room.id}`} className="flex-1 flex items-center justify-center py-3 rounded-full font-semibold text-sm transition-colors hover:opacity-90"
-              style={{ background: '#DCFCE7', color: '#15803D' }}>
+              style={{ background: '#2D3038', color: '#ffffff' }}>
               Apply to Rent
             </Link>
-            <a href="#ask" className="flex-1 flex items-center justify-center py-3 rounded-full border-2 font-semibold text-sm transition-colors hover:bg-green-50"
-              style={{ borderColor: '#15803D', color: '#15803D' }}>
+            <a href="#ask" className="flex-1 flex items-center justify-center py-3 rounded-full border-2 font-semibold text-sm transition-colors hover:bg-gray-50"
+              style={{ background: '#ffffff', borderColor: '#2D3038', color: '#2D3038' }}>
               Ask a Question
             </a>
           </div>
