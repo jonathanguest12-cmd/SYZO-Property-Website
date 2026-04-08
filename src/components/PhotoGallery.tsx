@@ -174,7 +174,7 @@ export default function PhotoGallery({ photos, alt }: PhotoGalleryProps) {
 
         {/* Thumbnail strip */}
         {hasMultiple && (
-          <div className="mt-2 flex gap-1.5 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
+          <div className="mt-2 flex gap-1.5 overflow-x-auto pb-1 -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide">
             {uniquePhotos.map((photo, idx) => (
               <button
                 key={idx}

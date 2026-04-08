@@ -24,5 +24,5 @@ export default async function CityPage({
 
   const rooms = await fetchAllRooms()
 
-  return <Suspense><RoomBrowser rooms={rooms} initialArea={areaFilter} /></Suspense>
+  return <Suspense><RoomBrowser rooms={rooms} initialArea={areaFilter} initialView="rooms" /></Suspense>
 }

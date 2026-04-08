@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { useSearchParams } from 'next/navigation'
 import type {
   RoomWithProperty,
   AreaFilter,
@@ -17,6 +16,7 @@ import PropertyCard from './PropertyCard'
 interface RoomBrowserProps {
   rooms: RoomWithProperty[]
   initialArea?: AreaFilter
+  initialView?: ViewMode
 }
 
 function matchesPriceRange(rent: number, range: PriceRange): boolean {
@@ -55,13 +55,12 @@ function matchesAvailability(dateStr: string, filter: AvailabilityFilter): boole
   return date <= cutoff
 }
 
-export default function RoomBrowser({ rooms, initialArea = 'all' }: RoomBrowserProps) {
-  const searchParams = useSearchParams()
+export default function RoomBrowser({ rooms, initialArea = 'all', initialView = 'rooms' }: RoomBrowserProps) {
   const [area, setArea] = useState<AreaFilter>(initialArea)
   const [priceRange, setPriceRange] = useState<PriceRange>('any')
   const [availabilityFilter, setAvailabilityFilter] = useState<AvailabilityFilter>('any')
   const [sort, setSort] = useState<SortOption>('price_asc')
-  const [view, setView] = useState<ViewMode>(searchParams.get('view') === 'properties' ? 'properties' : 'rooms')
+  const [view, setView] = useState<ViewMode>(initialView)
   const [showFilters, setShowFilters] = useState(false)
 
   const activeFilterCount = useMemo(() => {
@@ -124,27 +123,26 @@ export default function RoomBrowser({ rooms, initialArea = 'all' }: RoomBrowserP
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-6 md:px-8 md:py-8">
       {/* Controls bar */}
-      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between md:gap-4">
-        {/* Count pill — full width on mobile, inline on desktop */}
-        <div
-          className="inline-flex items-center self-start gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold"
-          style={{ background: '#DCFCE7', color: '#16A34A' }}
-        >
-          {view === 'properties'
-            ? `${propertyGroups.size} propert${propertyGroups.size !== 1 ? 'ies' : 'y'} available`
-            : `${filtered.length} room${filtered.length !== 1 ? 's' : ''} available`}
-        </div>
+      <div className="flex flex-col gap-2">
+        {/* Count pill — own line on mobile, inline on desktop */}
+        <div className="flex items-center justify-between md:justify-start md:gap-4">
+          <div
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold"
+            style={{ background: '#DCFCE7', color: '#16A34A' }}
+          >
+            {view === 'properties'
+              ? `${propertyGroups.size} propert${propertyGroups.size !== 1 ? 'ies' : 'y'} available`
+              : `${filtered.length} room${filtered.length !== 1 ? 's' : ''} available`}
+          </div>
 
-        {/* Filter controls row */}
-        <div className="flex items-center justify-between gap-2 md:justify-end">
-          {/* City filter pills */}
-          <div className="inline-flex rounded-lg p-0.5" style={{ backgroundColor: '#EEEDEA' }}>
+          {/* City filter pills — desktop only */}
+          <div className="hidden md:inline-flex rounded-lg p-0.5" style={{ backgroundColor: '#EEEDEA' }}>
             {([['all', 'All'], ['plymouth', 'Plymouth'], ['newquay', 'Newquay']] as const).map(([value, label]) => (
               <button
                 key={value}
                 type="button"
                 onClick={() => setArea(value as AreaFilter)}
-                className="rounded-md px-2 py-1 text-xs sm:px-3 sm:py-1.5 sm:text-sm font-medium transition-all duration-200 cursor-pointer"
+                className="rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200 cursor-pointer"
                 style={
                   area === value
                     ? { backgroundColor: '#ffffff', color: '#2D3038', boxShadow: '0 1px 2px rgba(0,0,0,0.06)' }
@@ -156,8 +154,11 @@ export default function RoomBrowser({ rooms, initialArea = 'all' }: RoomBrowserP
             ))}
           </div>
 
-          <div className="flex items-center gap-1.5 sm:gap-2">
-            {/* View toggle */}
+          {/* Spacer for desktop right-alignment */}
+          <div className="hidden md:flex md:flex-1" />
+
+          {/* View toggle + Filters — always visible */}
+          <div className="flex items-center gap-1.5 md:gap-2">
             <div
               className="inline-flex rounded-lg p-0.5"
               style={{ backgroundColor: '#EEEDEA' }}
@@ -165,7 +166,7 @@ export default function RoomBrowser({ rooms, initialArea = 'all' }: RoomBrowserP
               <button
                 type="button"
                 onClick={() => setView('rooms')}
-                className="rounded-md px-2 py-1 text-xs sm:px-3 sm:py-1.5 sm:text-sm font-medium transition-all duration-200 cursor-pointer"
+                className="rounded-md px-2.5 py-1 text-xs md:px-3 md:py-1.5 md:text-sm font-medium transition-all duration-200 cursor-pointer"
                 style={
                   view === 'rooms'
                     ? { backgroundColor: '#ffffff', color: '#2D3038', boxShadow: '0 1px 2px rgba(0,0,0,0.06)' }
@@ -177,7 +178,7 @@ export default function RoomBrowser({ rooms, initialArea = 'all' }: RoomBrowserP
               <button
                 type="button"
                 onClick={() => setView('properties')}
-                className="rounded-md px-2 py-1 text-xs sm:px-3 sm:py-1.5 sm:text-sm font-medium transition-all duration-200 cursor-pointer"
+                className="rounded-md px-2.5 py-1 text-xs md:px-3 md:py-1.5 md:text-sm font-medium transition-all duration-200 cursor-pointer"
                 style={
                   view === 'properties'
                     ? { backgroundColor: '#ffffff', color: '#2D3038', boxShadow: '0 1px 2px rgba(0,0,0,0.06)' }
@@ -188,11 +189,10 @@ export default function RoomBrowser({ rooms, initialArea = 'all' }: RoomBrowserP
               </button>
             </div>
 
-            {/* Filters toggle */}
             <button
               type="button"
               onClick={() => setShowFilters((v) => !v)}
-              className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs sm:gap-1.5 sm:px-3.5 sm:py-1.5 sm:text-sm font-medium transition-all duration-200 cursor-pointer"
+              className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs md:gap-1.5 md:px-3.5 md:py-1.5 md:text-sm font-medium transition-all duration-200 cursor-pointer"
               style={
                 showFilters || activeFilterCount > 0
                   ? { backgroundColor: '#2D3038', color: '#ffffff' }

@@ -64,8 +64,11 @@ body.lightbox-open header {
   }
 }
 
-/* Hide scrollbar on thumbnail strips */
-.overflow-x-auto::-webkit-scrollbar {
+/* Hide scrollbar utility */
+.scrollbar-hide {
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
 

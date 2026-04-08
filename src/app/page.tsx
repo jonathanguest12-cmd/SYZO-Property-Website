@@ -1,8 +1,15 @@
 import { Suspense } from 'react'
 import { fetchAllRooms } from '@/lib/queries'
 import RoomBrowser from '@/components/RoomBrowser'
+import type { ViewMode } from '@/lib/types'
 
-export default async function HomePage() {
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ view?: string }>
+}) {
+  const params = await searchParams
+  const initialView: ViewMode = params.view === 'properties' ? 'properties' : 'rooms'
   let rooms
   try {
     rooms = await fetchAllRooms()
@@ -26,8 +33,7 @@ export default async function HomePage() {
             style={{ color: '#2D3038' }}
           >
             <span className="block md:inline">Premium shared living</span>{' '}
-            <span className="block md:inline">across the</span>{' '}
-            <span className="block md:inline">South West.</span>
+            <span className="block md:inline">across the South West.</span>
           </h1>
           <p className="mt-4 max-w-2xl text-base leading-relaxed md:text-lg md:whitespace-nowrap" style={{ color: '#6B7280' }}>
             Beautifully furnished rooms in professionally managed houses.
@@ -36,7 +42,7 @@ export default async function HomePage() {
       </section>
 
       <Suspense>
-        <RoomBrowser rooms={rooms} />
+        <RoomBrowser rooms={rooms} initialView={initialView} />
       </Suspense>
     </>
   )
