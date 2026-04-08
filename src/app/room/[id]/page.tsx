@@ -344,7 +344,7 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
                             </div>
                           )}
                         </div>
-                        <div className="flex flex-col gap-0.5 min-w-0 justify-center">
+                        <div className="flex flex-col gap-0.5 min-w-0 justify-center flex-1">
                           <p className="font-semibold text-sm truncate" style={{ color: '#2D3038' }}>{r.name}</p>
                           <div className="flex items-baseline gap-1.5">
                             <span className="text-base font-bold tabular-nums" style={{ color: '#2D3038' }}>&pound;{Math.round(r.rent_pcm)}</span>
@@ -352,6 +352,9 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
                             <span className="ml-auto inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold" style={r.bills_included ? { backgroundColor: '#F0FAF0', color: '#16A34A' } : { backgroundColor: '#FEF9EF', color: '#B45309' }}>
                               {r.bills_included ? 'Bills inc.' : 'Bills extra'}
                             </span>
+                          </div>
+                          <div className="flex justify-end mt-1">
+                            <span className="text-xs font-medium px-3 py-1 rounded-full" style={{ background: '#DCFCE7', color: '#15803D' }}>View Room &rarr;</span>
                           </div>
                         </div>
                       </Link>
@@ -563,9 +566,12 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
                         <div className="relative w-full" style={{ height: '100px', backgroundColor: '#E5E3DF' }}>
                           {r.photo_urls[0] ? <Image src={r.photo_urls[0]} alt={r.name} fill quality={75} className="object-cover" sizes="200px" loading="lazy" /> : null}
                         </div>
-                        <div className="p-2.5">
+                        <div className="p-2.5 flex flex-col">
                           <p className="font-semibold text-xs" style={{ color: '#2D3038' }}>{r.name}</p>
                           <p className="text-sm font-bold tabular-nums" style={{ color: '#2D3038' }}>&pound;{Math.round(r.rent_pcm)}<span className="text-[10px] font-normal ml-0.5" style={{ color: '#9CA3AF' }}>/mo</span></p>
+                          <div className="flex justify-end mt-1.5">
+                            <span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ background: '#DCFCE7', color: '#15803D' }}>View Room &rarr;</span>
+                          </div>
                         </div>
                       </Link>
                     ))}
