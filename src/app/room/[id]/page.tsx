@@ -174,12 +174,12 @@ const AMENITY_ICONS: Record<string, React.ReactNode> = {
   ),
   'Parking (Permit Required)': (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M19 17H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1l2-3h8l2 3h1a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2z" /><circle cx="7.5" cy="17" r="1.5" /><circle cx="16.5" cy="17" r="1.5" />
+      <path d="M3 11l1.5-4.5A2 2 0 0 1 6.4 5h11.2a2 2 0 0 1 1.9 1.5L21 11" /><path d="M1 11h22v6a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1v-6z" /><circle cx="7" cy="18" r="2" /><circle cx="17" cy="18" r="2" />
     </svg>
   ),
   'Off-road parking': (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M19 17H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1l2-3h8l2 3h1a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2z" /><circle cx="7.5" cy="17" r="1.5" /><circle cx="16.5" cy="17" r="1.5" />
+      <path d="M3 11l1.5-4.5A2 2 0 0 1 6.4 5h11.2a2 2 0 0 1 1.9 1.5L21 11" /><path d="M1 11h22v6a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1v-6z" /><circle cx="7" cy="18" r="2" /><circle cx="17" cy="18" r="2" />
     </svg>
   ),
   'Outdoor seating': (
@@ -293,8 +293,8 @@ const SYZO_PROMISES = [
   },
   {
     icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-        <polyline points="20 6 9 17 4 12"/>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M9 3.5A5.5 5.5 0 0 1 20 8c0 4-3 5.5-4 8H8c-1-2.5-4-4-4-8a5.5 5.5 0 0 1 5-5.5"/><path d="M6 17h12"/><path d="M6 21h12"/>
       </svg>
     ),
     title: 'Bills Inclusive',
