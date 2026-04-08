@@ -57,6 +57,18 @@ body.lightbox-open header {
   visibility: hidden;
 }
 
+/* Prevent horizontal scroll on mobile */
+@media (max-width: 768px) {
+  html, body {
+    overflow-x: hidden;
+  }
+}
+
+/* Hide scrollbar on thumbnail strips */
+.overflow-x-auto::-webkit-scrollbar {
+  display: none;
+}
+
 /* Filter pill hover */
 .pill-hover {
   transition: background-color 0.2s ease;

@@ -25,8 +25,9 @@ export default async function HomePage() {
             className="text-4xl font-extrabold leading-tight tracking-tight md:text-6xl lg:text-[4rem]"
             style={{ color: '#2D3038' }}
           >
-            Premium shared living<br />
-            across the South West.
+            <span className="block md:inline">Premium shared living</span>{' '}
+            <span className="block md:inline">across the</span>{' '}
+            <span className="block md:inline">South West.</span>
           </h1>
           <p className="mt-4 max-w-2xl text-base leading-relaxed md:text-lg md:whitespace-nowrap" style={{ color: '#6B7280' }}>
             Beautifully furnished rooms in professionally managed houses.

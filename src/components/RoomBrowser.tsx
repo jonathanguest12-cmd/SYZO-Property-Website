@@ -124,16 +124,27 @@ export default function RoomBrowser({ rooms, initialArea = 'all' }: RoomBrowserP
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-6 md:px-8 md:py-8">
       {/* Controls bar */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between md:gap-4">
+        {/* Count pill — full width on mobile, inline on desktop */}
+        <div
+          className="inline-flex items-center self-start gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold"
+          style={{ background: '#DCFCE7', color: '#16A34A' }}
+        >
+          {view === 'properties'
+            ? `${propertyGroups.size} propert${propertyGroups.size !== 1 ? 'ies' : 'y'} available`
+            : `${filtered.length} room${filtered.length !== 1 ? 's' : ''} available`}
+        </div>
+
+        {/* Filter controls row */}
+        <div className="flex items-center justify-between gap-2 md:justify-end">
           {/* City filter pills */}
-          <div className="hidden sm:inline-flex rounded-lg p-0.5" style={{ backgroundColor: '#EEEDEA' }}>
+          <div className="inline-flex rounded-lg p-0.5" style={{ backgroundColor: '#EEEDEA' }}>
             {([['all', 'All'], ['plymouth', 'Plymouth'], ['newquay', 'Newquay']] as const).map(([value, label]) => (
               <button
                 key={value}
                 type="button"
                 onClick={() => setArea(value as AreaFilter)}
-                className="rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200 cursor-pointer"
+                className="rounded-md px-2 py-1 text-xs sm:px-3 sm:py-1.5 sm:text-sm font-medium transition-all duration-200 cursor-pointer"
                 style={
                   area === value
                     ? { backgroundColor: '#ffffff', color: '#2D3038', boxShadow: '0 1px 2px rgba(0,0,0,0.06)' }
@@ -144,69 +155,61 @@ export default function RoomBrowser({ rooms, initialArea = 'all' }: RoomBrowserP
               </button>
             ))}
           </div>
-          <div
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold"
-            style={{ background: '#DCFCE7', color: '#16A34A' }}
-          >
-            {view === 'properties'
-              ? `${propertyGroups.size} propert${propertyGroups.size !== 1 ? 'ies' : 'y'} available`
-              : `${filtered.length} room${filtered.length !== 1 ? 's' : ''} available`}
-          </div>
-        </div>
 
-        <div className="flex items-center gap-2">
-          {/* View toggle */}
-          <div
-            className="inline-flex rounded-lg p-0.5"
-            style={{ backgroundColor: '#EEEDEA' }}
-          >
-            <button
-              type="button"
-              onClick={() => setView('rooms')}
-              className="rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200 cursor-pointer"
-              style={
-                view === 'rooms'
-                  ? { backgroundColor: '#ffffff', color: '#2D3038', boxShadow: '0 1px 2px rgba(0,0,0,0.06)' }
-                  : { color: '#6B7280' }
-              }
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            {/* View toggle */}
+            <div
+              className="inline-flex rounded-lg p-0.5"
+              style={{ backgroundColor: '#EEEDEA' }}
             >
-              Rooms
-            </button>
-            <button
-              type="button"
-              onClick={() => setView('properties')}
-              className="rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200 cursor-pointer"
-              style={
-                view === 'properties'
-                  ? { backgroundColor: '#ffffff', color: '#2D3038', boxShadow: '0 1px 2px rgba(0,0,0,0.06)' }
-                  : { color: '#6B7280' }
-              }
-            >
-              Properties
-            </button>
-          </div>
-
-          {/* Filters toggle */}
-          <button
-            type="button"
-            onClick={() => setShowFilters((v) => !v)}
-            className="inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-sm font-medium transition-all duration-200 cursor-pointer"
-            style={
-              showFilters || activeFilterCount > 0
-                ? { backgroundColor: '#2D3038', color: '#ffffff' }
-                : { backgroundColor: '#EEEDEA', color: '#6B7280' }
-            }
-          >
-            Filters
-            {activeFilterCount > 0 && (
-              <span
-                className="inline-flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold"
-                style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: '#ffffff' }}
+              <button
+                type="button"
+                onClick={() => setView('rooms')}
+                className="rounded-md px-2 py-1 text-xs sm:px-3 sm:py-1.5 sm:text-sm font-medium transition-all duration-200 cursor-pointer"
+                style={
+                  view === 'rooms'
+                    ? { backgroundColor: '#ffffff', color: '#2D3038', boxShadow: '0 1px 2px rgba(0,0,0,0.06)' }
+                    : { color: '#6B7280' }
+                }
               >
-                {activeFilterCount}
-              </span>
-            )}
-          </button>
+                Rooms
+              </button>
+              <button
+                type="button"
+                onClick={() => setView('properties')}
+                className="rounded-md px-2 py-1 text-xs sm:px-3 sm:py-1.5 sm:text-sm font-medium transition-all duration-200 cursor-pointer"
+                style={
+                  view === 'properties'
+                    ? { backgroundColor: '#ffffff', color: '#2D3038', boxShadow: '0 1px 2px rgba(0,0,0,0.06)' }
+                    : { color: '#6B7280' }
+                }
+              >
+                Properties
+              </button>
+            </div>
+
+            {/* Filters toggle */}
+            <button
+              type="button"
+              onClick={() => setShowFilters((v) => !v)}
+              className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs sm:gap-1.5 sm:px-3.5 sm:py-1.5 sm:text-sm font-medium transition-all duration-200 cursor-pointer"
+              style={
+                showFilters || activeFilterCount > 0
+                  ? { backgroundColor: '#2D3038', color: '#ffffff' }
+                  : { backgroundColor: '#EEEDEA', color: '#6B7280' }
+              }
+            >
+              Filters
+              {activeFilterCount > 0 && (
+                <span
+                  className="inline-flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold"
+                  style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: '#ffffff' }}
+                >
+                  {activeFilterCount}
+                </span>
+              )}
+            </button>
+          </div>
         </div>
       </div>
 

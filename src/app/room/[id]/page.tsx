@@ -303,7 +303,7 @@ const SYZO_PROMISES = [
 
 function AmenityGrid({ amenities }: { amenities: string[] }) {
   return (
-    <div className="grid grid-cols-2 gap-y-5 gap-x-4">
+    <div className="grid grid-cols-1 gap-y-4 sm:grid-cols-2 sm:gap-y-5 gap-x-4">
       {amenities.map((amenity, i) => (
         <div key={i} className="flex items-center gap-2.5">
           <span className="w-5 h-5 flex-shrink-0" style={{ color: '#16A34A' }}>
@@ -563,7 +563,7 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
 
             {/* 2c. The SYZO Promise */}
             <Card title="The SYZO Promise">
-              <div className="grid grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5">
                 {SYZO_PROMISES.map((promise, i) => (
                   <div key={i} className="flex items-center gap-2.5">
                     <span className="flex-shrink-0" style={{ color: '#16A34A' }}>
