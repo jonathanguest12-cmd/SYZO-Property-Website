@@ -5,7 +5,6 @@ import type { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
 import {
-  fetchAllRooms,
   fetchRoomById,
   fetchRoomBySpareRoomId,
   fetchRoomsForProperty,
@@ -24,8 +23,35 @@ import ExpandableText from '@/components/ExpandableText'
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 export async function generateStaticParams() {
-  const rooms = await fetchAllRooms()
-  return rooms.map((room) => ({ id: room.id }))
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    || 'https://mtrrxtwisgftkqujfqlr.supabase.co'
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    || 'sb_publishable_eh8vOh14012eMEE1KgLDXA_5XmDjiHU'
+
+  try {
+    const res = await fetch(
+      `${supabaseUrl}/rest/v1/rooms?select=id&available_from=not.is.null&limit=300`,
+      {
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+        },
+        cache: 'no-store',
+      }
+    )
+
+    if (!res.ok) {
+      console.error('[generateStaticParams] Supabase fetch failed:', res.status)
+      return []
+    }
+
+    const rooms = await res.json()
+    console.log('[generateStaticParams] pre-building', rooms.length, 'room pages')
+    return rooms.map((r: { id: string }) => ({ id: r.id }))
+  } catch (err) {
+    console.error('[generateStaticParams] error:', err)
+    return []
+  }
 }
 
 function TextBlock({ text }: { text: string }) {
