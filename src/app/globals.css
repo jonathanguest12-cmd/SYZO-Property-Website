@@ -57,13 +57,6 @@ body.lightbox-open header {
   visibility: hidden;
 }
 
-/* Prevent horizontal scroll on mobile */
-@media (max-width: 768px) {
-  html, body {
-    overflow-x: hidden;
-  }
-}
-
 /* Hide scrollbar utility */
 .scrollbar-hide {
   scrollbar-width: none;

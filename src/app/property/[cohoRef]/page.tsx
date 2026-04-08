@@ -304,7 +304,7 @@ export default async function PropertyPage({
   const galleryPhotos = buildPropertyGallery(rooms)
 
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 py-6 md:px-8 md:py-8 overflow-x-hidden">
+    <div className="mx-auto w-full max-w-7xl px-4 py-6 md:px-8 md:py-8">
       <div className="mb-6 pb-6 border-b" style={{ borderColor: '#E5E7EB' }}>
         <Link href="/?view=properties" className="inline-flex items-center gap-1.5 text-sm font-medium transition-colors duration-200 hover:opacity-70" style={{ color: '#6B7280' }}>
           &larr; Back to all properties
@@ -313,7 +313,7 @@ export default async function PropertyPage({
 
       <div className="grid gap-8 lg:grid-cols-2">
         {/* LEFT: Photos + CTA (sticky) */}
-        <div>
+        <div className="min-w-0">
           <div className="lg:sticky lg:top-20 flex flex-col gap-5" style={{ maxHeight: 'calc(100vh - 100px)', overflowY: 'auto' }}>
             <PhotoGallery photos={galleryPhotos} alt={displayName} />
 
@@ -331,7 +331,7 @@ export default async function PropertyPage({
         </div>
 
         {/* RIGHT: Content cards */}
-        <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-5 min-w-0">
           <div>
             <h1 className="text-2xl font-bold tracking-tight md:text-3xl" style={{ color: '#2D3038' }}>{displayName}</h1>
             <p className="mt-1.5 text-sm" style={{ color: '#9CA3AF' }}>

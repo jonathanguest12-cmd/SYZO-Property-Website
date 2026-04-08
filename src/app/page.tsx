@@ -29,11 +29,11 @@ export default async function HomePage({
       <section className="relative" style={{ backgroundColor: '#F7F6F3' }}>
         <div className="mx-auto max-w-7xl px-6 pt-8 pb-12 md:pt-12 md:pb-16 md:px-8">
           <h1
-            className="text-4xl font-extrabold leading-tight tracking-tight md:text-6xl lg:text-[4rem]"
+            className="text-[2rem] font-extrabold leading-tight tracking-tight md:text-6xl lg:text-[4rem]"
             style={{ color: '#2D3038' }}
           >
-            <span className="block md:inline">Premium shared living</span>{' '}
-            <span className="block md:inline">across the South West.</span>
+            Premium shared living<br className="hidden md:inline" />{' '}
+            across the South West.
           </h1>
           <p className="mt-4 max-w-2xl text-base leading-relaxed md:text-lg md:whitespace-nowrap" style={{ color: '#6B7280' }}>
             Beautifully furnished rooms in professionally managed houses.
