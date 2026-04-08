@@ -106,22 +106,16 @@ function CheckItem({ text }: { text: string }) {
   )
 }
 
-function Card({ title, children, accent }: { title: string; children: React.ReactNode; accent?: boolean }) {
+function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div
-      className={`rounded-2xl bg-white p-6 border ${accent ? 'border-l-4' : ''}`}
+      className="rounded-2xl bg-white p-6 border"
       style={{
         borderColor: '#E5E7EB',
-        ...(accent ? { borderLeftColor: '#16A34A' } : {}),
         boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
       }}
     >
-      <h2
-        className="text-sm font-semibold uppercase tracking-[0.1em] mb-4"
-        style={{ color: accent ? '#15803D' : '#6B7280' }}
-      >
-        {title}
-      </h2>
+      <h2 className="text-sm font-semibold uppercase tracking-[0.1em] mb-4" style={{ color: '#6B7280' }}>{title}</h2>
       {children}
     </div>
   )
@@ -450,14 +444,14 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
 
             {/* 2. Home Amenities */}
             {room.property_amenities.length > 0 && (
-              <Card title="Home Amenities" accent>
+              <Card title="Home Amenities">
                 <AmenityGrid amenities={room.property_amenities} />
               </Card>
             )}
 
             {/* 2b. Room Amenities */}
             {room.room_amenities.length > 0 && (
-              <Card title="Room Amenities" accent>
+              <Card title="Room Amenities">
                 <AmenityGrid amenities={room.room_amenities} />
               </Card>
             )}
