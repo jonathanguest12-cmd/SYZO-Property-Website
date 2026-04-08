@@ -238,6 +238,7 @@ function getLettingDetails(room: RoomWithProperty) {
     deposit: info.depositAmountRequired ?? null,
     minTenancy: minMonths != null && minMonths > 0 ? `${minMonths} months` : null,
     couplesWelcome: info.couplesWelcome ?? null,
+    epcRating: info.epcRating ?? info.epc ?? prop.epcRating ?? null,
   }
 }
 
@@ -406,6 +407,15 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
                   </span>
                 </div>
               ) : null}
+              {/* EPC Rating */}
+              {letting.epcRating && (
+                <div className="flex justify-between items-center py-3 border-b" style={{ borderColor: '#F3F4F6' }}>
+                  <span className="text-sm" style={{ color: '#9CA3AF' }}>EPC Rating</span>
+                  <span className="text-sm font-medium px-2 py-0.5 rounded" style={{ background: '#F3F4F6', color: '#374151' }}>
+                    {letting.epcRating}
+                  </span>
+                </div>
+              )}
               {/* Bills — always included */}
               <div className="flex justify-between items-center py-3 border-b" style={{ borderColor: '#F3F4F6' }}>
                 <span className="text-sm" style={{ color: '#9CA3AF' }}>Bills</span>
@@ -460,7 +470,13 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
             {overview && (
               <Card title="About This Property">
                 {hasProcessed ? (
-                  <p className="text-sm leading-relaxed" style={{ color: '#374151' }}>{overview}</p>
+                  <div className="space-y-3">
+                    {overview.split('\n').filter(p => p.trim()).map((paragraph, i) => (
+                      <p key={i} className="text-sm leading-relaxed" style={{ color: '#374151' }}>
+                        {paragraph.trim()}
+                      </p>
+                    ))}
+                  </div>
                 ) : (
                   <ExpandableText maxHeight={200}><TextBlock text={overview} /></ExpandableText>
                 )}
@@ -470,7 +486,13 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
             {/* 4. About This Room */}
             {roomDesc && (
               <Card title="About This Room">
-                <p className="text-sm leading-relaxed" style={{ color: '#374151' }}>{roomDesc}</p>
+                <div className="space-y-3">
+                  {roomDesc.split('\n').filter(p => p.trim()).map((paragraph, i) => (
+                    <p key={i} className="text-sm leading-relaxed" style={{ color: '#374151' }}>
+                      {paragraph.trim()}
+                    </p>
+                  ))}
+                </div>
               </Card>
             )}
 
