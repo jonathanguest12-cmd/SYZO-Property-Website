@@ -1,7 +1,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import type { RoomWithProperty } from '@/lib/types'
-import { formatAvailableFrom, isAvailableNow, roomTypeLabel } from '@/lib/format'
+import { formatAvailableFrom, isAvailableNow, roomTypeLabel, isIllustrationPhoto } from '@/lib/format'
 
 /** SVG house icon for no-photo placeholder */
 function HouseIcon() {
@@ -40,6 +40,31 @@ export default function RoomCard({ room }: { room: RoomWithProperty }) {
   const availText = formatAvailableFrom(room.available_from)
   const availNow = isAvailableNow(room.available_from)
   const featurePills = getFeaturePills(room)
+
+  // Count total gallery photos (room + property, deduped) to match detail page
+  const totalPhotos = (() => {
+    const roomUrls = room.photo_urls ?? []
+    const propImages = (room.property_images ?? []).filter((img) => !isIllustrationPhoto(img.title || ''))
+    const seen = new Set<string>()
+    let count = 0
+    for (const url of roomUrls) {
+      const filename = url.split('/').pop() || url
+      if (!seen.has(url) && !seen.has(filename) && !/thumb|small|150x|100x/i.test(url)) {
+        seen.add(url)
+        seen.add(filename)
+        count++
+      }
+    }
+    for (const img of propImages) {
+      const filename = img.url.split('/').pop() || img.url
+      if (!seen.has(img.url) && !seen.has(filename) && !/thumb|small|150x|100x/i.test(img.url)) {
+        seen.add(img.url)
+        seen.add(filename)
+        count++
+      }
+    }
+    return count
+  })()
 
   return (
     <Link
@@ -80,7 +105,7 @@ export default function RoomCard({ room }: { room: RoomWithProperty }) {
           {room.property_city}
         </span>
         {/* Photo count badge */}
-        {room.photo_urls.length > 1 && (
+        {totalPhotos > 1 && (
           <span
             className="absolute bottom-2 right-2 rounded-md px-1.5 py-0.5 text-[11px] font-medium flex items-center gap-1"
             style={{ backgroundColor: 'rgba(0,0,0,0.5)', color: '#ffffff' }}
@@ -90,7 +115,7 @@ export default function RoomCard({ room }: { room: RoomWithProperty }) {
               <circle cx="8.5" cy="8.5" r="1.5" />
               <polyline points="21 15 16 10 5 21" />
             </svg>
-            {room.photo_urls.length}
+            {totalPhotos}
           </span>
         )}
       </div>
