@@ -270,8 +270,8 @@ export default async function PropertyPage({
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-6 md:px-8 md:py-8">
       <div className="mb-6 pb-6 border-b" style={{ borderColor: '#E5E7EB' }}>
-        <Link href="/" className="inline-flex items-center gap-1.5 text-sm font-medium transition-colors duration-200 hover:opacity-70" style={{ color: '#6B7280' }}>
-          &larr; Back to all rooms
+        <Link href="/?view=properties" className="inline-flex items-center gap-1.5 text-sm font-medium transition-colors duration-200 hover:opacity-70" style={{ color: '#6B7280' }}>
+          &larr; Back to all properties
         </Link>
       </div>
 
@@ -282,10 +282,14 @@ export default async function PropertyPage({
             <PhotoGallery photos={galleryPhotos} alt={displayName} />
 
             <div className="hidden lg:flex gap-3 mt-1">
-              <Link href="/" className="flex-1 flex items-center justify-center py-3.5 rounded-full font-semibold text-sm text-white transition-colors hover:opacity-90"
+              <Link href={`/apply-property/${cohoRef}`} className="flex-1 flex items-center justify-center py-3.5 rounded-full font-semibold text-sm text-white transition-opacity hover:opacity-90"
                 style={{ background: '#2D3038' }}>
-                Browse All Rooms
+                Apply to Rent
               </Link>
+              <a href="#ask" className="flex-1 flex items-center justify-center py-3.5 rounded-full font-semibold text-sm border-2 transition-colors hover:bg-gray-50"
+                style={{ borderColor: '#2D3038', color: '#2D3038' }}>
+                Ask a Question
+              </a>
             </div>
           </div>
         </div>
