@@ -63,7 +63,7 @@ export default function FilterPanel(props: {
       />
 
       <PillGroup
-        label="Price"
+        label="Room Price"
         value={props.priceRange}
         onChange={props.onPriceRangeChange}
         options={[
