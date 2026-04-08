@@ -85,12 +85,9 @@ export default function RoomBrowser({ rooms, initialArea = 'all' }: RoomBrowserP
     result = [...result].sort((a, b) => {
       switch (sort) {
         case 'price_asc':
-          if (a.property_ref !== b.property_ref) {
-            return a.property_ref.localeCompare(b.property_ref)
-          }
-          return a.rent_pcm - b.rent_pcm
+          return Number(a.rent_pcm) - Number(b.rent_pcm)
         case 'price_desc':
-          return b.rent_pcm - a.rent_pcm
+          return Number(b.rent_pcm) - Number(a.rent_pcm)
         case 'available_soonest':
           return (
             new Date(a.available_from).getTime() -

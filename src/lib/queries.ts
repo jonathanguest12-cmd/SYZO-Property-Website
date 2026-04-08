@@ -46,6 +46,8 @@ export function mapRoomToRoomWithProperty(row: RoomRow): RoomWithProperty {
     description_about_property: row.description_about_property ?? null,
     description_about_room: row.description_about_room ?? null,
     descriptions_processed_at: row.descriptions_processed_at ?? null,
+    deposit_type: row.deposit_type ?? null,
+    deposit_amount: row.deposit_amount ?? null,
   }
 }
 

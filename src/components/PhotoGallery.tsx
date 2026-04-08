@@ -160,6 +160,16 @@ export default function PhotoGallery({ photos, alt }: PhotoGalleryProps) {
               {safeIndex + 1} / {uniquePhotos.length}
             </span>
           )}
+
+          {/* Expand hint */}
+          <div className="absolute bottom-3 left-3 bg-black/40 rounded-md p-1.5 opacity-70 group-hover/gallery:opacity-100 transition-opacity pointer-events-none">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">
+              <polyline points="15 3 21 3 21 9"/>
+              <polyline points="9 21 3 21 3 15"/>
+              <line x1="21" y1="3" x2="14" y2="10"/>
+              <line x1="3" y1="21" x2="10" y2="14"/>
+            </svg>
+          </div>
         </div>
 
         {/* Thumbnail strip */}

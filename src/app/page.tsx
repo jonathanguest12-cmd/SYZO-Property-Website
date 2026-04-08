@@ -27,7 +27,7 @@ export default async function HomePage() {
             Premium shared living<br />
             across the South West.
           </h1>
-          <p className="mt-4 max-w-lg text-base leading-relaxed md:text-lg" style={{ color: '#6B7280' }}>
+          <p className="mt-4 max-w-2xl text-base leading-relaxed md:text-lg md:whitespace-nowrap" style={{ color: '#6B7280' }}>
             Beautifully furnished rooms in professionally managed houses.
           </p>
         </div>

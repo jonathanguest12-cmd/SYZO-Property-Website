@@ -100,6 +100,11 @@ export default function RoomCard({ room }: { room: RoomWithProperty }) {
           <p className="mt-0.5 text-sm truncate" style={{ color: '#9CA3AF' }}>
             {room.property_city}, {room.property_postcode}
           </p>
+          {room.name && (
+            <p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>
+              {room.name}
+            </p>
+          )}
         </div>
 
         {/* Rent + Bills */}
