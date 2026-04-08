@@ -2,29 +2,45 @@ import Image from 'next/image'
 import Link from 'next/link'
 import type { RoomWithProperty } from '@/lib/types'
 
+function formatPropertyAddress(propertyName: string, allPropertyNames: string[]): string {
+  const stripped = propertyName.replace(/^\d+[-\s]+/, '').trim()
+  const siblings = allPropertyNames.filter(
+    (p) => p.replace(/^\d+[-\s]+/, '').trim() === stripped
+  )
+  if (siblings.length <= 1) return stripped
+  const sorted = [...siblings].sort()
+  const index = sorted.indexOf(propertyName)
+  return `Property ${index + 1}, ${stripped}`
+}
+
 export default function PropertyCard({
   propertyRef,
   rooms,
+  allPropertyNames = [],
 }: {
   propertyRef: string
   rooms: RoomWithProperty[]
+  allPropertyNames?: string[]
 }) {
   if (rooms.length === 0) return null
 
   const first = rooms[0]
-  const displayName = first.property_name.replace(/^\d+[-\s]+/, '').trim()
+  const displayName = formatPropertyAddress(first.property_name, allPropertyNames)
 
-  // Skip first property photo (often an exterior drawing), use second.
-  let photoUrl: string | null = null
-  if (first.property_images.length > 1) {
-    photoUrl = first.property_images[1].url
-  } else if (rooms.some((r) => r.photo_urls.length > 0)) {
-    const roomWithPhoto = rooms.find((r) => r.photo_urls.length > 0)!
-    photoUrl = roomWithPhoto.photo_urls[0]
-  } else if (first.property_images.length === 1) {
-    photoUrl = first.property_images[0].url
-  } else {
-    photoUrl = first.property_photo_url
+  // Prefer .png illustration, then fall back to other images
+  const illustration = first.property_images.find(
+    (img) => img.title?.toLowerCase().endsWith('.png')
+  )
+  let photoUrl: string | null = illustration?.url ?? null
+  if (!photoUrl) {
+    if (first.property_images.length > 0) {
+      photoUrl = first.property_images[0].url
+    } else if (rooms.some((r) => r.photo_urls.length > 0)) {
+      const roomWithPhoto = rooms.find((r) => r.photo_urls.length > 0)!
+      photoUrl = roomWithPhoto.photo_urls[0]
+    } else {
+      photoUrl = first.property_photo_url
+    }
   }
 
   const prices = rooms.map((r) => r.rent_pcm)

@@ -111,6 +111,14 @@ export default function RoomBrowser({ rooms, initialArea = 'all' }: RoomBrowserP
     return map
   }, [filtered])
 
+  const allPropertyNames = useMemo(() => {
+    const names = new Set<string>()
+    for (const room of rooms) {
+      if (room.property_name) names.add(room.property_name)
+    }
+    return [...names]
+  }, [rooms])
+
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-6 md:px-8 md:py-8">
       {/* Controls bar */}
@@ -234,7 +242,7 @@ export default function RoomBrowser({ rooms, initialArea = 'all' }: RoomBrowserP
       ) : (
         <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 md:gap-6">
           {Array.from(propertyGroups.entries()).map(([ref, groupRooms]) => (
-            <PropertyCard key={ref} propertyRef={ref} rooms={groupRooms} />
+            <PropertyCard key={ref} propertyRef={ref} rooms={groupRooms} allPropertyNames={allPropertyNames} />
           ))}
         </div>
       )}
