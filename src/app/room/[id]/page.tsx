@@ -356,16 +356,7 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
           {/* RIGHT: Content cards */}
           <div className="flex flex-col gap-5">
             <div>
-              <div className="flex items-end justify-between gap-4">
-                <h1 className="text-2xl font-bold tracking-tight md:text-3xl" style={{ color: '#2D3038' }}>{formatRoomAddress(room.property_name, room.name)}</h1>
-                <Link
-                  href={`/property/${room.property_ref}`}
-                  className="flex-shrink-0 text-sm underline underline-offset-2 transition-colors duration-200 hover:opacity-70 pb-0.5"
-                  style={{ color: '#9CA3AF' }}
-                >
-                  View property page
-                </Link>
-              </div>
+              <h1 className="text-2xl font-bold tracking-tight md:text-3xl" style={{ color: '#2D3038' }}>{formatRoomAddress(room.property_name, room.name)}</h1>
               <p className="mt-1.5 text-sm" style={{ color: '#9CA3AF' }}>
                 {room.property_city}, {room.property_postcode}
                 {room.room_type && ` \u00B7 ${roomTypeLabel(room.room_type)}`}
@@ -375,7 +366,16 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
 
             {/* 1. Letting Details */}
             <div className="rounded-xl p-5" style={{ background: '#F9FAFB' }}>
-              <h2 className="text-sm font-semibold uppercase tracking-[0.1em] mb-3" style={{ color: '#9CA3AF' }}>Letting Details</h2>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-sm font-semibold uppercase tracking-[0.1em]" style={{ color: '#9CA3AF' }}>Letting Details</h2>
+                <Link
+                  href={`/property/${room.property_ref}`}
+                  className="text-xs underline underline-offset-2 hover:opacity-70 transition-opacity"
+                  style={{ color: '#9CA3AF' }}
+                >
+                  View property page
+                </Link>
+              </div>
               {/* Rent */}
               <div className="flex justify-between items-center py-3 border-b border-gray-100">
                 <span className="text-sm" style={{ color: '#9CA3AF' }}>Rent</span>

@@ -24,7 +24,7 @@ function PillGroup<T extends string>({
             key={opt.value}
             type="button"
             onClick={() => onChange(opt.value)}
-            className={`rounded-lg px-3.5 py-2 font-medium text-sm transition-all duration-200 ${value !== opt.value ? 'pill-hover' : ''}`}
+            className={`rounded-lg px-3.5 py-2 font-medium text-sm transition-all duration-200 cursor-pointer ${value !== opt.value ? 'pill-hover' : ''}`}
             style={
               value === opt.value
                 ? { backgroundColor: '#2D3038', color: '#ffffff' }
@@ -95,12 +95,12 @@ export default function FilterPanel(props: {
         <select
           value={props.sort}
           onChange={(e) => props.onSortChange(e.target.value as SortOption)}
-          className="w-fit rounded-lg px-3.5 py-2 text-sm font-medium appearance-none pr-8"
+          className="w-fit rounded-lg px-3.5 py-2 text-sm font-medium appearance-none pr-8 cursor-pointer"
           style={{ backgroundColor: '#F7F6F3', color: '#6B7280', border: 'none' }}
         >
-          <option value="price_asc">Price: low to high</option>
-          <option value="price_desc">Price: high to low</option>
-          <option value="available_soonest">Available soonest</option>
+          <option value="price_asc">Price: Low to High</option>
+          <option value="price_desc">Price: High to Low</option>
+          <option value="available_soonest">Available Soonest</option>
         </select>
       </div>
     </div>

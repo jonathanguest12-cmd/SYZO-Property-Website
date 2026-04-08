@@ -13,6 +13,11 @@ function HouseIcon() {
   )
 }
 
+function formatRoomAddress(propertyName: string, roomName: string): string {
+  const stripped = propertyName.replace(/^\d+[-\s]+/, '').trim()
+  return `${roomName}, ${stripped}`
+}
+
 /** Build consistent feature pills: room type + en-suite if applicable */
 function getFeaturePills(room: RoomWithProperty): string[] {
   const pills: string[] = []
@@ -95,16 +100,11 @@ export default function RoomCard({ room }: { room: RoomWithProperty }) {
         {/* Title: always street address */}
         <div>
           <h3 className="text-[15px] font-semibold leading-snug" style={{ color: '#2D3038' }}>
-            {room.property_name}
+            {formatRoomAddress(room.property_name, room.name)}
           </h3>
           <p className="mt-0.5 text-sm truncate" style={{ color: '#9CA3AF' }}>
             {room.property_city}, {room.property_postcode}
           </p>
-          {room.name && (
-            <p className="text-xs mt-0.5" style={{ color: '#9CA3AF' }}>
-              {room.name}
-            </p>
-          )}
         </div>
 
         {/* Rent + Bills */}

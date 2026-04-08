@@ -123,7 +123,7 @@ export default function RoomBrowser({ rooms, initialArea = 'all' }: RoomBrowserP
                 key={value}
                 type="button"
                 onClick={() => setArea(value as AreaFilter)}
-                className="px-2 py-1 rounded-md font-medium transition-all duration-200"
+                className="px-2 py-1 rounded-md font-medium transition-all duration-200 cursor-pointer"
                 style={
                   area === value
                     ? { color: '#2D3038', backgroundColor: '#EEEDEA' }
@@ -151,7 +151,7 @@ export default function RoomBrowser({ rooms, initialArea = 'all' }: RoomBrowserP
             <button
               type="button"
               onClick={() => setView('rooms')}
-              className="rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200"
+              className="rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200 cursor-pointer"
               style={
                 view === 'rooms'
                   ? { backgroundColor: '#ffffff', color: '#2D3038', boxShadow: '0 1px 2px rgba(0,0,0,0.06)' }
@@ -163,7 +163,7 @@ export default function RoomBrowser({ rooms, initialArea = 'all' }: RoomBrowserP
             <button
               type="button"
               onClick={() => setView('properties')}
-              className="rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200"
+              className="rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200 cursor-pointer"
               style={
                 view === 'properties'
                   ? { backgroundColor: '#ffffff', color: '#2D3038', boxShadow: '0 1px 2px rgba(0,0,0,0.06)' }
@@ -178,7 +178,7 @@ export default function RoomBrowser({ rooms, initialArea = 'all' }: RoomBrowserP
           <button
             type="button"
             onClick={() => setShowFilters((v) => !v)}
-            className="inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-sm font-medium transition-all duration-200"
+            className="inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-sm font-medium transition-all duration-200 cursor-pointer"
             style={
               showFilters || activeFilterCount > 0
                 ? { backgroundColor: '#2D3038', color: '#ffffff' }
