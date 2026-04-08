@@ -115,7 +115,7 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
         boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
       }}
     >
-      <h2 className="text-sm font-semibold uppercase tracking-[0.1em] mb-4" style={{ color: '#6B7280' }}>{title}</h2>
+      <h2 className="text-sm font-semibold uppercase tracking-[0.1em] mb-5" style={{ color: '#6B7280' }}>{title}</h2>
       {children}
     </div>
   )
@@ -298,7 +298,7 @@ const SYZO_PROMISES = [
 
 function AmenityGrid({ amenities }: { amenities: string[] }) {
   return (
-    <div className="grid grid-cols-2 gap-y-3 gap-x-4">
+    <div className="grid grid-cols-2 gap-y-5 gap-x-4">
       {amenities.map((amenity, i) => (
         <div key={i} className="flex items-center gap-2.5">
           <span className="w-5 h-5 flex-shrink-0" style={{ color: '#16A34A' }}>
@@ -492,23 +492,14 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
                   <span className="text-sm font-medium text-green-600">Zero deposit option &#10003;</span>
                 </div>
               ) : null}
-              {/* EPC Rating */}
-              {room.epc_rating && (
-                <div className="flex justify-between items-center py-3 border-b" style={{ borderColor: '#F3F4F6' }}>
-                  <span className="text-sm" style={{ color: '#9CA3AF' }}>EPC Rating</span>
-                  <span className="text-sm font-semibold px-2 py-0.5 rounded" style={{ background: '#F3F4F6', color: '#374151' }}>
-                    {room.epc_rating}
-                  </span>
-                </div>
-              )}
               {/* Bills — always included */}
               <div className="flex justify-between items-center py-3 border-b" style={{ borderColor: '#F3F4F6' }}>
                 <span className="text-sm" style={{ color: '#9CA3AF' }}>Bills</span>
                 <span className="text-sm font-medium text-green-600">Included</span>
               </div>
-              {/* Available */}
+              {/* Availability */}
               <div className="flex justify-between items-center py-3 border-b" style={{ borderColor: '#F3F4F6' }}>
-                <span className="text-sm" style={{ color: '#9CA3AF' }}>Available</span>
+                <span className="text-sm" style={{ color: '#9CA3AF' }}>Availability</span>
                 <span className={`text-sm font-medium ${availNow ? 'text-green-600' : ''}`}
                   style={!availNow ? { color: '#2D3038' } : undefined}>
                   {availNow ? 'Available Now' : availText}
@@ -530,9 +521,18 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
               )}
               {/* Couples */}
               {letting.couplesWelcome !== null && (
-                <div className="flex justify-between items-center py-3">
+                <div className="flex justify-between items-center py-3 border-b" style={{ borderColor: '#F3F4F6' }}>
                   <span className="text-sm" style={{ color: '#9CA3AF' }}>Couples</span>
                   <span className="text-sm font-medium" style={{ color: '#2D3038' }}>{letting.couplesWelcome ? 'Welcome' : 'Single occupancy only'}</span>
+                </div>
+              )}
+              {/* EPC Rating */}
+              {room.epc_rating && (
+                <div className="flex justify-between items-center py-3">
+                  <span className="text-sm" style={{ color: '#9CA3AF' }}>EPC Rating</span>
+                  <span className="text-sm font-semibold px-2 py-0.5 rounded" style={{ background: '#F3F4F6', color: '#374151' }}>
+                    {room.epc_rating}
+                  </span>
                 </div>
               )}
             </div>
@@ -553,7 +553,7 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
 
             {/* 2c. The SYZO Promise */}
             <Card title="The SYZO Promise">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-5">
                 {SYZO_PROMISES.map((promise, i) => (
                   <div key={i} className="flex items-center gap-2.5">
                     <span className="flex-shrink-0" style={{ color: '#16A34A' }}>
