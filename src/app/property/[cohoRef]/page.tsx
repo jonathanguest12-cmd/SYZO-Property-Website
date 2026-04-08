@@ -271,7 +271,7 @@ export default async function PropertyPage({
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-6 md:px-8 md:py-8">
       <div className="mb-6 pb-6 border-b" style={{ borderColor: '#E5E7EB' }}>
-        <Link href="/" className="inline-flex items-center gap-1.5 text-sm font-medium transition-colors duration-200 hover:opacity-70" style={{ color: '#6B7280' }}>
+        <Link href="/?view=properties" className="inline-flex items-center gap-1.5 text-sm font-medium transition-colors duration-200 hover:opacity-70" style={{ color: '#6B7280' }}>
           &larr; Back to all properties
         </Link>
       </div>

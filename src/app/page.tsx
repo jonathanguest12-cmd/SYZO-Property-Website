@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { fetchAllRooms } from '@/lib/queries'
 import RoomBrowser from '@/components/RoomBrowser'
 
@@ -33,7 +34,9 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <RoomBrowser rooms={rooms} />
+      <Suspense>
+        <RoomBrowser rooms={rooms} />
+      </Suspense>
     </>
   )
 }

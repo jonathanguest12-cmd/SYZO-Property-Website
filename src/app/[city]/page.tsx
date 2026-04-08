@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import { fetchAllRooms } from '@/lib/queries'
 import RoomBrowser from '@/components/RoomBrowser'
@@ -23,5 +24,5 @@ export default async function CityPage({
 
   const rooms = await fetchAllRooms()
 
-  return <RoomBrowser rooms={rooms} initialArea={areaFilter} />
+  return <Suspense><RoomBrowser rooms={rooms} initialArea={areaFilter} /></Suspense>
 }
