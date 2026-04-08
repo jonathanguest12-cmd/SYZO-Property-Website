@@ -12,6 +12,7 @@ export default function PropertyCard({
   if (rooms.length === 0) return null
 
   const first = rooms[0]
+  const displayName = first.property_name.replace(/^\d+[-\s]+/, '').trim()
 
   // Skip first property photo (often an exterior drawing), use second.
   let photoUrl: string | null = null
@@ -77,7 +78,7 @@ export default function PropertyCard({
       <div className="flex flex-1 flex-col gap-3 p-5">
         <div>
           <h3 className="text-[15px] font-semibold leading-snug truncate" style={{ color: '#2D3038' }}>
-            {first.property_name}
+            {displayName}
           </h3>
           <p className="mt-0.5 text-sm" style={{ color: '#9CA3AF' }}>
             {rooms.length} room{rooms.length !== 1 ? 's' : ''} available

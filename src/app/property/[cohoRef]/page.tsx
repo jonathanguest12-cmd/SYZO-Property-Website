@@ -264,13 +264,16 @@ export default async function PropertyPage({
   const epcRating = first?.epc_rating ?? null
   const totalRooms = first?.property_total_rooms ?? rooms.length
   const availableRooms = rooms.length
+  const rentMin = Math.min(...rooms.map(r => r.rent_pcm))
+  const rentMax = Math.max(...rooms.map(r => r.rent_pcm))
+  const rentRange = rentMin === rentMax ? `\u00A3${Math.round(rentMin)}` : `\u00A3${Math.round(rentMin)}\u2013\u00A3${Math.round(rentMax)}`
 
   const galleryPhotos = buildPropertyGallery(rooms)
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-6 md:px-8 md:py-8">
       <div className="mb-6 pb-6 border-b" style={{ borderColor: '#E5E7EB' }}>
-        <Link href="/?view=properties" className="inline-flex items-center gap-1.5 text-sm font-medium transition-colors duration-200 hover:opacity-70" style={{ color: '#6B7280' }}>
+        <Link href="/browse?view=properties" className="inline-flex items-center gap-1.5 text-sm font-medium transition-colors duration-200 hover:opacity-70" style={{ color: '#6B7280' }}>
           &larr; Back to all properties
         </Link>
       </div>
@@ -311,6 +314,13 @@ export default async function PropertyPage({
               <span className="text-sm" style={{ color: '#9CA3AF' }}>Total rooms</span>
               <span className="text-sm font-medium" style={{ color: '#2D3038' }}>{totalRooms}</span>
             </div>
+            {/* Rent range */}
+            {rooms.length > 0 && (
+              <div className="flex justify-between items-center py-3 border-b" style={{ borderColor: '#F3F4F6' }}>
+                <span className="text-sm" style={{ color: '#9CA3AF' }}>Rent from</span>
+                <span className="text-lg font-bold" style={{ color: '#2D3038' }}>{rentRange}<span className="text-sm font-normal ml-1" style={{ color: '#9CA3AF' }}>pcm</span></span>
+              </div>
+            )}
             {/* Available now */}
             <div className="flex justify-between items-center py-3 border-b" style={{ borderColor: '#F3F4F6' }}>
               <span className="text-sm" style={{ color: '#9CA3AF' }}>Available now</span>
