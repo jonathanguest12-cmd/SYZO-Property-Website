@@ -400,8 +400,13 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
             <div className="lg:sticky lg:top-20 flex flex-col gap-5" style={{ maxHeight: 'calc(100vh - 100px)', overflowY: 'auto' }}>
               <PhotoGallery photos={galleryPhotos} alt={room.property_name} />
 
-              <div className="hidden lg:block mt-1">
-                <Link href={`/apply/${room.id}`} className="btn-primary w-full inline-flex items-center justify-center rounded-lg px-6 py-3.5 text-base font-semibold text-white">
+              <div className="hidden lg:flex gap-3 mt-1">
+                <a href="#ask" className="flex-1 flex items-center justify-center py-3.5 rounded-full border-2 font-semibold text-sm transition-colors hover:bg-green-50"
+                  style={{ borderColor: '#16A34A', color: '#16A34A' }}>
+                  Ask a Question
+                </a>
+                <Link href={`/apply/${room.id}`} className="flex-1 flex items-center justify-center py-3.5 rounded-full font-semibold text-sm text-white transition-colors hover:opacity-90"
+                  style={{ background: '#16A34A' }}>
                   Apply to Rent
                 </Link>
               </div>
@@ -692,7 +697,16 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
             <p className="text-xl font-bold tabular-nums" style={{ color: '#2D3038' }}>&pound;{Math.round(room.rent_pcm)}<span className="text-sm font-normal ml-1" style={{ color: '#9CA3AF' }}>/mo</span></p>
             <p className="text-xs font-medium" style={{ color: availNow ? '#16A34A' : '#6B7280' }}>{availText}</p>
           </div>
-          <Link href={`/apply/${room.id}`} className="inline-flex items-center justify-center rounded-lg px-6 py-3 text-sm font-semibold text-white" style={{ backgroundColor: '#2D3038' }}>Apply to Rent</Link>
+          <div className="flex gap-2 flex-1">
+            <a href="#ask" className="flex-1 flex items-center justify-center py-3 rounded-full border-2 font-semibold text-sm transition-colors hover:bg-green-50"
+              style={{ borderColor: '#16A34A', color: '#16A34A' }}>
+              Ask a Question
+            </a>
+            <Link href={`/apply/${room.id}`} className="flex-1 flex items-center justify-center py-3 rounded-full font-semibold text-sm text-white transition-colors hover:opacity-90"
+              style={{ background: '#16A34A' }}>
+              Apply to Rent
+            </Link>
+          </div>
         </div>
       </div>
     </>
