@@ -402,11 +402,11 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
 
               <div className="hidden lg:flex gap-3 mt-1">
                 <Link href={`/apply/${room.id}`} className="flex-1 flex items-center justify-center py-3.5 rounded-full font-semibold text-sm text-white transition-colors hover:opacity-90"
-                  style={{ background: '#15803D' }}>
+                  style={{ background: '#16A34A' }}>
                   Apply to Rent
                 </Link>
                 <a href="#ask" className="flex-1 flex items-center justify-center py-3.5 rounded-full border-2 font-semibold text-sm transition-colors hover:bg-green-50"
-                  style={{ borderColor: '#15803D', color: '#15803D' }}>
+                  style={{ borderColor: '#16A34A', color: '#16A34A' }}>
                   Ask a Question
                 </a>
               </div>
@@ -441,7 +441,7 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
                             </span>
                           </div>
                           <div className="flex items-end flex-shrink-0 ml-2">
-                            <span className="text-xs font-medium px-3 py-1 rounded-full" style={{ background: '#DCFCE7', color: '#15803D' }}>View Room &rarr;</span>
+                            <span className="text-xs font-medium px-3 py-1 rounded-full" style={{ background: '#DCFCE7', color: '#16A34A' }}>View Room &rarr;</span>
                           </div>
                         </div>
                       </Link>
@@ -678,7 +678,7 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
                             <p className="font-semibold text-xs truncate" style={{ color: '#2D3038' }}>{r.name}</p>
                             <p className="text-sm font-bold tabular-nums" style={{ color: '#2D3038' }}>&pound;{Math.round(r.rent_pcm)}<span className="text-[10px] font-normal ml-0.5" style={{ color: '#9CA3AF' }}>/mo</span></p>
                           </div>
-                          <span className="text-[10px] font-medium px-2 py-0.5 rounded-full flex-shrink-0" style={{ background: '#DCFCE7', color: '#15803D' }}>View Room &rarr;</span>
+                          <span className="text-[10px] font-medium px-2 py-0.5 rounded-full flex-shrink-0" style={{ background: '#DCFCE7', color: '#16A34A' }}>View Room &rarr;</span>
                         </div>
                       </Link>
                     ))}
@@ -699,11 +699,11 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
           </div>
           <div className="flex gap-2 flex-1">
             <Link href={`/apply/${room.id}`} className="flex-1 flex items-center justify-center py-3 rounded-full font-semibold text-sm text-white transition-colors hover:opacity-90"
-              style={{ background: '#15803D' }}>
+              style={{ background: '#16A34A' }}>
               Apply to Rent
             </Link>
             <a href="#ask" className="flex-1 flex items-center justify-center py-3 rounded-full border-2 font-semibold text-sm transition-colors hover:bg-green-50"
-              style={{ borderColor: '#15803D', color: '#15803D' }}>
+              style={{ borderColor: '#16A34A', color: '#16A34A' }}>
               Ask a Question
             </a>
           </div>

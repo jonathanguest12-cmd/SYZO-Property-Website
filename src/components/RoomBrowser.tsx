@@ -136,7 +136,7 @@ export default function RoomBrowser({ rooms, initialArea = 'all' }: RoomBrowserP
           </div>
           <div
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold"
-            style={{ background: '#DCFCE7', color: '#15803D' }}
+            style={{ background: '#DCFCE7', color: '#16A34A' }}
           >
             {filtered.length} room{filtered.length !== 1 ? 's' : ''} available
           </div>
