@@ -175,6 +175,24 @@ export async function fetchAvailableRoomCount(city?: string): Promise<number> {
 }
 
 /**
+ * Fetch all distinct property names from available rooms.
+ */
+export async function fetchAllPropertyNames(): Promise<string[]> {
+  const supabase = await createServerSupabaseClient()
+  const { data, error } = await supabase
+    .from('rooms')
+    .select('additional_info')
+    .not('available_from', 'is', null)
+
+  if (error) throw error
+
+  const names = (data ?? [])
+    .map((row: any) => row.additional_info?.property?.name as string | undefined)
+    .filter((n): n is string => !!n)
+  return [...new Set(names)]
+}
+
+/**
  * Insert a stale link lead record. Best-effort — silently fails.
  */
 export async function insertStaleLinkLead(
