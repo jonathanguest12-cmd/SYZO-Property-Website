@@ -53,6 +53,7 @@ export default function PhotoGallery({ photos, alt }: PhotoGalleryProps) {
 
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [lightboxOpen, setLightboxOpen] = useState(false)
+  const [touchStartX, setTouchStartX] = useState<number | null>(null)
 
   const safeIndex = Math.min(selectedIndex, Math.max(0, uniquePhotos.length - 1))
   const hasMultiple = uniquePhotos.length > 1
@@ -64,6 +65,20 @@ export default function PhotoGallery({ photos, alt }: PhotoGalleryProps) {
   const goPrev = useCallback(() => {
     setSelectedIndex((prev) => (prev - 1 + uniquePhotos.length) % uniquePhotos.length)
   }, [uniquePhotos.length])
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    setTouchStartX(e.touches[0].clientX)
+  }, [])
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (touchStartX === null) return
+    const diff = touchStartX - e.changedTouches[0].clientX
+    if (Math.abs(diff) > 50) {
+      if (diff > 0) goNext()
+      else goPrev()
+    }
+    setTouchStartX(null)
+  }, [touchStartX, goNext, goPrev])
 
   // Keyboard navigation for lightbox
   useEffect(() => {
@@ -118,6 +133,8 @@ export default function PhotoGallery({ photos, alt }: PhotoGalleryProps) {
           className="relative w-full overflow-hidden rounded-xl group/gallery cursor-pointer"
           style={{ aspectRatio: '4/3', backgroundColor: '#E5E3DF' }}
           onClick={() => setLightboxOpen(true)}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
         >
           <Image
             src={mainPhoto.url}
@@ -174,31 +191,31 @@ export default function PhotoGallery({ photos, alt }: PhotoGalleryProps) {
 
         {/* Thumbnail strip */}
         {hasMultiple && (
-          <div className="mt-2 flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
+          <div className="mt-2 flex gap-2 overflow-x-auto py-1 scrollbar-hide">
             {uniquePhotos.map((photo, idx) => (
               <button
                 key={idx}
                 type="button"
                 onClick={() => setSelectedIndex(idx)}
-                className="relative flex-shrink-0 overflow-hidden rounded-md transition-all duration-200"
+                className="relative flex-shrink-0 rounded-md transition-all duration-200"
                 style={{
                   width: '56px',
                   height: '42px',
-                  backgroundColor: '#E5E3DF',
-                  outline: idx === safeIndex ? '2px solid #2D3038' : '2px solid transparent',
-                  outlineOffset: '1px',
+                  border: idx === safeIndex ? '2px solid #2D3038' : '2px solid transparent',
                   opacity: idx === safeIndex ? 1 : 0.5,
                 }}
               >
-                <Image
-                  src={photo.url}
-                  alt={photo.title || `Photo ${idx + 1}`}
-                  fill
-                  quality={70}
-                  className="object-cover"
-                  sizes="56px"
-                  loading="lazy"
-                />
+                <div className="relative w-full h-full overflow-hidden rounded-[4px]" style={{ backgroundColor: '#E5E3DF' }}>
+                  <Image
+                    src={photo.url}
+                    alt={photo.title || `Photo ${idx + 1}`}
+                    fill
+                    quality={70}
+                    className="object-cover"
+                    sizes="56px"
+                    loading="lazy"
+                  />
+                </div>
               </button>
             ))}
           </div>
@@ -211,6 +228,8 @@ export default function PhotoGallery({ photos, alt }: PhotoGalleryProps) {
           className="fixed inset-0 z-[100] flex items-center justify-center"
           style={{ backgroundColor: '#000' }}
           onClick={() => setLightboxOpen(false)}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
         >
           {/* Close button */}
           <button

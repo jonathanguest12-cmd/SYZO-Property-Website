@@ -483,7 +483,7 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
               {/* Rent */}
               <div className="flex justify-between items-center py-3 border-b" style={{ borderColor: '#F3F4F6' }}>
                 <span className="text-sm" style={{ color: '#9CA3AF' }}>Rent</span>
-                <span className="text-2xl font-bold" style={{ color: '#2D3038' }}>
+                <span className="text-lg font-bold" style={{ color: '#2D3038' }}>
                   &pound;{Math.round(room.rent_pcm)}
                   <span className="text-sm font-normal ml-1" style={{ color: '#9CA3AF' }}>pcm</span>
                 </span>
