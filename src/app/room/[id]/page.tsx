@@ -294,7 +294,7 @@ const SYZO_PROMISES = [
   {
     icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M9 3.5A5.5 5.5 0 0 1 20 8c0 4-3 5.5-4 8H8c-1-2.5-4-4-4-8a5.5 5.5 0 0 1 5-5.5"/><path d="M6 17h12"/><path d="M6 21h12"/>
+        <path d="M18 7a5 5 0 0 0-10 0v10"/><path d="M6 11h9"/><path d="M6 17h12"/>
       </svg>
     ),
     title: 'Bills Inclusive',
