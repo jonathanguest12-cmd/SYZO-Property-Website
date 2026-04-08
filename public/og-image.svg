@@ -1,0 +1,7 @@
+<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="630" fill="#F7F6F3"/>
+  <rect x="500" y="195" width="200" height="200" rx="8" fill="#2D3038"/>
+  <text x="600" y="275" font-family="system-ui, sans-serif" font-size="42" font-weight="bold" fill="white" text-anchor="middle" letter-spacing="4">SY</text>
+  <text x="600" y="335" font-family="system-ui, sans-serif" font-size="42" font-weight="bold" fill="white" text-anchor="middle" letter-spacing="4">ZO</text>
+  <text x="600" y="455" font-family="system-ui, sans-serif" font-size="28" fill="#2D3038" text-anchor="middle" opacity="0.7">Premium shared living across the South West</text>
+</svg>

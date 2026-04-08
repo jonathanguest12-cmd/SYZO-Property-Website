@@ -21,9 +21,10 @@ export const metadata: Metadata = {
     siteName: 'SYZO',
     images: [
       {
-        url: '/og-image.png',
+        url: '/og-image.svg',
         width: 1200,
         height: 630,
+        alt: 'SYZO — Premium Shared Living',
       },
     ],
     locale: 'en_GB',
