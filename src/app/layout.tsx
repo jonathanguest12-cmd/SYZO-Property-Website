@@ -11,9 +11,24 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 })
 
 export const metadata: Metadata = {
-  title: 'SYZO - Rooms to Rent in Plymouth & Newquay',
+  title: 'SYZO — Premium Shared Living across the South West',
   description:
-    'Browse available rooms to rent in Plymouth and Newquay. Bills included options, flexible move-in dates.',
+    'Beautifully furnished rooms in professionally managed houses across Plymouth and Newquay. All bills included.',
+  openGraph: {
+    title: 'SYZO — Premium Shared Living across the South West',
+    description: 'Beautifully furnished rooms in professionally managed houses across Plymouth and Newquay. All bills included.',
+    url: 'https://syzo-property-website.vercel.app',
+    siteName: 'SYZO',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+      },
+    ],
+    locale: 'en_GB',
+    type: 'website',
+  },
 }
 
 export default function RootLayout({
