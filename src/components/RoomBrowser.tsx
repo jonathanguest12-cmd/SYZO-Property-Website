@@ -124,8 +124,8 @@ export default function RoomBrowser({ rooms, initialArea = 'all', initialView = 
     <div className="mx-auto w-full max-w-7xl px-4 py-6 md:px-8 md:py-8">
       {/* Controls bar */}
       <div className="flex flex-col gap-2">
-        {/* Count pill — own line on mobile, inline on desktop */}
-        <div className="flex items-center justify-between md:justify-start md:gap-4">
+        {/* ROW 1: Count pill + city pills (desktop) */}
+        <div className="flex items-center gap-4">
           <div
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold"
             style={{ background: '#DCFCE7', color: '#16A34A' }}
@@ -153,63 +153,60 @@ export default function RoomBrowser({ rooms, initialArea = 'all', initialView = 
               </button>
             ))}
           </div>
+        </div>
 
-          {/* Spacer for desktop right-alignment */}
-          <div className="hidden md:flex md:flex-1" />
-
-          {/* View toggle + Filters — always visible */}
-          <div className="flex items-center gap-1.5 md:gap-2">
-            <div
-              className="inline-flex rounded-lg p-0.5"
-              style={{ backgroundColor: '#EEEDEA' }}
-            >
-              <button
-                type="button"
-                onClick={() => setView('rooms')}
-                className="rounded-md px-2.5 py-1 text-xs md:px-3 md:py-1.5 md:text-sm font-medium transition-all duration-200 cursor-pointer"
-                style={
-                  view === 'rooms'
-                    ? { backgroundColor: '#ffffff', color: '#2D3038', boxShadow: '0 1px 2px rgba(0,0,0,0.06)' }
-                    : { color: '#6B7280' }
-                }
-              >
-                Rooms
-              </button>
-              <button
-                type="button"
-                onClick={() => setView('properties')}
-                className="rounded-md px-2.5 py-1 text-xs md:px-3 md:py-1.5 md:text-sm font-medium transition-all duration-200 cursor-pointer"
-                style={
-                  view === 'properties'
-                    ? { backgroundColor: '#ffffff', color: '#2D3038', boxShadow: '0 1px 2px rgba(0,0,0,0.06)' }
-                    : { color: '#6B7280' }
-                }
-              >
-                Properties
-              </button>
-            </div>
-
+        {/* ROW 2: View toggle left, Filters right */}
+        <div className="flex items-center justify-between">
+          <div
+            className="inline-flex rounded-lg p-0.5"
+            style={{ backgroundColor: '#EEEDEA' }}
+          >
             <button
               type="button"
-              onClick={() => setShowFilters((v) => !v)}
-              className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs md:gap-1.5 md:px-3.5 md:py-1.5 md:text-sm font-medium transition-all duration-200 cursor-pointer"
+              onClick={() => setView('rooms')}
+              className="rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200 cursor-pointer"
               style={
-                showFilters || activeFilterCount > 0
-                  ? { backgroundColor: '#2D3038', color: '#ffffff' }
-                  : { backgroundColor: '#EEEDEA', color: '#6B7280' }
+                view === 'rooms'
+                  ? { backgroundColor: '#ffffff', color: '#2D3038', boxShadow: '0 1px 2px rgba(0,0,0,0.06)' }
+                  : { color: '#6B7280' }
               }
             >
-              Filters
-              {activeFilterCount > 0 && (
-                <span
-                  className="inline-flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold"
-                  style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: '#ffffff' }}
-                >
-                  {activeFilterCount}
-                </span>
-              )}
+              Rooms
+            </button>
+            <button
+              type="button"
+              onClick={() => setView('properties')}
+              className="rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-200 cursor-pointer"
+              style={
+                view === 'properties'
+                  ? { backgroundColor: '#ffffff', color: '#2D3038', boxShadow: '0 1px 2px rgba(0,0,0,0.06)' }
+                  : { color: '#6B7280' }
+              }
+            >
+              Properties
             </button>
           </div>
+
+          <button
+            type="button"
+            onClick={() => setShowFilters((v) => !v)}
+            className="inline-flex items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-sm font-medium transition-all duration-200 cursor-pointer"
+            style={
+              showFilters || activeFilterCount > 0
+                ? { backgroundColor: '#2D3038', color: '#ffffff' }
+                : { backgroundColor: '#EEEDEA', color: '#6B7280' }
+            }
+          >
+            Filters
+            {activeFilterCount > 0 && (
+              <span
+                className="inline-flex h-5 w-5 items-center justify-center rounded-full text-xs font-bold"
+                style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: '#ffffff' }}
+              >
+                {activeFilterCount}
+              </span>
+            )}
+          </button>
         </div>
       </div>
 
