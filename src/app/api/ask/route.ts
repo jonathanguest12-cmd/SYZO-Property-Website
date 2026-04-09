@@ -19,7 +19,7 @@ const ratelimit = new Ratelimit({
 })
 
 const SUPABASE_URL = 'https://mtrrxtwisgftkqujfqlr.supabase.co'
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY_PARROT || ''
+const SUPABASE_KEY = process.env.SUPABASE_SECRET_KEY_PARROT || ''
 
 async function logSession(
   sessionId: string,
