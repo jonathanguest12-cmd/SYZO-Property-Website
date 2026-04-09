@@ -431,7 +431,7 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
               {otherRooms.length > 0 && (
                 <div className="hidden lg:block mt-4">
                   <h3 className="text-sm font-semibold uppercase tracking-[0.1em] mb-3" style={{ color: '#9CA3AF' }}>
-                    Other Rooms at {room.property_name}
+                    Other Rooms at {room.property_name.replace(/^\d+[-\s]+/, '').trim()}
                   </h3>
                   <div className="flex flex-col gap-2">
                     {otherRooms.map((r) => (
@@ -682,7 +682,7 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
             {/* Mobile: Other rooms */}
             {otherRooms.length > 0 && (
               <div className="lg:hidden">
-                <Card title={`Other Rooms at ${room.property_name}`}>
+                <Card title={`Other Rooms at ${room.property_name.replace(/^\d+[-\s]+/, '').trim()}`}>
                   <div className="flex gap-3 overflow-x-auto pb-1">
                     {otherRooms.map((r) => (
                       <Link key={r.id} href={`/room/${r.id}`} className="flex-shrink-0 overflow-hidden rounded-lg" style={{ width: '200px', border: '1px solid #F0EFEC' }}>
