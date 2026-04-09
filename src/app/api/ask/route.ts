@@ -164,7 +164,7 @@ export async function POST(req: NextRequest) {
       if (liveAvailability) {
         enrichedSystemPrompt = systemPrompt.replace(
           /AVAILABILITY:.*$/m,
-          `AVAILABILITY: ${liveAvailability} (confirmed live)`
+          `AVAILABILITY: ${liveAvailability}`
         )
       }
     }
