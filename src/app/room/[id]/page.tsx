@@ -19,6 +19,8 @@ import {
 } from '@/lib/format'
 import PhotoGallery from '@/components/PhotoGallery'
 import ExpandableText from '@/components/ExpandableText'
+import RoomActions from '@/components/RoomActions'
+import { buildRoomSystemPrompt } from '@/lib/chatbot'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -395,6 +397,9 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
   const hasLocalArea = localSections.length > 0
   const depositInfo = parsed?.depositInfo ?? null
 
+  const chatSystemPrompt = buildRoomSystemPrompt(room)
+  const chatGreeting = `Hi! I'm here to answer any questions about ${room.name} at ${room.property_name.replace(/^\d+[-\s]+/, '').trim()}. What would you like to know?`
+
   return (
     <>
       <div className="mx-auto w-full max-w-7xl px-4 py-6 md:px-8 md:py-8">
@@ -410,15 +415,16 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
             <div className="lg:sticky lg:top-20 flex flex-col gap-5" style={{ maxHeight: 'calc(100vh - 100px)', overflowY: 'auto' }}>
               <PhotoGallery photos={galleryPhotos} alt={room.property_name} />
 
-              <div className="hidden lg:flex gap-3 mt-1">
-                <Link href={`/apply/${room.id}`} className="flex-1 flex items-center justify-center py-3.5 rounded-full font-semibold text-sm transition-colors hover:opacity-90"
-                  style={{ background: '#2D3038', color: '#ffffff' }}>
-                  Apply to Rent
-                </Link>
-                <a href="#ask" className="flex-1 flex items-center justify-center py-3.5 rounded-full border-2 font-semibold text-sm transition-colors hover:bg-gray-50"
-                  style={{ background: '#ffffff', borderColor: '#2D3038', color: '#2D3038' }}>
-                  Ask a Question
-                </a>
+              <div className="hidden lg:block mt-1">
+                <RoomActions
+                  roomId={room.id}
+                  applyHref={`/apply/${room.id}`}
+                  systemPrompt={chatSystemPrompt}
+                  greeting={chatGreeting}
+                  roomName={room.name}
+                  propertyName={room.property_name}
+                  propertyRef={room.property_ref}
+                />
               </div>
 
               {/* Other rooms — compact cards */}
@@ -707,15 +713,16 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
             <p className="text-xl font-bold tabular-nums" style={{ color: '#2D3038' }}>&pound;{Math.round(room.rent_pcm)}<span className="text-sm font-normal ml-1" style={{ color: '#9CA3AF' }}>/mo</span></p>
             <p className="text-xs font-medium" style={{ color: availNow ? '#16A34A' : '#6B7280' }}>{availShort}</p>
           </div>
-          <div className="flex gap-2 flex-1">
-            <Link href={`/apply/${room.id}`} className="flex-1 flex items-center justify-center py-3 rounded-full font-semibold text-sm transition-colors hover:opacity-90"
-              style={{ background: '#2D3038', color: '#ffffff' }}>
-              Apply to Rent
-            </Link>
-            <a href="#ask" className="flex-1 flex items-center justify-center py-3 rounded-full border-2 font-semibold text-sm transition-colors hover:bg-gray-50"
-              style={{ background: '#ffffff', borderColor: '#2D3038', color: '#2D3038' }}>
-              Ask a Question
-            </a>
+          <div className="flex-1">
+            <RoomActions
+              roomId={room.id}
+              applyHref={`/apply/${room.id}`}
+              systemPrompt={chatSystemPrompt}
+              greeting={chatGreeting}
+              roomName={room.name}
+              propertyName={room.property_name}
+              propertyRef={room.property_ref}
+            />
           </div>
         </div>
       </div>

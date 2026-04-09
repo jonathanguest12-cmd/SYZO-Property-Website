@@ -8,6 +8,8 @@ import type { RoomWithProperty } from '@/lib/types'
 import { isAvailableNow } from '@/lib/format'
 import PhotoGallery from '@/components/PhotoGallery'
 import RoomCard from '@/components/RoomCard'
+import RoomActions from '@/components/RoomActions'
+import { buildPropertySystemPrompt } from '@/lib/chatbot'
 
 export async function generateStaticParams() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -303,6 +305,17 @@ export default async function PropertyPage({
 
   const galleryPhotos = buildPropertyGallery(rooms)
 
+  const chatSystemPrompt = buildPropertySystemPrompt(
+    propertyName,
+    city,
+    postcode,
+    amenities,
+    aboutProperty,
+    rooms.map(r => ({ name: r.name, rent_pcm: r.rent_pcm, room_type: r.room_type, available_from: r.available_from })),
+    epcRating
+  )
+  const chatGreeting = `Hi! I can answer questions about ${displayName}. We currently have ${availableRooms} room${availableRooms !== 1 ? 's' : ''} available. What would you like to know?`
+
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-6 md:px-8 md:py-8">
       <div className="mb-6 pb-6 border-b" style={{ borderColor: '#E5E7EB' }}>
@@ -317,15 +330,16 @@ export default async function PropertyPage({
           <div className="lg:sticky lg:top-20 flex flex-col gap-5" style={{ maxHeight: 'calc(100vh - 100px)', overflowY: 'auto' }}>
             <PhotoGallery photos={galleryPhotos} alt={displayName} />
 
-            <div className="hidden lg:flex gap-3 mt-1">
-              <Link href={`/apply-property/${cohoRef}`} className="flex-1 flex items-center justify-center py-3.5 rounded-full font-semibold text-sm text-white transition-opacity hover:opacity-90"
-                style={{ background: '#2D3038' }}>
-                Apply to Rent
-              </Link>
-              <a href="#ask" className="flex-1 flex items-center justify-center py-3.5 rounded-full font-semibold text-sm border-2 transition-colors hover:bg-gray-50"
-                style={{ borderColor: '#2D3038', color: '#2D3038' }}>
-                Ask a Question
-              </a>
+            <div className="hidden lg:block mt-1">
+              <RoomActions
+                roomId=""
+                applyHref={`/apply-property/${cohoRef}`}
+                systemPrompt={chatSystemPrompt}
+                greeting={chatGreeting}
+                roomName="this property"
+                propertyName={propertyName}
+                propertyRef={cohoRef}
+              />
             </div>
           </div>
         </div>
