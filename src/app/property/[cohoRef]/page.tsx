@@ -339,6 +339,14 @@ export default async function PropertyPage({
                 roomName="this property"
                 propertyName={propertyName}
                 propertyRef={cohoRef}
+                suggestions={[
+                  'What rooms are available?',
+                  'What are the prices?',
+                  'When can I move in?',
+                  'Tell me about deposits',
+                  'Are bills included?',
+                  'Something else',
+                ]}
               />
             </div>
           </div>

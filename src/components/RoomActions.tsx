@@ -12,7 +12,18 @@ interface RoomActionsProps {
   roomName: string
   propertyName: string
   propertyRef?: string
+  suggestions?: string[]
 }
+
+const defaultSuggestions = [
+  "What's the rent?",
+  'Are bills included?',
+  'When is it available?',
+  'Tell me about the deposit',
+  "What's included in the room?",
+  'Tell me about the property',
+  'Something else',
+]
 
 export default function RoomActions({
   roomId,
@@ -22,6 +33,7 @@ export default function RoomActions({
   roomName,
   propertyName,
   propertyRef,
+  suggestions = defaultSuggestions,
 }: RoomActionsProps) {
   const [modalOpen, setModalOpen] = useState(false)
 
@@ -52,6 +64,7 @@ export default function RoomActions({
         propertyRef={propertyRef}
         roomName={roomName}
         propertyName={propertyName}
+        suggestions={suggestions}
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
       />

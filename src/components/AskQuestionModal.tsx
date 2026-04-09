@@ -16,6 +16,7 @@ interface AskQuestionModalProps {
   propertyRef?: string
   roomName: string
   propertyName: string
+  suggestions: string[]
   isOpen: boolean
   onClose: () => void
 }
@@ -32,6 +33,7 @@ export default function AskQuestionModal({
   propertyRef,
   roomName,
   propertyName,
+  suggestions,
   isOpen,
   onClose,
 }: AskQuestionModalProps) {
@@ -80,10 +82,10 @@ export default function AskQuestionModal({
 
   if (!isOpen) return null
 
-  const sendMessage = async () => {
-    if (!input.trim() || loading || rateLimited) return
+  const sendMessageWithText = async (text: string) => {
+    if (!text.trim() || loading || rateLimited) return
 
-    const userMessage: Message = { role: 'user', content: input.trim() }
+    const userMessage: Message = { role: 'user', content: text.trim() }
     const newMessages = [...messages, userMessage]
     setMessages(newMessages)
     setInput('')
@@ -129,6 +131,8 @@ export default function AskQuestionModal({
       setLoading(false)
     }
   }
+
+  const sendMessage = () => sendMessageWithText(input)
 
   return (
     <div
@@ -206,6 +210,28 @@ export default function AskQuestionModal({
               </div>
             </div>
           ))}
+
+          {/* Quick reply chips — show only before first user message */}
+          {messages.length === 1 && !loading && (
+            <div className="flex flex-wrap gap-2 mt-1 mb-2">
+              {suggestions.map((suggestion, i) => (
+                <button
+                  key={i}
+                  onClick={() => {
+                    if (suggestion === 'Something else') {
+                      inputRef.current?.focus()
+                    } else {
+                      sendMessageWithText(suggestion)
+                    }
+                  }}
+                  className="text-xs px-3 py-1.5 rounded-full border transition-colors hover:bg-gray-50 cursor-pointer"
+                  style={{ borderColor: '#E5E7EB', color: '#374151' }}
+                >
+                  {suggestion}
+                </button>
+              ))}
+            </div>
+          )}
 
           {loading && (
             <div className="flex justify-start">
