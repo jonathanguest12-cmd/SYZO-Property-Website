@@ -45,6 +45,8 @@ export default function AskQuestionModal({
   const [loading, setLoading] = useState(false)
   const [rateLimited, setRateLimited] = useState(false)
   const [remaining, setRemaining] = useState(20)
+  const [followUps, setFollowUps] = useState<string[]>([])
+  const [showFollowUps, setShowFollowUps] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -84,6 +86,7 @@ export default function AskQuestionModal({
 
   const sendMessageWithText = async (text: string) => {
     if (!text.trim() || loading || rateLimited) return
+    setShowFollowUps(false)
 
     const userMessage: Message = { role: 'user', content: text.trim() }
     const newMessages = [...messages, userMessage]
@@ -118,6 +121,13 @@ export default function AskQuestionModal({
         ...prev,
         { role: 'assistant', content: data.content },
       ])
+
+      // Show follow-ups after first user message only
+      const userCount = newMessages.filter(m => m.role === 'user').length
+      if (userCount === 1 && data.followUps?.length) {
+        setFollowUps(data.followUps)
+        setShowFollowUps(true)
+      }
     } catch {
       setMessages((prev) => [
         ...prev,
@@ -268,6 +278,30 @@ export default function AskQuestionModal({
           )}
           <div ref={messagesEndRef} />
         </div>
+
+        {/* Follow-up chips — after first assistant response */}
+        {showFollowUps && followUps.length > 0 && (
+          <div className="px-5 pb-2 flex-shrink-0">
+            <p className="text-xs mb-2" style={{ color: '#9CA3AF' }}>
+              You might also want to know:
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {followUps.map((followUp, i) => (
+                <button
+                  key={i}
+                  onClick={() => {
+                    setShowFollowUps(false)
+                    sendMessageWithText(followUp)
+                  }}
+                  className="text-xs px-3 py-1.5 rounded-full border transition-colors hover:bg-gray-50 cursor-pointer"
+                  style={{ borderColor: '#E5E7EB', color: '#374151' }}
+                >
+                  {followUp}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Rate limit warning */}
         {remaining <= 5 && !rateLimited && (

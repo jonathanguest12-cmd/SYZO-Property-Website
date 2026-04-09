@@ -21,6 +21,58 @@ const ratelimit = new Ratelimit({
 const SUPABASE_URL = 'https://mtrrxtwisgftkqujfqlr.supabase.co'
 const SUPABASE_KEY = process.env.SUPABASE_SECRET_KEY_PARROT || ''
 
+const AVAILABILITY_KEYWORDS = [
+  'available', 'availability', 'when can i move', 'move in',
+  'still free', 'still available', 'vacant', 'taken',
+  'when is it', 'how soon', 'start date', 'move date',
+]
+
+function isAvailabilityQuestion(message: string): boolean {
+  const lower = message.toLowerCase()
+  return AVAILABILITY_KEYWORDS.some((kw) => lower.includes(kw))
+}
+
+async function getLiveAvailability(roomId: string | null): Promise<string | null> {
+  if (!roomId) return null
+  try {
+    const supabaseUrl =
+      process.env.NEXT_PUBLIC_SUPABASE_URL || SUPABASE_URL
+    const key = SUPABASE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+
+    const res = await fetch(
+      `${supabaseUrl}/rest/v1/rooms?select=available_from&id=eq.${roomId}`,
+      {
+        headers: {
+          apikey: key,
+          Authorization: `Bearer ${key}`,
+        },
+        cache: 'no-store',
+      }
+    )
+
+    if (!res.ok) return null
+    const data = await res.json()
+    if (!data?.[0]) return null
+
+    const availableFrom = data[0].available_from
+    if (!availableFrom) return 'not currently available'
+
+    const date = new Date(availableFrom)
+    const now = new Date()
+
+    if (date <= now) {
+      return 'available now'
+    }
+    return `available from ${date.toLocaleDateString('en-GB', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    })}`
+  } catch {
+    return null
+  }
+}
+
 async function logSession(
   sessionId: string,
   roomId: string | null,
@@ -71,7 +123,7 @@ async function logSession(
       }).catch(() => null)
     }
   } catch {
-    // Silently fail — don't break the chat
+    // Silently fail
   }
 }
 
@@ -102,10 +154,25 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    const lastUserMessage =
+      messages[messages.length - 1]?.content || ''
+
+    // Enrich system prompt with live availability if relevant
+    let enrichedSystemPrompt = systemPrompt
+    if (isAvailabilityQuestion(lastUserMessage) && roomId) {
+      const liveAvailability = await getLiveAvailability(roomId)
+      if (liveAvailability) {
+        enrichedSystemPrompt = systemPrompt.replace(
+          /AVAILABILITY:.*$/m,
+          `AVAILABILITY: ${liveAvailability} (confirmed live)`
+        )
+      }
+    }
+
     const response = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 300,
-      system: systemPrompt,
+      system: enrichedSystemPrompt,
       messages: messages.map((m: { role: string; content: string }) => ({
         role: m.role,
         content: m.content,
@@ -117,9 +184,48 @@ export async function POST(req: NextRequest) {
         ? response.content[0].text
         : "Sorry, I couldn't generate a response. Please try again."
 
-    const messageCount = messages.filter(
+    // Generate follow-up suggestions (non-blocking, best-effort)
+    const userMessageCount = messages.filter(
       (m: { role: string }) => m.role === 'user'
     ).length
+
+    let followUps: string[] = []
+    if (userMessageCount === 1) {
+      try {
+        const followUpRes = await client.messages.create({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 100,
+          system:
+            'You generate short follow-up questions a property tenant might ask. Return exactly 3 questions as a JSON array of strings. No other text.',
+          messages: [
+            {
+              role: 'user',
+              content: `The user asked: "${lastUserMessage}"
+Claude answered: "${content}"
+Context: ${systemPrompt.slice(0, 500)}
+
+Generate 3 short follow-up questions they might want to ask next. Keep each under 8 words. Return as JSON array only.`,
+            },
+          ],
+        })
+
+        const followUpText =
+          followUpRes.content[0].type === 'text'
+            ? followUpRes.content[0].text.trim()
+            : '[]'
+        const clean = followUpText
+          .replace(/^```(?:json)?\s*/i, '')
+          .replace(/\s*```$/i, '')
+          .trim()
+        followUps = JSON.parse(clean)
+        if (!Array.isArray(followUps)) followUps = []
+        followUps = followUps.slice(0, 3)
+      } catch {
+        followUps = []
+      }
+    }
+
+    // Log session (non-blocking)
     logSession(
       sessionId,
       roomId,
@@ -127,10 +233,10 @@ export async function POST(req: NextRequest) {
       roomName,
       propertyName,
       messages,
-      messageCount
+      userMessageCount
     )
 
-    return NextResponse.json({ content, remaining })
+    return NextResponse.json({ content, remaining, followUps })
   } catch (err) {
     console.error('Ask API error:', err)
     return NextResponse.json(
