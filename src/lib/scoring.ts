@@ -8,11 +8,23 @@
 
 export type IncomeBracket = 'under_low' | 'low' | 'medium' | 'high'
 
+/**
+ * Fixed annual gross income brackets, in £.
+ * Display labels are derived from these constants — they are not
+ * calculated from rent. Scoring values for each bracket are unchanged.
+ */
+export const INCOME_BRACKETS = {
+  underLowMax: 20000, // Under £20,000
+  lowMax: 28000,      // £20,000 – £28,000
+  mediumMax: 40000,   // £28,000 – £40,000
+  // high: £40,000 or more
+} as const
+
 export interface ScreeningAnswers {
   whoMovingIn: string
   moveInTimeline: string
   employmentStatus: string
-  monthlyIncome: IncomeBracket
+  annualIncome: IncomeBracket
   smokes: boolean
   hasPets: boolean
   lengthOfStay: string
@@ -30,6 +42,7 @@ export interface ScoreResult {
   tier: Tier
   redReason: string | null
   flags: string[]
+  incomeRiskMitigated: boolean
 }
 
 export function scoreApplication(answers: ScreeningAnswers): ScoreResult {
@@ -53,13 +66,13 @@ export function scoreApplication(answers: ScreeningAnswers): ScoreResult {
       : 1
 
   let incomeScore = 0
-  if (answers.monthlyIncome === 'under_low') {
+  if (answers.annualIncome === 'under_low') {
     incomeScore = 0
     flags.push('income_very_low')
-  } else if (answers.monthlyIncome === 'low') {
+  } else if (answers.annualIncome === 'low') {
     incomeScore = 1
     flags.push('income_low')
-  } else if (answers.monthlyIncome === 'medium') {
+  } else if (answers.annualIncome === 'medium') {
     incomeScore = 2
   } else {
     incomeScore = 3
@@ -83,39 +96,47 @@ export function scoreApplication(answers: ScreeningAnswers): ScoreResult {
     moveInScore + employmentScore + incomeScore + stayScore + creditScore + guarantorBonus
   const percentage = Math.round((total / maxScore) * 100)
 
+  // Income risk is mitigated when an applicant with a low/very-low income
+  // bracket also provides a UK guarantor. This clears the income amber floor
+  // but does NOT clear adverse_credit, short_stay, or family flags.
+  const incomeRiskMitigated =
+    (flags.includes('income_very_low') || flags.includes('income_low')) &&
+    answers.hasGuarantor === true
+
   let tier: Tier
-  if (redReason || percentage < 50) {
+  if (redReason) {
+    // Hard disqualifier — always red.
+    tier = 'red'
+  } else if (percentage < 50) {
+    // Score too weak regardless of flags.
     tier = 'red'
   } else if (
-    percentage < 75 ||
-    flags.includes('income_very_low') ||
-    flags.includes('income_low') ||
     flags.includes('short_stay') ||
     flags.includes('adverse_credit') ||
-    flags.includes('family')
+    flags.includes('family') ||
+    (!incomeRiskMitigated &&
+      (flags.includes('income_very_low') || flags.includes('income_low')))
   ) {
+    // Amber-forcing flags:
+    //  - short_stay     room may not suit (min tenancy concern)
+    //  - adverse_credit always Verity review — guarantor does NOT clear this
+    //  - family         HMO suitability — always Verity review
+    //  - income flag without guarantor — affordability risk
     tier = 'amber'
-  } else {
+  } else if (percentage >= 75) {
     tier = 'green'
+  } else {
+    // 50–74% with no amber-forcing flags.
+    tier = 'amber'
   }
 
-  return { score: total, maxScore, percentage, tier, redReason, flags }
-}
-
-/**
- * Compute the income bracket boundaries for a given rent, rounded to £50.
- * Returned values are the upper bound of `under_low`, `low`, and `medium`.
- * `high` has no upper bound.
- */
-export function incomeBrackets(rentPcm: number): {
-  underLowMax: number
-  lowMax: number
-  mediumMax: number
-} {
-  const round50 = (n: number) => Math.round(n / 50) * 50
   return {
-    underLowMax: round50(rentPcm * 1.5),
-    lowMax: round50(rentPcm * 2),
-    mediumMax: round50(rentPcm * 2.5),
+    score: total,
+    maxScore,
+    percentage,
+    tier,
+    redReason,
+    flags,
+    incomeRiskMitigated,
   }
 }

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { incomeBrackets, type IncomeBracket } from '@/lib/scoring'
+import { INCOME_BRACKETS, type IncomeBracket } from '@/lib/scoring'
 
 interface ApplyClientProps {
   roomId: string
@@ -33,7 +33,7 @@ interface Answers {
   whoMovingIn: string | null
   moveInTimeline: string | null
   employmentStatus: string | null
-  monthlyIncome: IncomeBracket | null
+  annualIncome: IncomeBracket | null
   smokes: boolean | null
   hasPets: boolean | null
   lengthOfStay: string | null
@@ -45,7 +45,7 @@ const EMPTY_ANSWERS: Answers = {
   whoMovingIn: null,
   moveInTimeline: null,
   employmentStatus: null,
-  monthlyIncome: null,
+  annualIncome: null,
   smokes: null,
   hasPets: null,
   lengthOfStay: null,
@@ -80,7 +80,6 @@ export default function ApplyClient({
   const [result, setResult] = useState<ResultTier | null>(null)
 
   const cleanProperty = stripHouseNumber(propertyName)
-  const brackets = incomeBrackets(rentPcm)
 
   // ----- navigation helpers -----
 
@@ -116,7 +115,7 @@ export default function ApplyClient({
   }
 
   function answerIncome(value: IncomeBracket) {
-    setAnswers((a) => ({ ...a, monthlyIncome: value }))
+    setAnswers((a) => ({ ...a, annualIncome: value }))
     goTo(5)
   }
 
@@ -138,10 +137,10 @@ export default function ApplyClient({
 
   function answerAdverseCredit(value: boolean) {
     setAnswers((a) => ({ ...a, adverseCredit: value }))
-    // Conditional: guarantor question only shown when income < 2x rent.
+    // Conditional: guarantor question only shown for low income brackets.
     // hasGuarantor stays null otherwise → scoring uses 15-pt max.
     const incomeFlagged =
-      answers.monthlyIncome === 'under_low' || answers.monthlyIncome === 'low'
+      answers.annualIncome === 'under_low' || answers.annualIncome === 'low'
     goTo(incomeFlagged ? 9 : 10)
   }
 
@@ -191,7 +190,7 @@ export default function ApplyClient({
             whoMovingIn: answers.whoMovingIn,
             moveInTimeline: answers.moveInTimeline,
             employmentStatus: answers.employmentStatus,
-            monthlyIncome: answers.monthlyIncome,
+            annualIncome: answers.annualIncome,
             // Coerce nullable booleans to false for the API contract — at this
             // point in the flow we either asked the question or short-circuited.
             smokes: answers.smokes ?? false,
@@ -275,12 +274,13 @@ export default function ApplyClient({
             )}
             {step === 4 && (
               <Question
-                heading="What’s your monthly take-home pay?"
+                heading="What’s your annual income before tax?"
+                subheading="Include all sources — salary, self-employment, or benefits."
                 options={[
-                  { label: `Under ${formatGBP(brackets.underLowMax)}`, value: 'under_low' },
-                  { label: `${formatGBP(brackets.underLowMax)} \u2013 ${formatGBP(brackets.lowMax)}`, value: 'low' },
-                  { label: `${formatGBP(brackets.lowMax)} \u2013 ${formatGBP(brackets.mediumMax)}`, value: 'medium' },
-                  { label: `${formatGBP(brackets.mediumMax)} or more`, value: 'high' },
+                  { label: `Under ${formatGBP(INCOME_BRACKETS.underLowMax)}`, value: 'under_low' },
+                  { label: `${formatGBP(INCOME_BRACKETS.underLowMax)} \u2013 ${formatGBP(INCOME_BRACKETS.lowMax)}`, value: 'low' },
+                  { label: `${formatGBP(INCOME_BRACKETS.lowMax)} \u2013 ${formatGBP(INCOME_BRACKETS.mediumMax)}`, value: 'medium' },
+                  { label: `${formatGBP(INCOME_BRACKETS.mediumMax)} or more`, value: 'high' },
                 ]}
                 onSelect={(v) => answerIncome(v as IncomeBracket)}
               />

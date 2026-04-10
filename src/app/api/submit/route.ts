@@ -114,8 +114,8 @@ export async function POST(req: NextRequest) {
   if (typeof a.employmentStatus !== 'string' || !VALID_EMPLOYMENT.includes(a.employmentStatus)) {
     return bad('Invalid answer: employmentStatus')
   }
-  if (typeof a.monthlyIncome !== 'string' || !VALID_INCOME.includes(a.monthlyIncome as IncomeBracket)) {
-    return bad('Invalid answer: monthlyIncome')
+  if (typeof a.annualIncome !== 'string' || !VALID_INCOME.includes(a.annualIncome as IncomeBracket)) {
+    return bad('Invalid answer: annualIncome')
   }
   if (typeof a.smokes !== 'boolean') return bad('Invalid answer: smokes')
   if (typeof a.hasPets !== 'boolean') return bad('Invalid answer: hasPets')
@@ -131,7 +131,7 @@ export async function POST(req: NextRequest) {
     whoMovingIn: a.whoMovingIn,
     moveInTimeline: a.moveInTimeline,
     employmentStatus: a.employmentStatus,
-    monthlyIncome: a.monthlyIncome as IncomeBracket,
+    annualIncome: a.annualIncome as IncomeBracket,
     smokes: a.smokes,
     hasPets: a.hasPets,
     lengthOfStay: a.lengthOfStay,
@@ -162,7 +162,7 @@ export async function POST(req: NextRequest) {
         who_moving_in: screening.whoMovingIn,
         move_in_timeline: screening.moveInTimeline,
         employment_status: screening.employmentStatus,
-        monthly_income: screening.monthlyIncome,
+        annual_income: screening.annualIncome,
         smokes: screening.smokes,
         has_pets: screening.hasPets,
         length_of_stay: screening.lengthOfStay,
@@ -174,6 +174,7 @@ export async function POST(req: NextRequest) {
         score: result.score,
         tier: result.tier,
         red_reason: result.redReason,
+        scoring_flags: result.flags,
       }),
     })
 
