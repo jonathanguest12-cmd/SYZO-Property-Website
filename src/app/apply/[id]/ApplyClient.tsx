@@ -78,6 +78,7 @@ export default function ApplyClient({
   const [contactError, setContactError] = useState<string | null>(null)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [result, setResult] = useState<ResultTier | null>(null)
+  const [applicationId, setApplicationId] = useState<string | null>(null)
 
   const cleanProperty = stripHouseNumber(propertyName)
 
@@ -211,6 +212,9 @@ export default function ApplyClient({
 
       const data = await res.json()
       if (data?.tier === 'green' || data?.tier === 'amber' || data?.tier === 'red') {
+        if (typeof data.applicationId === 'string') {
+          setApplicationId(data.applicationId)
+        }
         setResult(data.tier)
       } else {
         setSubmitError('Unexpected response. Please try again.')
@@ -225,7 +229,7 @@ export default function ApplyClient({
   // ----- result page short-circuit -----
 
   if (result) {
-    return <ResultView tier={result} roomId={roomId} />
+    return <ResultView tier={result} roomId={roomId} applicationId={applicationId} />
   }
 
   // ----- shared layout chrome -----
@@ -684,7 +688,15 @@ function Submitting() {
   )
 }
 
-function ResultView({ tier, roomId }: { tier: ResultTier; roomId: string }) {
+function ResultView({
+  tier,
+  roomId,
+  applicationId,
+}: {
+  tier: ResultTier
+  roomId: string
+  applicationId: string | null
+}) {
   if (tier === 'green') {
     return (
       <ResultLayout
@@ -699,9 +711,17 @@ function ResultView({ tier, roomId }: { tier: ResultTier; roomId: string }) {
           </div>
         }
         heading="Great news."
-        body="You’re a strong fit for this room. We’ll be in touch within 24 hours to arrange a viewing — keep an eye on your email."
-        ctaLabel="Back to room"
-        ctaHref={`/room/${roomId}`}
+        body="You\u2019re a strong fit for this room. We\u2019ll be in touch within 24 hours to arrange a viewing."
+        primaryCta={
+          applicationId
+            ? { label: 'Book a Viewing', href: `/book-viewing/${applicationId}` }
+            : { label: 'Back to room', href: `/room/${roomId}` }
+        }
+        secondaryCta={
+          applicationId
+            ? { label: 'Back to room', href: `/room/${roomId}` }
+            : undefined
+        }
       />
     )
   }
@@ -711,9 +731,8 @@ function ResultView({ tier, roomId }: { tier: ResultTier; roomId: string }) {
       <ResultLayout
         icon={<NeutralCircle />}
         heading="Thanks for applying."
-        body="We’re reviewing your application and will be in touch within 2 working days."
-        ctaLabel="Back to room"
-        ctaHref={`/room/${roomId}`}
+        body="Our team will review your application and be in touch within 2 working days."
+        primaryCta={{ label: 'Back to room', href: `/room/${roomId}` }}
       />
     )
   }
@@ -722,25 +741,29 @@ function ResultView({ tier, roomId }: { tier: ResultTier; roomId: string }) {
     <ResultLayout
       icon={<NeutralCircle />}
       heading="Thanks for applying."
-      body="Unfortunately we’re unable to proceed with your application for this room at this time. We wish you the best with your search."
-      ctaLabel="Browse other rooms"
-      ctaHref="/"
+      body="We\u2019ve received your application and will be in touch if we have something that\u2019s a good fit."
+      primaryCta={{ label: 'Browse other rooms', href: '/' }}
     />
   )
+}
+
+interface CtaSpec {
+  label: string
+  href: string
 }
 
 function ResultLayout({
   icon,
   heading,
   body,
-  ctaLabel,
-  ctaHref,
+  primaryCta,
+  secondaryCta,
 }: {
   icon: React.ReactNode
   heading: string
   body: string
-  ctaLabel: string
-  ctaHref: string
+  primaryCta: CtaSpec
+  secondaryCta?: CtaSpec
 }) {
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-16 sm:px-6">
@@ -762,12 +785,23 @@ function ResultLayout({
           {body}
         </p>
         <Link
-          href={ctaHref}
+          href={primaryCta.href}
           className="mt-8 inline-flex items-center justify-center rounded-full px-8 py-3.5 text-sm font-semibold text-white transition-colors duration-200 hover:opacity-90"
           style={{ backgroundColor: '#2D3038' }}
         >
-          {ctaLabel}
+          {primaryCta.label}
         </Link>
+        {secondaryCta && (
+          <div className="mt-4">
+            <Link
+              href={secondaryCta.href}
+              className="text-sm font-medium transition-colors duration-200 hover:opacity-70"
+              style={{ color: '#9CA3AF' }}
+            >
+              {secondaryCta.label}
+            </Link>
+          </div>
+        )}
       </div>
     </div>
   )

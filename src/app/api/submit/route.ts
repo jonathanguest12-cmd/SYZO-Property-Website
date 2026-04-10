@@ -142,16 +142,20 @@ export async function POST(req: NextRequest) {
 
   const result = scoreApplication(screening)
 
+  let applicationId: string | null = null
+
   // Save every application regardless of tier. Best-effort: if Supabase fails,
   // we still return success to the applicant (logged server-side for follow-up).
   try {
-    const supabaseRes = await fetch(`${SUPABASE_URL}/rest/v1/applications`, {
+    const supabaseRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/applications?select=id`,
+      {
       method: 'POST',
       headers: {
         apikey: SUPABASE_KEY,
         Authorization: `Bearer ${SUPABASE_KEY}`,
         'Content-Type': 'application/json',
-        Prefer: 'return=minimal',
+        Prefer: 'return=representation',
       },
       body: JSON.stringify({
         room_id: roomId,
@@ -181,11 +185,18 @@ export async function POST(req: NextRequest) {
     if (!supabaseRes.ok) {
       const detail = await supabaseRes.text().catch(() => '')
       console.error('[submit] Supabase save failed:', supabaseRes.status, detail)
+    } else {
+      const rows = (await supabaseRes.json().catch(() => [])) as Array<{ id?: string }>
+      const id = Array.isArray(rows) && rows[0]?.id
+      if (typeof id === 'string' && UUID_RE.test(id)) {
+        applicationId = id
+      }
     }
   } catch (err) {
     console.error('[submit] Supabase request error:', err)
   }
 
-  // Return tier ONLY. Never expose score, percentage, flags, or red_reason.
-  return NextResponse.json({ tier: result.tier })
+  // Return tier + applicationId only. Never expose score, flags, or red_reason.
+  // applicationId is needed by the booking flow for green-tier applicants.
+  return NextResponse.json({ tier: result.tier, applicationId })
 }
