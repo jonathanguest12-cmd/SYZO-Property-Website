@@ -5,9 +5,6 @@ import { Redis } from '@upstash/redis'
 // UUID v4 (case-insensitive).
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
-const SUPABASE_URL =
-  process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://mtrrxtwisgftkqujfqlr.supabase.co'
-
 const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL!,
   token: process.env.UPSTASH_REDIS_REST_TOKEN!,
@@ -25,6 +22,7 @@ const ratelimit = new Ratelimit({
 type ApplicationRow = {
   id: string
   tier: 'green' | 'amber' | 'red'
+  property_ref: string | null
 }
 
 type SlotRow = {
@@ -40,8 +38,11 @@ function bad(msg: string, status = 400) {
 
 export async function POST(req: NextRequest) {
   const SUPABASE_KEY = process.env.SUPABASE_SECRET_KEY_PARROT
-  if (!SUPABASE_KEY) {
-    console.error('[book-viewing] SUPABASE_SECRET_KEY_PARROT is not set')
+  const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
+  if (!SUPABASE_KEY || !SUPABASE_URL) {
+    console.error(
+      '[book-viewing] Missing SUPABASE_SECRET_KEY_PARROT or NEXT_PUBLIC_SUPABASE_URL'
+    )
     return bad('Booking unavailable. Please try again.', 500)
   }
 
@@ -81,12 +82,15 @@ export async function POST(req: NextRequest) {
     'Content-Type': 'application/json',
   } as const
 
-  // 1. Validate the application exists and is green-tier.
+  // 1. Validate the application exists and is green-tier. We also need
+  // property_ref so we can enforce that the slot being claimed belongs to
+  // the applicant's own property (prevents cross-property bookings via a
+  // direct API call with a foreign slotId).
   // Explicit column select — never SELECT * on the PII-bearing applications table.
   let application: ApplicationRow | null = null
   try {
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/applications?id=eq.${applicationId}&select=id,tier&limit=1`,
+      `${SUPABASE_URL}/rest/v1/applications?id=eq.${applicationId}&select=id,tier,property_ref&limit=1`,
       { headers: sbHeaders, cache: 'no-store' }
     )
     if (!res.ok) {
@@ -103,6 +107,9 @@ export async function POST(req: NextRequest) {
   if (!application) return bad('Application not found', 404)
   if (application.tier !== 'green') {
     return bad('Not eligible for booking', 403)
+  }
+  if (!application.property_ref) {
+    return bad('Application missing property reference', 500)
   }
 
   // 2. Already-booked check: if this applicant has any booked slot, refuse.
@@ -125,14 +132,16 @@ export async function POST(req: NextRequest) {
     console.error('[book-viewing] existing booking check error:', err)
   }
 
-  // 3. Atomic claim — PATCH with a status=eq.available guard.
-  // PostgREST matches rows that satisfy BOTH filters, so if another request
-  // already flipped the row to 'booked', the update affects zero rows and
-  // the returning array is empty. This is the "single UPDATE ... RETURNING"
-  // the brief calls for, implemented via PostgREST's filtered PATCH.
+  // 3. Atomic claim — PATCH with a status=eq.available AND property_ref guard.
+  // The property_ref filter is a cross-check that prevents a green applicant
+  // from claiming a slot at a different property via a direct API call with
+  // a foreign slotId. Combined with status=eq.available it is the single
+  // "UPDATE ... WHERE id=? AND status='available' AND property_ref=? RETURNING"
+  // the brief asks for, expressed as a PostgREST filtered PATCH.
+  const propertyRefParam = encodeURIComponent(application.property_ref)
   try {
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/viewing_slots?id=eq.${slotId}&status=eq.available&select=id,slot_date,start_time,property_name`,
+      `${SUPABASE_URL}/rest/v1/viewing_slots?id=eq.${slotId}&status=eq.available&property_ref=eq.${propertyRefParam}&select=id,slot_date,start_time,property_name`,
       {
         method: 'PATCH',
         headers: { ...sbHeaders, Prefer: 'return=representation' },

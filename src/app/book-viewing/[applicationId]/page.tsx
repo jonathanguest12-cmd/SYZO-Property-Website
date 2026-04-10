@@ -10,9 +10,6 @@ export const revalidate = 0
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
-const SUPABASE_URL =
-  process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://mtrrxtwisgftkqujfqlr.supabase.co'
-
 type ApplicationRow = {
   id: string
   tier: 'green' | 'amber' | 'red'
@@ -28,9 +25,13 @@ function ukTodayIso(): string {
   return new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/London' })
 }
 
-async function sbGet<T>(path: string, key: string): Promise<T | null> {
+async function sbGet<T>(
+  path: string,
+  key: string,
+  baseUrl: string
+): Promise<T | null> {
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    const res = await fetch(`${baseUrl}/rest/v1/${path}`, {
       headers: {
         apikey: key,
         Authorization: `Bearer ${key}`,
@@ -60,15 +61,19 @@ export default async function BookViewingPage({
   }
 
   const SUPABASE_KEY = process.env.SUPABASE_SECRET_KEY_PARROT
-  if (!SUPABASE_KEY) {
-    console.error('[book-viewing/page] SUPABASE_SECRET_KEY_PARROT is not set')
+  const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
+  if (!SUPABASE_KEY || !SUPABASE_URL) {
+    console.error(
+      '[book-viewing/page] Missing SUPABASE_SECRET_KEY_PARROT or NEXT_PUBLIC_SUPABASE_URL'
+    )
     redirect('/')
   }
 
   // Fetch the application. Explicit column list — never SELECT * on PII tables.
   const appRows = await sbGet<ApplicationRow[]>(
     `applications?id=eq.${applicationId}&select=id,tier,property_ref,property_name,full_name,email,phone&limit=1`,
-    SUPABASE_KEY
+    SUPABASE_KEY,
+    SUPABASE_URL
   )
   const application = appRows && appRows[0]
   if (!application || application.tier !== 'green') {
@@ -82,7 +87,8 @@ export default async function BookViewingPage({
   // Check if this applicant already has a booked slot.
   const existingRows = await sbGet<SlotData[]>(
     `viewing_slots?applicant_id=eq.${applicationId}&status=eq.booked&select=id,slot_date,start_time,property_name&limit=1`,
-    SUPABASE_KEY
+    SUPABASE_KEY,
+    SUPABASE_URL
   )
   const existingBooking = (existingRows && existingRows[0]) || null
 
@@ -93,7 +99,8 @@ export default async function BookViewingPage({
       `viewing_slots?property_ref=eq.${encodeURIComponent(
         application.property_ref
       )}&status=eq.available&slot_date=gte.${today}&select=id,slot_date,start_time,property_name&order=slot_date.asc,start_time.asc`,
-      SUPABASE_KEY
+      SUPABASE_KEY,
+      SUPABASE_URL
     )) || []
 
   const appData: ApplicationData = {
