@@ -3,8 +3,6 @@ import { Ratelimit } from '@upstash/ratelimit'
 import { Redis } from '@upstash/redis'
 import { scoreApplication, type IncomeBracket, type ScreeningAnswers } from '@/lib/scoring'
 
-const SUPABASE_URL = 'https://mtrrxtwisgftkqujfqlr.supabase.co'
-
 const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL!,
   token: process.env.UPSTASH_REDIS_REST_TOKEN!,
@@ -38,8 +36,11 @@ function bad(msg: string, status = 400) {
 
 export async function POST(req: NextRequest) {
   const SUPABASE_KEY = process.env.SUPABASE_SECRET_KEY_PARROT
-  if (!SUPABASE_KEY) {
-    console.error('[submit] SUPABASE_SECRET_KEY_PARROT is not set')
+  const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
+  if (!SUPABASE_KEY || !SUPABASE_URL) {
+    console.error(
+      '[submit] Missing SUPABASE_SECRET_KEY_PARROT or NEXT_PUBLIC_SUPABASE_URL'
+    )
     return bad('Submission failed. Please try again.', 500)
   }
 
