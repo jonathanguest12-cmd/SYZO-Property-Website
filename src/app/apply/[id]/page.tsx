@@ -1,19 +1,36 @@
-import { notFound } from 'next/navigation'
-import Image from 'next/image'
 import Link from 'next/link'
-import {
-  fetchRoomById,
-  fetchRoomBySpareRoomId,
-  insertStaleLinkLead,
-} from '@/lib/queries'
+import { fetchRoomById, fetchRoomBySpareRoomId, insertStaleLinkLead } from '@/lib/queries'
 import type { RoomWithProperty } from '@/lib/types'
+import ApplyClient from './ApplyClient'
+
+export const revalidate = 3600
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
-function getRoomTitle(room: RoomWithProperty): string {
-  if (room.advert_title) return room.advert_title
-  const type = room.room_type === 'doubleRoom' ? 'Double Room' : room.room_type === 'singleRoom' ? 'Single Room' : 'Room'
-  return `${type} \u2014 ${room.property_name}`
+export async function generateStaticParams() {
+  const supabaseUrl =
+    process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://mtrrxtwisgftkqujfqlr.supabase.co'
+  const supabaseKey =
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    'sb_publishable_eh8vOh14012eMEE1KgLDXA_5XmDjiHU'
+
+  try {
+    const res = await fetch(
+      `${supabaseUrl}/rest/v1/rooms?select=id&available_from=not.is.null&limit=300`,
+      {
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${supabaseKey}`,
+        },
+        cache: 'no-store',
+      }
+    )
+    if (!res.ok) return []
+    const rooms = await res.json()
+    return rooms.map((r: { id: string }) => ({ id: r.id }))
+  } catch {
+    return []
+  }
 }
 
 async function resolveRoom(id: string): Promise<RoomWithProperty | null> {
@@ -24,78 +41,26 @@ async function resolveRoom(id: string): Promise<RoomWithProperty | null> {
   return fetchRoomBySpareRoomId(id)
 }
 
-function RoomSummary({ room }: { room: RoomWithProperty }) {
-  const photoUrl = room.photo_urls.length > 0 ? room.photo_urls[0] : null
-  const title = getRoomTitle(room)
+function formatAvailableLabel(availableFrom: string | null): string {
+  if (!availableFrom) return 'Availability TBC'
+  const date = new Date(availableFrom)
+  if (Number.isNaN(date.getTime())) return 'Availability TBC'
+  if (date <= new Date()) return 'Available now'
+  return `Available from ${date.toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'long',
+  })}`
+}
 
-  return (
-    <div className="mx-auto w-full max-w-2xl px-4 py-16 sm:px-6">
-      {/* Room context card */}
-      <div
-        className="flex gap-4 rounded-xl bg-white p-4 mb-8"
-        style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}
-      >
-        {photoUrl && (
-          <div
-            className="relative flex-shrink-0 overflow-hidden rounded-lg"
-            style={{ width: '80px', aspectRatio: '4/3', backgroundColor: '#E5E3DF' }}
-          >
-            <Image
-              src={photoUrl}
-              alt={title}
-              fill
-              quality={75}
-              className="object-cover"
-              sizes="80px"
-            />
-          </div>
-        )}
-        <div className="flex flex-col gap-1">
-          <h2 className="font-semibold" style={{ color: '#2D3038' }}>{title}</h2>
-          <p className="text-sm" style={{ color: '#9CA3AF' }}>
-            {room.property_name} &middot; {room.property_city}
-          </p>
-          <p className="text-xl font-bold tabular-nums" style={{ color: '#2D3038' }}>
-            &pound;{Math.round(room.rent_pcm)}
-            <span className="text-sm font-normal ml-1" style={{ color: '#9CA3AF' }}>/month</span>
-          </p>
-        </div>
-      </div>
-
-      {/* Application form placeholder */}
-      <div className="text-center">
-        <h1 className="text-2xl font-bold tracking-tight md:text-3xl" style={{ color: '#2D3038' }}>
-          Apply to Rent
-        </h1>
-        <div
-          className="mt-6 rounded-xl bg-white p-8"
-          style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}
-        >
-          <p style={{ color: '#6B7280' }}>
-            The application form is coming soon. In the meantime, please
-            contact us to express your interest.
-          </p>
-          <p className="mt-4 text-sm" style={{ color: '#9CA3AF' }}>
-            Call{' '}
-            <a href="tel:01174504898" className="font-medium underline underline-offset-2" style={{ color: '#2D3038' }}>
-              0117 450 4898
-            </a>
-            {' '}or email{' '}
-            <a href="mailto:hello@syzo.co" className="font-medium underline underline-offset-2" style={{ color: '#2D3038' }}>
-              hello@syzo.co
-            </a>
-          </p>
-        </div>
-        <Link
-          href={`/room/${room.id}`}
-          className="mt-6 inline-block text-sm font-medium transition-colors duration-200 hover:opacity-70"
-          style={{ color: '#6B7280' }}
-        >
-          &larr; Back to Room
-        </Link>
-      </div>
-    </div>
-  )
+function getRoomTitle(room: RoomWithProperty): string {
+  if (room.advert_title) return room.advert_title
+  const type =
+    room.room_type === 'doubleRoom'
+      ? 'Double Room'
+      : room.room_type === 'singleRoom'
+      ? 'Single Room'
+      : 'Room'
+  return `${type} \u2014 ${room.property_name}`
 }
 
 export default async function ApplyPage({
@@ -104,31 +69,42 @@ export default async function ApplyPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-
   const room = await resolveRoom(id)
-  if (room) {
-    return <RoomSummary room={room} />
+
+  if (!room) {
+    // Stale link — record lead and show fallback
+    await insertStaleLinkLead(id)
+    return (
+      <div className="mx-auto w-full max-w-2xl px-4 py-16 sm:px-6 text-center">
+        <h1
+          className="text-2xl font-bold tracking-tight md:text-3xl"
+          style={{ color: '#2D3038' }}
+        >
+          Room No Longer Available
+        </h1>
+        <p className="mt-4" style={{ color: '#6B7280' }}>
+          Sorry, the room you were looking at is no longer listed. Browse our
+          other available rooms below.
+        </p>
+        <Link
+          href="/"
+          className="mt-6 inline-flex items-center justify-center rounded-lg px-6 py-3.5 text-sm font-semibold text-white transition-colors duration-200"
+          style={{ backgroundColor: '#2D3038' }}
+        >
+          Browse Available Rooms
+        </Link>
+      </div>
+    )
   }
 
-  // Stale link -- record lead and show message
-  await insertStaleLinkLead(id)
-
   return (
-    <div className="mx-auto w-full max-w-2xl px-4 py-16 sm:px-6 text-center">
-      <h1 className="text-2xl font-bold tracking-tight md:text-3xl" style={{ color: '#2D3038' }}>
-        Room No Longer Available
-      </h1>
-      <p className="mt-4" style={{ color: '#6B7280' }}>
-        Sorry, the room you were looking at is no longer listed. Browse our
-        other available rooms below.
-      </p>
-      <Link
-        href="/"
-        className="mt-6 inline-flex items-center justify-center rounded-lg px-6 py-3.5 text-sm font-semibold text-white transition-colors duration-200"
-        style={{ backgroundColor: '#2D3038' }}
-      >
-        Browse Available Rooms
-      </Link>
-    </div>
+    <ApplyClient
+      roomId={room.id}
+      roomName={getRoomTitle(room)}
+      propertyName={room.property_name}
+      propertyRef={room.property_ref}
+      rentPcm={Math.round(room.rent_pcm)}
+      availableLabel={formatAvailableLabel(room.available_from)}
+    />
   )
 }
