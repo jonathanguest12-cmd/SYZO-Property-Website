@@ -711,7 +711,7 @@ function ResultView({
           </div>
         }
         heading="Great news."
-        body="You\u2019re a strong fit for this room. We\u2019ll be in touch within 24 hours to arrange a viewing."
+        body="You're a strong fit for this room. We'll be in touch within 24 hours to arrange a viewing."
         primaryCta={
           applicationId
             ? { label: 'Book a Viewing', href: `/book-viewing/${applicationId}` }
@@ -741,7 +741,7 @@ function ResultView({
     <ResultLayout
       icon={<NeutralCircle />}
       heading="Thanks for applying."
-      body="We\u2019ve received your application and will be in touch if we have something that\u2019s a good fit."
+      body="We've received your application and will be in touch if we have something that's a good fit."
       primaryCta={{ label: 'Browse other rooms', href: '/' }}
     />
   )
