@@ -1,13 +1,18 @@
 import { Suspense } from 'react'
-import { fetchAllRooms } from '@/lib/queries'
+import { fetchAllRooms, fetchAllPropertyNames } from '@/lib/queries'
 import RoomBrowser from '@/components/RoomBrowser'
+import type { RoomWithProperty } from '@/lib/types'
 
 export const revalidate = 3600
 
 export default async function HomePage() {
-  let rooms
+  let rooms: RoomWithProperty[]
+  let allPropertyNames: string[]
   try {
-    rooms = await fetchAllRooms()
+    ;[rooms, allPropertyNames] = await Promise.all([
+      fetchAllRooms(),
+      fetchAllPropertyNames(),
+    ])
   } catch (error) {
     console.error('Failed to fetch rooms:', error)
     return (
@@ -37,7 +42,7 @@ export default async function HomePage() {
       </section>
 
       <Suspense>
-        <RoomBrowser rooms={rooms} />
+        <RoomBrowser rooms={rooms} allPropertyNames={allPropertyNames} />
       </Suspense>
     </>
   )

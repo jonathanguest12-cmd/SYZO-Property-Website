@@ -35,13 +35,13 @@ describe('RoomBrowser', () => {
   const rooms = [plymouthRoom, newquayRoom]
 
   it('renders room count', () => {
-    render(<RoomBrowser rooms={rooms} />)
+    render(<RoomBrowser rooms={rooms} allPropertyNames={[]} />)
     expect(screen.getByText(/rooms? available/)).toBeInTheDocument()
   })
 
   it('filters by area when Plymouth is clicked in the filter', async () => {
     const user = userEvent.setup()
-    render(<RoomBrowser rooms={rooms} />)
+    render(<RoomBrowser rooms={rooms} allPropertyNames={[]} />)
 
     // Open filters first
     const filtersButton = screen.getByText('Filters')
@@ -60,13 +60,13 @@ describe('RoomBrowser', () => {
   })
 
   it('shows empty state when no results', () => {
-    render(<RoomBrowser rooms={[]} />)
+    render(<RoomBrowser rooms={[]} allPropertyNames={[]} />)
     expect(screen.getByText('No rooms match your filters')).toBeInTheDocument()
   })
 
   it('toggles to property view', async () => {
     const user = userEvent.setup()
-    render(<RoomBrowser rooms={rooms} />)
+    render(<RoomBrowser rooms={rooms} allPropertyNames={[]} />)
 
     const buttons = screen.getAllByRole('button')
     const propertiesButton = buttons.find(
@@ -79,13 +79,13 @@ describe('RoomBrowser', () => {
   })
 
   it('respects initialArea', () => {
-    render(<RoomBrowser rooms={rooms} initialArea="newquay" />)
+    render(<RoomBrowser rooms={rooms} allPropertyNames={[]} initialArea="newquay" />)
     expect(screen.getAllByText(/10 Beach Road/).length).toBeGreaterThan(0)
     expect(screen.queryByText(/Plymouth, PL4 7EG/)).not.toBeInTheDocument()
   })
 
   it('shows active filter count badge', async () => {
-    render(<RoomBrowser rooms={rooms} initialArea="plymouth" />)
+    render(<RoomBrowser rooms={rooms} allPropertyNames={[]} initialArea="plymouth" />)
 
     const filtersButton = screen.getByText('Filters').closest('button')!
     expect(filtersButton.textContent).toContain('1')
@@ -93,7 +93,7 @@ describe('RoomBrowser', () => {
 
   it('sorts by price descending', async () => {
     const user = userEvent.setup()
-    render(<RoomBrowser rooms={rooms} />)
+    render(<RoomBrowser rooms={rooms} allPropertyNames={[]} />)
 
     // Open filters
     const filtersButton = screen.getByText('Filters')

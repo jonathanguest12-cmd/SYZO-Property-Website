@@ -1,6 +1,6 @@
 import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
-import { fetchAllRooms } from '@/lib/queries'
+import { fetchAllRooms, fetchAllPropertyNames } from '@/lib/queries'
 import RoomBrowser from '@/components/RoomBrowser'
 import type { AreaFilter } from '@/lib/types'
 
@@ -22,7 +22,19 @@ export default async function CityPage({
   const areaFilter = validCities[city.toLowerCase()]
   if (!areaFilter) notFound()
 
-  const rooms = await fetchAllRooms()
+  const [rooms, allPropertyNames] = await Promise.all([
+    fetchAllRooms(),
+    fetchAllPropertyNames(),
+  ])
 
-  return <Suspense><RoomBrowser rooms={rooms} initialArea={areaFilter} initialView="rooms" /></Suspense>
+  return (
+    <Suspense>
+      <RoomBrowser
+        rooms={rooms}
+        allPropertyNames={allPropertyNames}
+        initialArea={areaFilter}
+        initialView="rooms"
+      />
+    </Suspense>
+  )
 }

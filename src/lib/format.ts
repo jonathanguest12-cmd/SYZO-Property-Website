@@ -2,6 +2,33 @@
  * Shared formatting utilities for the SYZO property website.
  */
 
+/**
+ * Display name for a property, disambiguated when multiple properties share
+ * the same road. Used by the room detail page, the property detail page,
+ * and the RoomCard / PropertyCard components so every surface renders the
+ * same string for the same underlying property.
+ *
+ *   single on the road   → "Radnor Place"
+ *   multiple on the road → "Property 1, Radnor Place" / "Property 2, Radnor Place"
+ *
+ * The caller must pass the full list of property names from Supabase
+ * (fetchAllPropertyNames) — not a subset derived from currently-loaded
+ * rooms — otherwise the numbering will drift when filters hide siblings.
+ */
+export function buildPropertyDisplayName(
+  propertyName: string,
+  allPropertyNames: string[],
+): string {
+  const stripped = propertyName.replace(/^\d+[-\s]+/, '').trim()
+  const siblings = allPropertyNames.filter(
+    (p) => p.replace(/^\d+[-\s]+/, '').trim() === stripped
+  )
+  if (siblings.length <= 1) return stripped
+  const sorted = [...siblings].sort()
+  const index = sorted.indexOf(propertyName)
+  return `Property ${index + 1}, ${stripped}`
+}
+
 export function formatAvailableFrom(value: string | null | undefined): string {
   if (!value) return 'Available Now'
   const lower = value.toLowerCase()

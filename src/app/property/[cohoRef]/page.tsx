@@ -457,7 +457,7 @@ export default async function PropertyPage({
         ) : (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 md:gap-6">
             {rooms.map((room) => (
-              <RoomCard key={room.id} room={room} />
+              <RoomCard key={room.id} room={room} allPropertyNames={allPropertyNames} />
             ))}
           </div>
         )}

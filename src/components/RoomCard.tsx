@@ -1,7 +1,13 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import type { RoomWithProperty } from '@/lib/types'
-import { formatAvailableFrom, isAvailableNow, roomTypeLabel, isIllustrationPhoto } from '@/lib/format'
+import {
+  buildPropertyDisplayName,
+  formatAvailableFrom,
+  isAvailableNow,
+  roomTypeLabel,
+  isIllustrationPhoto,
+} from '@/lib/format'
 
 /** SVG house icon for no-photo placeholder */
 function HouseIcon() {
@@ -13,9 +19,8 @@ function HouseIcon() {
   )
 }
 
-function formatRoomAddress(propertyName: string, roomName: string): string {
-  const stripped = propertyName.replace(/^\d+[-\s]+/, '').trim()
-  return `${roomName}, ${stripped}`
+function formatRoomAddress(displayPropertyName: string, roomName: string): string {
+  return `${roomName}, ${displayPropertyName}`
 }
 
 /** Build consistent feature pills: room type + en-suite if applicable */
@@ -35,11 +40,25 @@ function getFeaturePills(room: RoomWithProperty): string[] {
   return pills
 }
 
-export default function RoomCard({ room }: { room: RoomWithProperty }) {
+export default function RoomCard({
+  room,
+  allPropertyNames = [],
+}: {
+  room: RoomWithProperty
+  /**
+   * Full list of property names from Supabase. When provided, the card
+   * title disambiguates shared-road properties (e.g. "Room 7, Property 1,
+   * Radnor Place"). When omitted it falls back to the plain stripped road
+   * name — used by tests and by any future caller that only cares about
+   * card chrome.
+   */
+  allPropertyNames?: string[]
+}) {
   const photoUrl = room.photo_urls.length > 0 ? room.photo_urls[0] : null
   const availText = formatAvailableFrom(room.available_from)
   const availNow = isAvailableNow(room.available_from)
   const featurePills = getFeaturePills(room)
+  const displayPropertyName = buildPropertyDisplayName(room.property_name, allPropertyNames)
 
   // Count total gallery photos (room + property, deduped) to match detail page
   const totalPhotos = (() => {
@@ -125,7 +144,7 @@ export default function RoomCard({ room }: { room: RoomWithProperty }) {
         {/* Title: always street address */}
         <div>
           <h3 className="text-[15px] font-semibold leading-snug" style={{ color: '#2D3038' }}>
-            {formatRoomAddress(room.property_name, room.name)}
+            {formatRoomAddress(displayPropertyName, room.name)}
           </h3>
           <p className="mt-0.5 text-sm truncate" style={{ color: '#9CA3AF' }}>
             {room.property_city}, {room.property_postcode}

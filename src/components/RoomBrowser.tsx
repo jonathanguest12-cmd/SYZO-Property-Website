@@ -16,6 +16,7 @@ import PropertyCard from './PropertyCard'
 
 interface RoomBrowserProps {
   rooms: RoomWithProperty[]
+  allPropertyNames: string[]
   initialArea?: AreaFilter
   initialView?: ViewMode
 }
@@ -56,7 +57,12 @@ function matchesAvailability(dateStr: string, filter: AvailabilityFilter): boole
   return date <= cutoff
 }
 
-export default function RoomBrowser({ rooms, initialArea = 'all', initialView }: RoomBrowserProps) {
+export default function RoomBrowser({
+  rooms,
+  allPropertyNames,
+  initialArea = 'all',
+  initialView,
+}: RoomBrowserProps) {
   const searchParams = useSearchParams()
   const resolvedView = initialView ?? (searchParams.get('view') === 'properties' ? 'properties' : 'rooms')
   const [area, setArea] = useState<AreaFilter>(initialArea)
@@ -114,14 +120,6 @@ export default function RoomBrowser({ rooms, initialArea = 'all', initialView }:
     }
     return map
   }, [filtered])
-
-  const allPropertyNames = useMemo(() => {
-    const names = new Set<string>()
-    for (const room of rooms) {
-      if (room.property_name) names.add(room.property_name)
-    }
-    return [...names]
-  }, [rooms])
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-6 md:px-8 md:py-8">
@@ -303,7 +301,7 @@ export default function RoomBrowser({ rooms, initialArea = 'all', initialView }:
       ) : view === 'rooms' ? (
         <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 md:gap-6">
           {filtered.map((room) => (
-            <RoomCard key={room.id} room={room} />
+            <RoomCard key={room.id} room={room} allPropertyNames={allPropertyNames} />
           ))}
         </div>
       ) : (

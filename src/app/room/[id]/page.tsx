@@ -12,6 +12,7 @@ import {
 } from '@/lib/queries'
 import type { RoomWithProperty } from '@/lib/types'
 import {
+  buildPropertyDisplayName,
   formatAvailableFrom,
   isAvailableNow,
   roomTypeLabel,
@@ -24,28 +25,6 @@ import RoomActions from '@/components/RoomActions'
 import { buildRoomSystemPrompt } from '@/lib/chatbot'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-
-/**
- * Display name for a property, disambiguated when multiple properties share
- * the same road. Mirrors `formatPropertyAddress` in src/app/property/[cohoRef]/page.tsx
- * so both surfaces render the same string.
- *
- *  single on the road   → "Radnor Place"
- *  multiple on the road → "Property 1, Radnor Place" / "Property 2, Radnor Place"
- */
-function buildPropertyDisplayName(
-  propertyName: string,
-  allPropertyNames: string[],
-): string {
-  const stripped = propertyName.replace(/^\d+[-\s]+/, '').trim()
-  const siblings = allPropertyNames.filter(
-    (p) => p.replace(/^\d+[-\s]+/, '').trim() === stripped
-  )
-  if (siblings.length <= 1) return stripped
-  const sorted = [...siblings].sort()
-  const index = sorted.indexOf(propertyName)
-  return `Property ${index + 1}, ${stripped}`
-}
 
 function formatRoomAddress(displayPropertyName: string, roomName: string): string {
   return `${roomName}, ${displayPropertyName}`
