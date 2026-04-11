@@ -8,6 +8,7 @@ import {
   fetchRoomById,
   fetchRoomBySpareRoomId,
   fetchRoomsForProperty,
+  fetchAllPropertyNames,
 } from '@/lib/queries'
 import type { RoomWithProperty } from '@/lib/types'
 import {
@@ -24,9 +25,30 @@ import { buildRoomSystemPrompt } from '@/lib/chatbot'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
-function formatRoomAddress(propertyName: string, roomName: string): string {
+/**
+ * Display name for a property, disambiguated when multiple properties share
+ * the same road. Mirrors `formatPropertyAddress` in src/app/property/[cohoRef]/page.tsx
+ * so both surfaces render the same string.
+ *
+ *  single on the road   → "Radnor Place"
+ *  multiple on the road → "Property 1, Radnor Place" / "Property 2, Radnor Place"
+ */
+function buildPropertyDisplayName(
+  propertyName: string,
+  allPropertyNames: string[],
+): string {
   const stripped = propertyName.replace(/^\d+[-\s]+/, '').trim()
-  return `${roomName}, ${stripped}`
+  const siblings = allPropertyNames.filter(
+    (p) => p.replace(/^\d+[-\s]+/, '').trim() === stripped
+  )
+  if (siblings.length <= 1) return stripped
+  const sorted = [...siblings].sort()
+  const index = sorted.indexOf(propertyName)
+  return `Property ${index + 1}, ${stripped}`
+}
+
+function formatRoomAddress(displayPropertyName: string, roomName: string): string {
+  return `${roomName}, ${displayPropertyName}`
 }
 
 export async function generateStaticParams() {
@@ -355,9 +377,13 @@ async function resolveRoom(id: string): Promise<RoomWithProperty | null> {
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params
-  const room = await resolveRoom(id)
+  const [room, allPropertyNames] = await Promise.all([
+    resolveRoom(id),
+    fetchAllPropertyNames(),
+  ])
   if (!room) return { title: 'Room Not Found - SYZO' }
-  const addressTitle = formatRoomAddress(room.property_name, room.name)
+  const displayPropertyName = buildPropertyDisplayName(room.property_name, allPropertyNames)
+  const addressTitle = formatRoomAddress(displayPropertyName, room.name)
   return {
     title: `${addressTitle} - SYZO`,
     description: `${addressTitle}, ${room.property_city}. \u00A3${Math.round(room.rent_pcm)}/month. ${room.bills_included ? 'Bills included.' : 'Bills extra.'}`,
@@ -366,9 +392,13 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
 export default async function RoomDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const room = await resolveRoom(id)
+  const [room, allPropertyNames] = await Promise.all([
+    resolveRoom(id),
+    fetchAllPropertyNames(),
+  ])
   if (!room) notFound()
 
+  const displayPropertyName = buildPropertyDisplayName(room.property_name, allPropertyNames)
   const otherRooms = (await fetchRoomsForProperty(room.property_ref)).filter((r) => r.id !== room.id)
 
   const availText = formatAvailableFrom(room.available_from)
@@ -398,7 +428,7 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
   const depositInfo = parsed?.depositInfo ?? null
 
   const chatSystemPrompt = buildRoomSystemPrompt(room)
-  const chatGreeting = `Hi! I'm here to answer any questions about ${room.name} at ${room.property_name.replace(/^\d+[-\s]+/, '').trim()}. What would you like to know?`
+  const chatGreeting = `Hi! I'm here to answer any questions about ${room.name} at ${displayPropertyName}. What would you like to know?`
 
   return (
     <>
@@ -422,7 +452,7 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
                   systemPrompt={chatSystemPrompt}
                   greeting={chatGreeting}
                   roomName={room.name}
-                  propertyName={room.property_name}
+                  propertyName={displayPropertyName}
                   propertyRef={room.property_ref}
                 />
               </div>
@@ -431,7 +461,7 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
               {otherRooms.length > 0 && (
                 <div className="hidden lg:block mt-4">
                   <h3 className="text-sm font-semibold uppercase tracking-[0.1em] mb-3" style={{ color: '#9CA3AF' }}>
-                    Other Rooms at {room.property_name.replace(/^\d+[-\s]+/, '').trim()}
+                    Other Rooms at {displayPropertyName}
                   </h3>
                   <div className="flex flex-col gap-2">
                     {otherRooms.map((r) => (
@@ -471,7 +501,7 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
           {/* RIGHT: Content cards */}
           <div className="flex flex-col gap-5 min-w-0">
             <div>
-              <h1 className="text-2xl font-bold tracking-tight md:text-3xl break-words min-w-0" style={{ color: '#2D3038' }}>{formatRoomAddress(room.property_name, room.name)}</h1>
+              <h1 className="text-2xl font-bold tracking-tight md:text-3xl break-words min-w-0" style={{ color: '#2D3038' }}>{formatRoomAddress(displayPropertyName, room.name)}</h1>
               <p className="mt-1.5 text-sm" style={{ color: '#9CA3AF' }}>
                 {room.property_city}, {room.property_postcode}
                 {room.room_type && ` \u00B7 ${roomTypeLabel(room.room_type)}`}
@@ -682,7 +712,7 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
             {/* Mobile: Other rooms */}
             {otherRooms.length > 0 && (
               <div className="lg:hidden">
-                <Card title={`Other Rooms at ${room.property_name.replace(/^\d+[-\s]+/, '').trim()}`}>
+                <Card title={`Other Rooms at ${displayPropertyName}`}>
                   <div className="flex gap-3 overflow-x-auto pb-1">
                     {otherRooms.map((r) => (
                       <Link key={r.id} href={`/room/${r.id}`} className="flex-shrink-0 overflow-hidden rounded-lg" style={{ width: '200px', border: '1px solid #F0EFEC' }}>
@@ -720,7 +750,7 @@ export default async function RoomDetailPage({ params }: { params: Promise<{ id:
               systemPrompt={chatSystemPrompt}
               greeting={chatGreeting}
               roomName={room.name}
-              propertyName={room.property_name}
+              propertyName={displayPropertyName}
               propertyRef={room.property_ref}
             />
           </div>
