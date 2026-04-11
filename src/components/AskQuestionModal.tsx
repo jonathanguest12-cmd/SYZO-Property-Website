@@ -343,8 +343,8 @@ export default function AskQuestionModal({
                   if (e.key === 'Enter') sendMessage()
                 }}
                 placeholder="Type your question..."
-                className="flex-1 text-sm outline-none bg-transparent"
-                style={{ color: '#2D3038' }}
+                className="flex-1 text-base outline-none bg-transparent"
+                style={{ color: '#2D3038', fontSize: 16 }}
               />
               <button
                 onClick={sendMessage}
