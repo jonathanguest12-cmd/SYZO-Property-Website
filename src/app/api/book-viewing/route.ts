@@ -159,6 +159,29 @@ export async function POST(req: NextRequest) {
     if (!Array.isArray(rows) || rows.length === 0) {
       return NextResponse.json({ success: false, error: 'slot_taken' })
     }
+
+    // Fire-and-forget webhook to n8n view-02 for booking confirmation
+    // (email + WhatsApp). Never block the booking response.
+    const webhookBase = process.env.N8N_BASE_URL
+    const webhookToken = process.env.WEBHOOK_INTERNAL_TOKEN
+    if (webhookBase && webhookToken) {
+      fetch(`${webhookBase}/webhook/view-02-booking-confirmation`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-internal-token': webhookToken,
+        },
+        body: JSON.stringify({
+          applicationId: applicationId,
+          slotId: rows[0].id,
+        }),
+      }).catch((err) => {
+        console.error('[view-02] Webhook call failed:', err.message)
+      })
+    } else {
+      console.warn('[view-02] Skipping webhook — N8N_BASE_URL or WEBHOOK_INTERNAL_TOKEN not set')
+    }
+
     return NextResponse.json({ success: true, slot: rows[0] })
   } catch (err) {
     console.error('[book-viewing] claim error:', err)
