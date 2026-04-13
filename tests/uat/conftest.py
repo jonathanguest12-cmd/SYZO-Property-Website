@@ -46,11 +46,15 @@ SB_HEADERS = {
     "Content-Type": "application/json",
 }
 
-# Seed properties in viewing_slots — stable across runs.
-PROPERTY_REF_WITH_SLOTS = "test-property-001"
+# Real properties with room-level viewing slots (seeded by Brief 1).
+PROPERTY_REF_WITH_SLOTS = "9-radnor-place-jcheb"
 PROPERTY_NAME_WITH_SLOTS = "Radnor Place"
-PROPERTY_REF_FOREIGN = "test-property-002"
+ROOM_ID_WITH_SLOTS = "57a3a19f-8db4-4579-99f7-e811dd6b5c56"  # room-5-bhmxr
+ROOM_REF_WITH_SLOTS = "room-5-bhmxr"
+PROPERTY_REF_FOREIGN = "64-alexandra-road-gfjsn"
 PROPERTY_NAME_FOREIGN = "Alexandra Road"
+ROOM_ID_FOREIGN = "5cd2c562-4503-4529-93ea-5882489ad487"  # room-6-nkgmj
+ROOM_REF_FOREIGN = "room-6-nkgmj"
 
 # Any email matching this pattern is safe to nuke in global cleanup.
 UAT_EMAIL_PREFIX = "uat-"
@@ -122,10 +126,11 @@ class Seeder:
         length_of_stay: str = "12+ months",
         who_moving_in: str = "Just me",
         has_guarantor: Any = None,
+        room_id: str | None = None,
     ) -> str:
         """Insert a single throwaway application. Returns the id."""
         ts = int(time.time() * 1000)
-        payload = {
+        payload: dict[str, Any] = {
             "room_name": "UAT Room",
             "property_name": property_name,
             "property_ref": property_ref,
@@ -147,6 +152,8 @@ class Seeder:
             "red_reason": None,
             "scoring_flags": [],
         }
+        if room_id:
+            payload["room_id"] = room_id
         r = httpx.post(
             f"{SUPABASE_URL}/rest/v1/applications?select=id",
             headers={**SB_HEADERS, "Prefer": "return=representation"},
@@ -212,15 +219,24 @@ def clean_pre_run() -> None:
         )
     except Exception:
         pass
+    # Reset only slots booked by UAT-seeded applicants — never wipe real
+    # tenant bookings. Find UAT application IDs first, then reset their slots.
     try:
-        httpx.patch(
-            f"{SUPABASE_URL}/rest/v1/viewing_slots"
-            f"?property_ref=in.({PROPERTY_REF_WITH_SLOTS},{PROPERTY_REF_FOREIGN})"
-            f"&status=eq.booked",
-            headers={**SB_HEADERS, "Prefer": "return=minimal"},
-            json={"status": "available", "applicant_id": None},
+        uat_apps = httpx.get(
+            f"{SUPABASE_URL}/rest/v1/applications?email=like.{UAT_EMAIL_PREFIX}*&select=id",
+            headers=SB_HEADERS,
             timeout=10.0,
         )
+        if uat_apps.status_code == 200:
+            uat_ids = [a["id"] for a in uat_apps.json()]
+            for aid in uat_ids:
+                httpx.patch(
+                    f"{SUPABASE_URL}/rest/v1/viewing_slots"
+                    f"?applicant_id=eq.{aid}&status=eq.booked",
+                    headers={**SB_HEADERS, "Prefer": "return=minimal"},
+                    json={"status": "available", "applicant_id": None},
+                    timeout=10.0,
+                )
     except Exception:
         pass
     # Clear the /api/submit rate limit keys for every IP that localhost
@@ -283,11 +299,16 @@ def take_screenshot(page: Page, out_dir: Path, index: int, name: str) -> str:
 # Supabase / Upstash helpers
 # ----------------------------------------------------------------------------
 
-def pick_available_slot(property_ref: str) -> dict | None:
+def pick_available_slot(property_ref: str, room_ref: str | None = None) -> dict | None:
+    """Find an available slot, preferring room_ref filter if provided."""
+    ref_filter = (
+        f"room_ref=eq.{room_ref}" if room_ref
+        else f"property_ref=eq.{property_ref}"
+    )
     try:
         r = httpx.get(
             f"{SUPABASE_URL}/rest/v1/viewing_slots"
-            f"?property_ref=eq.{property_ref}&status=eq.available"
+            f"?{ref_filter}&status=eq.available"
             f"&select=id,slot_date,start_time&order=slot_date.asc,start_time.asc&limit=1",
             headers=SB_HEADERS,
             timeout=10.0,
