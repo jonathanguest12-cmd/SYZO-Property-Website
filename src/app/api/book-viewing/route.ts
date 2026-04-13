@@ -31,6 +31,7 @@ type SlotRow = {
   slot_date: string
   start_time: string
   property_name: string
+  room_name: string | null
 }
 
 function bad(msg: string, status = 400) {
@@ -142,7 +143,7 @@ export async function POST(req: NextRequest) {
   const propertyRefParam = encodeURIComponent(application.property_ref)
   try {
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/viewing_slots?id=eq.${slotId}&status=eq.available&property_ref=eq.${propertyRefParam}&select=id,slot_date,start_time,property_name`,
+      `${SUPABASE_URL}/rest/v1/viewing_slots?id=eq.${slotId}&status=eq.available&property_ref=eq.${propertyRefParam}&select=id,slot_date,start_time,property_name,room_name`,
       {
         method: 'PATCH',
         headers: { ...sbHeaders, Prefer: 'return=representation' },
@@ -195,6 +196,7 @@ export async function POST(req: NextRequest) {
             applicationId: applicationId,
             slotId: rows[0].id,
             propertyAddress: propertyAddress,
+            roomName: rows[0].room_name || '',
           }),
         }).catch((err) => {
           console.error('[view-02] Webhook call failed:', err.message)
