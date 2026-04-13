@@ -161,6 +161,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: 'slot_taken' })
     }
 
+    // Look up the full property address for the confirmation email.
+    let propertyAddress = ''
+    try {
+      const propRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/properties?coho_reference=eq.${propertyRefParam}&select=address,postcode&limit=1`,
+        { headers: sbHeaders, cache: 'no-store' }
+      )
+      if (propRes.ok) {
+        const propRows = (await propRes.json()) as { address: string; postcode: string }[]
+        if (propRows[0]) {
+          propertyAddress = `${propRows[0].address}, ${propRows[0].postcode}`
+        }
+      }
+    } catch (err) {
+      console.error('[book-viewing] property address lookup error:', err)
+    }
+
     // Fire-and-forget webhook to n8n view-02 for booking confirmation
     // (email + WhatsApp). Never block the booking response.
     const webhookBase = process.env.N8N_BASE_URL
@@ -177,6 +194,7 @@ export async function POST(req: NextRequest) {
           body: JSON.stringify({
             applicationId: applicationId,
             slotId: rows[0].id,
+            propertyAddress: propertyAddress,
           }),
         }).catch((err) => {
           console.error('[view-02] Webhook call failed:', err.message)
