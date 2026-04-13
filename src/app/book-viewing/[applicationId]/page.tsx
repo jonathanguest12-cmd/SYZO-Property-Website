@@ -94,7 +94,7 @@ export default async function BookViewingPage({
       SUPABASE_URL
     ),
     sbGet<{ name: string }[]>(
-      'properties?select=name&active=eq.true',
+      'properties?select=name&active=eq.true&limit=500',
       SUPABASE_KEY,
       SUPABASE_URL
     ),
@@ -121,7 +121,7 @@ export default async function BookViewingPage({
     : `&property_ref=eq.${encodeURIComponent(application.property_ref)}`
   const slotRows =
     (await sbGet<SlotData[]>(
-      `viewing_slots?status=eq.available&slot_date=gte.${cutoffDate}${cityFilter}&select=id,slot_date,start_time,property_name&order=slot_date.asc,start_time.asc`,
+      `viewing_slots?status=eq.available&slot_date=gte.${cutoffDate}${cityFilter}&select=id,slot_date,start_time,property_name&order=slot_date.asc,start_time.asc&limit=500`,
       SUPABASE_KEY,
       SUPABASE_URL
     )) || []

@@ -62,6 +62,7 @@ export async function fetchAllRooms(): Promise<RoomWithProperty[]> {
     .select('*')
     .not('available_from', 'is', null)
     .order('rent_pcm', { ascending: true })
+    .limit(500)
 
   if (error) throw error
   return (data ?? []).map((row) => mapRoomToRoomWithProperty(row as RoomRow))
@@ -97,6 +98,7 @@ export async function fetchRoomsForProperty(propertyRef: string): Promise<RoomWi
     .select('*')
     .not('available_from', 'is', null)
     .order('rent_pcm', { ascending: true })
+    .limit(500)
 
   if (error) throw error
 
@@ -156,6 +158,7 @@ export async function fetchAvailableRoomCount(city?: string): Promise<number> {
       .from('rooms')
       .select('additional_info')
       .not('available_from', 'is', null)
+      .limit(500)
 
     if (error) throw error
 
@@ -183,6 +186,7 @@ export async function fetchAllPropertyNames(): Promise<string[]> {
     .from('rooms')
     .select('additional_info')
     .not('available_from', 'is', null)
+    .limit(500)
 
   if (error) throw error
 
