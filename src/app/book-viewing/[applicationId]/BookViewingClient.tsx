@@ -302,7 +302,7 @@ export default function BookViewingClient({
 
         {/* Confirming panel */}
         {(view === 'confirming' || view === 'submitting') && selectedSlot && (
-          <div className="p-6 sm:p-8">
+          <div className="p-6 sm:p-8 max-w-lg mx-auto">
             <ConfirmPanel
               slot={selectedSlot}
               propertyNameLabel={application.propertyName}
@@ -598,7 +598,7 @@ function ConfirmPanel({
         className="mt-8 w-full inline-flex items-center justify-center rounded-full px-8 py-3.5 text-sm font-semibold text-white transition-colors duration-200 hover:opacity-90 disabled:opacity-60"
         style={{ backgroundColor: '#2D3038' }}
       >
-        {submitting ? 'Booking\u2026' : 'Confirm Booking'}
+        {submitting ? 'Booking\u2026' : 'Confirm Viewing'}
       </button>
     </div>
   )
