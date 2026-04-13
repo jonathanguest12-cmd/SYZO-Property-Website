@@ -18,6 +18,7 @@ type ApplicationRow = {
   full_name: string | null
   email: string | null
   phone: string | null
+  cancel_count: number | null
 }
 
 // Today in UK time as YYYY-MM-DD. Uses en-CA because it emits ISO-format.
@@ -71,7 +72,7 @@ export default async function BookViewingPage({
 
   // Fetch the application. Explicit column list — never SELECT * on PII tables.
   const appRows = await sbGet<ApplicationRow[]>(
-    `applications?id=eq.${applicationId}&select=id,tier,property_ref,property_name,full_name,email,phone&limit=1`,
+    `applications?id=eq.${applicationId}&select=id,tier,property_ref,property_name,full_name,email,phone,cancel_count&limit=1`,
     SUPABASE_KEY,
     SUPABASE_URL
   )
@@ -103,6 +104,16 @@ export default async function BookViewingPage({
       SUPABASE_URL
     )) || []
 
+  // Filter out slots within the next 24 hours — ensures the 24hr reminder
+  // (view-03) fires before the viewing, not immediately after booking.
+  const minBookableDateTime = new Date(Date.now() + 24 * 60 * 60 * 1000)
+  const bookableSlots = slotRows.filter((slot) => {
+    const slotDateTime = new Date(`${slot.slot_date}T${slot.start_time}`)
+    return slotDateTime > minBookableDateTime
+  })
+
+  const isRebook = (application.cancel_count ?? 0) > 0
+
   const appData: ApplicationData = {
     id: application.id,
     propertyName: application.property_name || 'your room',
@@ -114,8 +125,9 @@ export default async function BookViewingPage({
   return (
     <BookViewingClient
       application={appData}
-      initialSlots={slotRows}
+      initialSlots={bookableSlots}
       existingBooking={existingBooking}
+      isRebook={isRebook}
     />
   )
 }

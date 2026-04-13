@@ -9,6 +9,7 @@ booked state, atomic claim).
 from __future__ import annotations
 
 import re
+from datetime import datetime, timedelta, timezone
 
 import httpx
 from playwright.sync_api import BrowserContext
@@ -309,6 +310,76 @@ def _chk_ui_no_slots_fallback(ctx: BrowserContext, seeder: Seeder, result: StepR
         page.close()
 
 
+def _chk_24h_minimum_window(ctx: BrowserContext, seeder: Seeder, result: StepResult) -> None:
+    """Verify no slots within 24 hours of now are shown on the booking page."""
+    target = _RUNTIME["target_url"]
+    out_dir = _RUNTIME["out_dir"]
+    app_id = seeder.seed_application(PROPERTY_REF_WITH_SLOTS, PROPERTY_NAME_WITH_SLOTS, tier="green")
+    clear_rate_limit(app_id)
+    page, ce, pe = new_page(ctx)
+    try:
+        url = f"{target}/book-viewing/{app_id}"
+        result.url = url
+        result.expected = "All displayed slots are >24 hours from now"
+        page.goto(url, wait_until="networkidle", timeout=20_000)
+        result.screenshot = take_screenshot(page, out_dir, result.index, result.name)
+        body = page.inner_text("body")
+        result.observed = body[:260].replace("\n", " ")
+
+        # If the fallback "No viewing slots" is shown, that's fine — no slots
+        # within 24h means nothing to violate the rule.
+        if "No viewing slots" in body:
+            result.status = "PASS"
+            result.console_errors = ce
+            result.page_errors = pe
+            return
+
+        # Verify via the API that the slots served for this property all start
+        # more than 24 hours from now.
+        now = datetime.now(timezone.utc)
+        cutoff = now + timedelta(hours=24)
+        r = httpx.get(
+            f"{SUPABASE_URL}/rest/v1/viewing_slots"
+            f"?property_ref=eq.{PROPERTY_REF_WITH_SLOTS}&status=eq.available"
+            f"&select=slot_date,start_time&order=slot_date.asc,start_time.asc",
+            headers=SB_HEADERS,
+            timeout=10.0,
+        )
+        all_slots = r.json() if r.status_code == 200 else []
+        slots_within_24h = [
+            s for s in all_slots
+            if datetime.fromisoformat(f"{s['slot_date']}T{s['start_time']}+00:00") <= cutoff
+        ]
+
+        # If there are slots within 24h in the DB but none shown on the page,
+        # the filter is working correctly.
+        if slots_within_24h:
+            # Check none of those near-future times appear in the rendered page
+            violations = []
+            for s in slots_within_24h:
+                h, m, *_ = s["start_time"].split(":")
+                hour = int(h)
+                minute = int(m)
+                period = "PM" if hour >= 12 else "AM"
+                hour12 = hour % 12 or 12
+                time_label = f"{hour12}:{minute:02d} {period}"
+                if time_label in body:
+                    violations.append(f"{s['slot_date']} {time_label}")
+            if violations:
+                result.status = "FAIL"
+                result.reason = f"Slots within 24h shown on page: {violations}"
+            else:
+                result.status = "PASS"
+        else:
+            # No slots within 24h in the DB, so nothing to filter — pass
+            result.status = "PASS"
+
+        result.console_errors = ce
+        result.page_errors = pe
+    finally:
+        page.close()
+
+
 # ----------------------------------------------------------------------------
 # Exported TESTS list — the suite runner concatenates all of these.
 # ----------------------------------------------------------------------------
@@ -323,4 +394,5 @@ TESTS: list[TestCase] = [
     TestCase(name="Booking UI: confirmation view + WhatsApp 24h copy", kind="ui", run=_chk_ui_confirmation_view),
     TestCase(name="Booking API: rate limit at 4th attempt", kind="api", run=_chk_api_rate_limit),
     TestCase(name="Booking UI: no-slots fallback with pre-filled details", kind="ui", run=_chk_ui_no_slots_fallback),
+    TestCase(name="Booking UI: 24h minimum booking window enforced", kind="ui", run=_chk_24h_minimum_window),
 ]

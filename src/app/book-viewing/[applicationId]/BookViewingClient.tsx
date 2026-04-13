@@ -23,13 +23,10 @@ interface Props {
   application: ApplicationData
   initialSlots: SlotData[]
   existingBooking: SlotData | null
+  isRebook?: boolean
 }
 
 type View = 'calendar' | 'confirming' | 'submitting' | 'confirmed'
-
-function stripHouseNumber(name: string): string {
-  return name.replace(/^\d+[-\s]+/, '').trim()
-}
 
 function formatDayLabel(dateStr: string): string {
   // dateStr is YYYY-MM-DD. Parse as local date to avoid UTC-rollback on e.g. 13 Apr.
@@ -90,6 +87,7 @@ export default function BookViewingClient({
   application,
   initialSlots,
   existingBooking,
+  isRebook = false,
 }: Props) {
   const router = useRouter()
   const [view, setView] = useState<View>(
@@ -102,7 +100,6 @@ export default function BookViewingClient({
   const [error, setError] = useState<string | null>(null)
 
   const dayGroups = useMemo(() => groupByDay(initialSlots), [initialSlots])
-  const cleanProperty = stripHouseNumber(application.propertyName)
 
   async function handleConfirm() {
     if (!selectedSlot) return
@@ -161,7 +158,7 @@ export default function BookViewingClient({
     return (
       <ConfirmedView
         slot={confirmedSlot}
-        propertyNameLabel={cleanProperty}
+        propertyNameLabel={application.propertyName}
       />
     )
   }
@@ -180,9 +177,19 @@ export default function BookViewingClient({
           className="mt-2 text-2xl font-bold tracking-tight md:text-3xl"
           style={{ color: '#2D3038' }}
         >
-          {cleanProperty}
+          {application.propertyName}
         </h1>
       </div>
+
+      {isRebook && (
+        <div
+          className="mb-4 rounded-xl px-4 py-3 text-sm leading-relaxed"
+          style={{ backgroundColor: '#FEF9C3', color: '#713F12' }}
+        >
+          Your previous viewing was cancelled. Please select a new time
+          below&nbsp;&mdash; your details are already saved.
+        </div>
+      )}
 
       <div
         className="rounded-2xl bg-white p-6 sm:p-8 border"
@@ -204,7 +211,7 @@ export default function BookViewingClient({
         {(view === 'confirming' || view === 'submitting') && selectedSlot && (
           <ConfirmPanel
             slot={selectedSlot}
-            propertyNameLabel={cleanProperty}
+            propertyNameLabel={application.propertyName}
             application={application}
             submitting={view === 'submitting'}
             onConfirm={handleConfirm}
