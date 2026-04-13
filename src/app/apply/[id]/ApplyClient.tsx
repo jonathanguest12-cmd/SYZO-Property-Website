@@ -415,7 +415,7 @@ function Welcome({ onStart, roomId }: { onStart: () => void; roomId: string }) {
       <button
         type="button"
         onClick={onStart}
-        className="mt-8 w-full sm:w-auto inline-flex items-center justify-center rounded-full px-8 py-3.5 text-sm font-semibold text-white transition-colors duration-200 hover:opacity-90"
+        className="mt-8 w-full sm:w-auto inline-flex items-center justify-center rounded-full px-8 py-3.5 text-sm font-semibold text-white transition-colors duration-200 hover:opacity-90 cursor-pointer"
         style={{ backgroundColor: '#2D3038' }}
       >
         Start Application
