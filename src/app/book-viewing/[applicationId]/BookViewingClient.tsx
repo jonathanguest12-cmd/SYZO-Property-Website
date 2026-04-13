@@ -285,11 +285,16 @@ export default function BookViewingClient({
       )}
 
       <div
-        className="rounded-2xl bg-white border overflow-hidden"
-        style={{
-          borderColor: '#E5E7EB',
-          boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-        }}
+        className={`rounded-2xl overflow-hidden ${
+          view === 'confirming' || view === 'submitting'
+            ? ''
+            : 'bg-white border'
+        }`}
+        style={
+          view === 'confirming' || view === 'submitting'
+            ? {}
+            : { borderColor: '#E5E7EB', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }
+        }
       >
         {error && (
           <div
@@ -545,7 +550,7 @@ function ConfirmPanel({
         onClick={onBack}
         aria-label="Back"
         disabled={submitting}
-        className="mb-4 inline-flex items-center gap-1 text-xs font-medium transition-colors duration-200 hover:opacity-70 disabled:opacity-40"
+        className="mb-4 inline-flex items-center gap-1 text-xs font-medium transition-colors duration-200 hover:opacity-70 disabled:opacity-40 cursor-pointer"
         style={{ color: '#9CA3AF' }}
       >
         <svg
