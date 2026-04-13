@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { waitUntil } from '@vercel/functions'
 import { Ratelimit } from '@upstash/ratelimit'
 import { Redis } from '@upstash/redis'
 
@@ -165,19 +166,22 @@ export async function POST(req: NextRequest) {
     const webhookBase = process.env.N8N_BASE_URL
     const webhookToken = process.env.WEBHOOK_INTERNAL_TOKEN
     if (webhookBase && webhookToken) {
-      fetch(`${webhookBase}/webhook/view-02-booking-confirmation`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-internal-token': webhookToken,
-        },
-        body: JSON.stringify({
-          applicationId: applicationId,
-          slotId: rows[0].id,
-        }),
-      }).catch((err) => {
-        console.error('[view-02] Webhook call failed:', err.message)
-      })
+      const baseUrl = webhookBase.replace(/\/$/, '')
+      waitUntil(
+        fetch(`${baseUrl}/webhook/view-02-booking-confirmation`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-internal-token': webhookToken,
+          },
+          body: JSON.stringify({
+            applicationId: applicationId,
+            slotId: rows[0].id,
+          }),
+        }).catch((err) => {
+          console.error('[view-02] Webhook call failed:', err.message)
+        })
+      )
     } else {
       console.warn('[view-02] Skipping webhook — N8N_BASE_URL or WEBHOOK_INTERNAL_TOKEN not set')
     }
