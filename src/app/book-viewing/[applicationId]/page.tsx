@@ -18,6 +18,11 @@ type ApplicationRow = {
   full_name: string | null
   email: string | null
   phone: string | null
+  cancel_count: number | null
+}
+
+type PropertyRow = {
+  city: string
 }
 
 // Today in UK time as YYYY-MM-DD. Uses en-CA because it emits ISO-format.
@@ -71,7 +76,7 @@ export default async function BookViewingPage({
 
   // Fetch the application. Explicit column list — never SELECT * on PII tables.
   const appRows = await sbGet<ApplicationRow[]>(
-    `applications?id=eq.${applicationId}&select=id,tier,property_ref,property_name,full_name,email,phone&limit=1`,
+    `applications?id=eq.${applicationId}&select=id,tier,property_ref,property_name,full_name,email,phone,cancel_count&limit=1`,
     SUPABASE_KEY,
     SUPABASE_URL
   )
@@ -84,6 +89,14 @@ export default async function BookViewingPage({
     redirect('/')
   }
 
+  // Look up the property's city so we can filter slots by city.
+  const propertyRows = await sbGet<PropertyRow[]>(
+    `properties?coho_reference=eq.${encodeURIComponent(application.property_ref)}&select=city&limit=1`,
+    SUPABASE_KEY,
+    SUPABASE_URL
+  )
+  const propertyCity = propertyRows?.[0]?.city?.toLowerCase() || ''
+
   // Check if this applicant already has a booked slot.
   const existingRows = await sbGet<SlotData[]>(
     `viewing_slots?applicant_id=eq.${applicationId}&status=eq.booked&select=id,slot_date,start_time,property_name&limit=1`,
@@ -92,16 +105,29 @@ export default async function BookViewingPage({
   )
   const existingBooking = (existingRows && existingRows[0]) || null
 
-  // Fetch available slots for this property, today onwards (UK time).
+  // Fetch available slots for this property's city, today onwards (UK time).
   const today = ukTodayIso()
+  const cityFilter = propertyCity
+    ? `&city=eq.${encodeURIComponent(propertyCity)}`
+    : `&property_ref=eq.${encodeURIComponent(application.property_ref)}`
   const slotRows =
     (await sbGet<SlotData[]>(
-      `viewing_slots?property_ref=eq.${encodeURIComponent(
-        application.property_ref
-      )}&status=eq.available&slot_date=gte.${today}&select=id,slot_date,start_time,property_name&order=slot_date.asc,start_time.asc`,
+      `viewing_slots?status=eq.available&slot_date=gte.${today}${cityFilter}&select=id,slot_date,start_time,property_name&order=slot_date.asc,start_time.asc`,
       SUPABASE_KEY,
       SUPABASE_URL
     )) || []
+
+  // Filter out slots within the next 48 hours — ensures the 24hr reminder
+  // (view-03) fires before the viewing, not immediately after booking.
+  const minBookableDateTime = new Date(Date.now() + 48 * 60 * 60 * 1000)
+  const bookableSlots = slotRows.filter((slot) => {
+    // Append 'Z' — Supabase stores times in UTC; explicit suffix avoids
+    // drift when the server's local timezone differs (e.g. BST in summer).
+    const slotDateTime = new Date(`${slot.slot_date}T${slot.start_time}Z`)
+    return slotDateTime > minBookableDateTime
+  })
+
+  const isRebook = (application.cancel_count ?? 0) > 0
 
   const appData: ApplicationData = {
     id: application.id,
@@ -114,8 +140,9 @@ export default async function BookViewingPage({
   return (
     <BookViewingClient
       application={appData}
-      initialSlots={slotRows}
+      initialSlots={bookableSlots}
       existingBooking={existingBooking}
+      isRebook={isRebook}
     />
   )
 }
