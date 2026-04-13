@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import Link from 'next/link'
 import { INCOME_BRACKETS, type IncomeBracket } from '@/lib/scoring'
 
@@ -63,6 +63,36 @@ function formatGBP(n: number): string {
   return `\u00a3${n.toLocaleString('en-GB')}`
 }
 
+// ---------------------------------------------------------------------------
+// Human-readable display values for the review screen
+// ---------------------------------------------------------------------------
+
+const DISPLAY_VALUES: Record<string, string> = {
+  'Just me': 'Just me',
+  'Me and my partner': 'Me and my partner',
+  'Me and family': 'Me and my family',
+  'Within 4 weeks': 'Within 4 weeks',
+  '1\u20133 months': '1\u20133 months',
+  '3+ months': '3+ months',
+  'Employed': 'Employed',
+  'Self-employed': 'Self-employed',
+  'Student': 'Student',
+  'Unemployed': 'Unemployed',
+  'under_low': `Under ${formatGBP(INCOME_BRACKETS.underLowMax)}`,
+  'low': `${formatGBP(INCOME_BRACKETS.underLowMax)} \u2013 ${formatGBP(INCOME_BRACKETS.lowMax)}`,
+  'medium': `${formatGBP(INCOME_BRACKETS.lowMax)} \u2013 ${formatGBP(INCOME_BRACKETS.mediumMax)}`,
+  'high': `${formatGBP(INCOME_BRACKETS.mediumMax)}+`,
+  '12+ months': '12+ months',
+  '6\u201312 months': '6\u201312 months',
+  'Under 6 months': 'Under 6 months',
+}
+
+function displayValue(raw: string | boolean | null): string {
+  if (raw === null) return '\u2014'
+  if (typeof raw === 'boolean') return raw ? 'Yes' : 'No'
+  return DISPLAY_VALUES[raw] || raw
+}
+
 export default function ApplyClient({
   roomId,
   roomName,
@@ -79,6 +109,14 @@ export default function ApplyClient({
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [result, setResult] = useState<ResultTier | null>(null)
   const [applicationId, setApplicationId] = useState<string | null>(null)
+
+  // Green flash state
+  const [flashingAnswer, setFlashingAnswer] = useState<string | null>(null)
+  const flashTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Review screen state
+  const [showReview, setShowReview] = useState(false)
+  const returnToReviewRef = useRef(false)
 
   const cleanProperty = stripHouseNumber(propertyName)
 
@@ -98,56 +136,82 @@ export default function ApplyClient({
     })
   }
 
-  // ----- answer setters with auto-advance + skip logic -----
+  // Flash an answer green, then advance after animation completes.
+  const flashAndAdvance = useCallback(
+    (value: string, advanceFn: () => void) => {
+      // Cancel any pending flash
+      if (flashTimeoutRef.current) clearTimeout(flashTimeoutRef.current)
+      setFlashingAnswer(value)
+      flashTimeoutRef.current = setTimeout(() => {
+        setFlashingAnswer(null)
+        // If we came from the review screen, return there
+        if (returnToReviewRef.current) {
+          returnToReviewRef.current = false
+          setShowReview(true)
+        } else {
+          advanceFn()
+        }
+      }, 650)
+    },
+    []
+  )
+
+  // ----- answer setters with flash + auto-advance + skip logic -----
 
   function answerWhoMovingIn(value: string) {
     setAnswers((a) => ({ ...a, whoMovingIn: value }))
-    goTo(2)
+    flashAndAdvance(value, () => goTo(2))
   }
 
   function answerMoveIn(value: string) {
     setAnswers((a) => ({ ...a, moveInTimeline: value }))
-    goTo(3)
+    flashAndAdvance(value, () => goTo(3))
   }
 
   function answerEmployment(value: string) {
     setAnswers((a) => ({ ...a, employmentStatus: value }))
-    goTo(4)
+    flashAndAdvance(value, () => goTo(4))
   }
 
   function answerIncome(value: IncomeBracket) {
     setAnswers((a) => ({ ...a, annualIncome: value }))
-    goTo(5)
+    flashAndAdvance(value, () => goTo(5))
   }
 
   function answerSmokes(value: boolean) {
     setAnswers((a) => ({ ...a, smokes: value }))
-    // Smokes=yes is a hard disqualifier — skip remaining screening, collect contact, save.
-    goTo(value ? 10 : 6)
+    flashAndAdvance(value ? 'yes' : 'no', () => goTo(value ? 10 : 6))
   }
 
   function answerPets(value: boolean) {
     setAnswers((a) => ({ ...a, hasPets: value }))
-    goTo(value ? 10 : 7)
+    flashAndAdvance(value ? 'yes' : 'no', () => goTo(value ? 10 : 7))
   }
 
   function answerLengthOfStay(value: string) {
     setAnswers((a) => ({ ...a, lengthOfStay: value }))
-    goTo(8)
+    flashAndAdvance(value, () => goTo(8))
   }
 
   function answerAdverseCredit(value: boolean) {
     setAnswers((a) => ({ ...a, adverseCredit: value }))
-    // Conditional: guarantor question only shown for low income brackets.
-    // hasGuarantor stays null otherwise → scoring uses 15-pt max.
     const incomeFlagged =
       answers.annualIncome === 'under_low' || answers.annualIncome === 'low'
-    goTo(incomeFlagged ? 9 : 10)
+    flashAndAdvance(value ? 'yes' : 'no', () => goTo(incomeFlagged ? 9 : 10))
   }
 
   function answerGuarantor(value: boolean) {
     setAnswers((a) => ({ ...a, hasGuarantor: value }))
-    goTo(10)
+    flashAndAdvance(value ? 'yes' : 'no', () => goTo(10))
+  }
+
+  // ----- review helpers -----
+
+  function editFromReview(targetStep: Step) {
+    returnToReviewRef.current = true
+    setShowReview(false)
+    setStep(targetStep)
+    setHistory([])
   }
 
   // ----- submission -----
@@ -162,14 +226,19 @@ export default function ApplyClient({
     return null
   }
 
-  async function handleSubmit() {
+  function handleContactSubmit() {
     const err = validateContact()
     if (err) {
       setContactError(err)
       return
     }
     setContactError(null)
+    setShowReview(true)
+  }
+
+  async function handleSubmit() {
     setSubmitError(null)
+    setShowReview(false)
     setStep(11)
 
     try {
@@ -192,8 +261,6 @@ export default function ApplyClient({
             moveInTimeline: answers.moveInTimeline,
             employmentStatus: answers.employmentStatus,
             annualIncome: answers.annualIncome,
-            // Coerce nullable booleans to false for the API contract — at this
-            // point in the flow we either asked the question or short-circuited.
             smokes: answers.smokes ?? false,
             hasPets: answers.hasPets ?? false,
             lengthOfStay: answers.lengthOfStay ?? '12+ months',
@@ -206,7 +273,7 @@ export default function ApplyClient({
       if (!res.ok) {
         const data = await res.json().catch(() => ({}))
         setSubmitError(data?.error || 'Submission failed. Please try again.')
-        setStep(10)
+        setShowReview(true)
         return
       }
 
@@ -218,11 +285,11 @@ export default function ApplyClient({
         setResult(data.tier)
       } else {
         setSubmitError('Unexpected response. Please try again.')
-        setStep(10)
+        setShowReview(true)
       }
     } catch {
       setSubmitError('Submission failed. Please try again.')
-      setStep(10)
+      setShowReview(true)
     }
   }
 
@@ -232,10 +299,108 @@ export default function ApplyClient({
     return <ResultView tier={result} roomId={roomId} applicationId={applicationId} />
   }
 
+  // ----- review screen -----
+
+  if (showReview) {
+    return (
+      <div className="mx-auto w-full max-w-2xl px-4 py-12 sm:px-6 sm:py-16">
+        <RoomBadge
+          roomName={roomName}
+          cleanProperty={cleanProperty}
+          rentPcm={rentPcm}
+          availableLabel={availableLabel}
+        />
+
+        <div
+          className="rounded-2xl bg-white p-6 sm:p-8 border"
+          style={{ borderColor: '#E5E7EB', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}
+        >
+          <h2
+            className="text-xl font-semibold tracking-tight md:text-2xl text-center mb-6"
+            style={{ color: '#2D3038' }}
+          >
+            Review your answers
+          </h2>
+
+          <div className="flex flex-col">
+            <ReviewRow label="Who's moving in?" value={displayValue(answers.whoMovingIn)} onEdit={() => editFromReview(1)} />
+            <ReviewRow label="Move-in timeline" value={displayValue(answers.moveInTimeline)} onEdit={() => editFromReview(2)} />
+            <ReviewRow label="Employment status" value={displayValue(answers.employmentStatus)} onEdit={() => editFromReview(3)} />
+            <ReviewRow label="Annual income" value={displayValue(answers.annualIncome)} onEdit={() => editFromReview(4)} />
+            <ReviewRow label="Do you smoke?" value={displayValue(answers.smokes)} onEdit={() => editFromReview(5)} />
+            {answers.smokes === false && (
+              <ReviewRow label="Do you have pets?" value={displayValue(answers.hasPets)} onEdit={() => editFromReview(6)} />
+            )}
+            {answers.smokes === false && answers.hasPets === false && (
+              <>
+                <ReviewRow label="Length of stay" value={displayValue(answers.lengthOfStay)} onEdit={() => editFromReview(7)} />
+                <ReviewRow label="Any adverse credit history?" value={displayValue(answers.adverseCredit)} onEdit={() => editFromReview(8)} />
+              </>
+            )}
+            {answers.hasGuarantor !== null && (
+              <ReviewRow label="Can you provide a guarantor?" value={displayValue(answers.hasGuarantor)} onEdit={() => editFromReview(9)} last />
+            )}
+          </div>
+
+          <div
+            className="mt-6 rounded-xl border p-4"
+            style={{ borderColor: '#E5E7EB', backgroundColor: '#F9FAFB' }}
+          >
+            <p
+              className="text-xs font-semibold uppercase tracking-[0.08em] mb-2"
+              style={{ color: '#9CA3AF' }}
+            >
+              Your details
+            </p>
+            <p className="text-sm font-medium" style={{ color: '#2D3038' }}>
+              {contact.fullName}
+            </p>
+            <p className="text-sm" style={{ color: '#6B7280' }}>
+              {contact.email}
+            </p>
+            <p className="text-sm" style={{ color: '#6B7280' }}>
+              {contact.phone}
+            </p>
+          </div>
+
+          {submitError && (
+            <p className="mt-4 text-sm text-center" style={{ color: '#B91C1C' }}>
+              {submitError}
+            </p>
+          )}
+
+          <button
+            type="button"
+            onClick={handleSubmit}
+            className="mt-8 w-full inline-flex items-center justify-center rounded-full px-8 py-3.5 text-sm font-semibold text-white transition-colors duration-200 hover:opacity-90 cursor-pointer"
+            style={{ backgroundColor: '#2D3038' }}
+          >
+            Submit Application
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   // ----- shared layout chrome -----
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-12 sm:px-6 sm:py-16">
+      {/* Green flash animation styles */}
+      <style>{`
+        @keyframes flashGreen {
+          0%   { background-color: transparent; }
+          20%  { background-color: #4ADE80; color: #fff; }
+          40%  { background-color: transparent; }
+          60%  { background-color: #4ADE80; color: #fff; }
+          80%  { background-color: transparent; }
+          100% { background-color: #4ADE80; color: #fff; }
+        }
+        .flash-green {
+          animation: flashGreen 0.6s ease-in-out forwards;
+        }
+      `}</style>
+
       <RoomBadge
         roomName={roomName}
         cleanProperty={cleanProperty}
@@ -257,9 +422,10 @@ export default function ApplyClient({
           >
             {step === 1 && (
               <Question
-                heading="Who’s moving in?"
+                heading="Who's moving in?"
                 options={['Just me', 'Me and my partner', 'Me and family']}
                 onSelect={answerWhoMovingIn}
+                flashingAnswer={flashingAnswer}
               />
             )}
             {step === 2 && (
@@ -267,18 +433,20 @@ export default function ApplyClient({
                 heading="When are you looking to move in?"
                 options={['Within 4 weeks', '1\u20133 months', '3+ months']}
                 onSelect={answerMoveIn}
+                flashingAnswer={flashingAnswer}
               />
             )}
             {step === 3 && (
               <Question
-                heading="What’s your employment status?"
+                heading="What's your employment status?"
                 options={['Employed', 'Self-employed', 'Student', 'Unemployed']}
                 onSelect={answerEmployment}
+                flashingAnswer={flashingAnswer}
               />
             )}
             {step === 4 && (
               <Question
-                heading="What’s your annual income before tax?"
+                heading="What's your annual income before tax?"
                 subheading="Include all sources — salary, self-employment, or benefits."
                 options={[
                   { label: `Under ${formatGBP(INCOME_BRACKETS.underLowMax)}`, value: 'under_low' },
@@ -287,6 +455,7 @@ export default function ApplyClient({
                   { label: `${formatGBP(INCOME_BRACKETS.mediumMax)} or more`, value: 'high' },
                 ]}
                 onSelect={(v) => answerIncome(v as IncomeBracket)}
+                flashingAnswer={flashingAnswer}
               />
             )}
             {step === 5 && (
@@ -297,6 +466,7 @@ export default function ApplyClient({
                   { label: 'Yes', value: 'yes' },
                 ]}
                 onSelect={(v) => answerSmokes(v === 'yes')}
+                flashingAnswer={flashingAnswer}
               />
             )}
             {step === 6 && (
@@ -307,6 +477,7 @@ export default function ApplyClient({
                   { label: 'Yes', value: 'yes' },
                 ]}
                 onSelect={(v) => answerPets(v === 'yes')}
+                flashingAnswer={flashingAnswer}
               />
             )}
             {step === 7 && (
@@ -314,6 +485,7 @@ export default function ApplyClient({
                 heading="How long are you looking to stay?"
                 options={['12+ months', '6\u201312 months', 'Under 6 months']}
                 onSelect={answerLengthOfStay}
+                flashingAnswer={flashingAnswer}
               />
             )}
             {step === 8 && (
@@ -325,6 +497,7 @@ export default function ApplyClient({
                   { label: 'Yes', value: 'yes' },
                 ]}
                 onSelect={(v) => answerAdverseCredit(v === 'yes')}
+                flashingAnswer={flashingAnswer}
               />
             )}
             {step === 9 && (
@@ -335,6 +508,7 @@ export default function ApplyClient({
                   { label: 'No', value: 'no' },
                 ]}
                 onSelect={(v) => answerGuarantor(v === 'yes')}
+                flashingAnswer={flashingAnswer}
               />
             )}
           </QuestionFrame>
@@ -344,7 +518,7 @@ export default function ApplyClient({
           <ContactForm
             contact={contact}
             onChange={setContact}
-            onSubmit={handleSubmit}
+            onSubmit={handleContactSubmit}
             onBack={goBack}
             error={contactError || submitError}
           />
@@ -359,6 +533,46 @@ export default function ApplyClient({
 // ============================================================================
 // Sub-components
 // ============================================================================
+
+function ReviewRow({
+  label,
+  value,
+  onEdit,
+  last = false,
+}: {
+  label: string
+  value: string
+  onEdit: () => void
+  last?: boolean
+}) {
+  return (
+    <div
+      className={`flex items-center gap-3 py-3 ${last ? '' : 'border-b'}`}
+      style={{ borderColor: '#F3F4F6' }}
+    >
+      <button
+        type="button"
+        onClick={onEdit}
+        className="shrink-0 transition-colors duration-150 cursor-pointer"
+        style={{ color: '#9CA3AF' }}
+        onMouseEnter={(e) => { e.currentTarget.style.color = '#4B5563' }}
+        onMouseLeave={(e) => { e.currentTarget.style.color = '#9CA3AF' }}
+        aria-label={`Edit ${label}`}
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+        </svg>
+      </button>
+      <span className="text-sm flex-1 min-w-0" style={{ color: '#6B7280' }}>
+        {label}
+      </span>
+      <span className="text-sm font-medium text-right shrink-0" style={{ color: '#1C1C1A' }}>
+        {value}
+      </span>
+    </div>
+  )
+}
 
 function RoomBadge({
   roomName,
@@ -450,7 +664,7 @@ function QuestionFrame({
         type="button"
         onClick={onBack}
         aria-label="Back"
-        className="mb-4 inline-flex items-center gap-1 text-xs font-medium transition-colors duration-200 hover:opacity-70"
+        className="mb-4 inline-flex items-center gap-1 text-xs font-medium transition-colors duration-200 hover:opacity-70 cursor-pointer"
         style={{ color: '#9CA3AF' }}
       >
         <svg
@@ -499,11 +713,13 @@ function Question({
   subheading,
   options,
   onSelect,
+  flashingAnswer,
 }: {
   heading: string
   subheading?: string
   options: Array<string | QuestionOption>
   onSelect: (value: string) => void
+  flashingAnswer: string | null
 }) {
   const normalised: QuestionOption[] = options.map((o) =>
     typeof o === 'string' ? { label: o, value: o } : o
@@ -523,21 +739,27 @@ function Question({
         </p>
       )}
       <div className="mt-8 flex flex-col gap-3">
-        {normalised.map((opt) => (
-          <button
-            key={opt.value}
-            type="button"
-            onClick={() => onSelect(opt.value)}
-            className="w-full rounded-full border px-6 py-4 text-base font-medium text-left transition-all duration-150 hover:border-current hover:shadow-sm"
-            style={{
-              borderColor: '#E5E7EB',
-              color: '#2D3038',
-              backgroundColor: '#FFFFFF',
-            }}
-          >
-            {opt.label}
-          </button>
-        ))}
+        {normalised.map((opt) => {
+          const isFlashing = flashingAnswer === opt.value
+          return (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => onSelect(opt.value)}
+              disabled={flashingAnswer !== null}
+              className={`w-full rounded-full border px-6 py-4 text-base font-medium text-left transition-all duration-150 hover:border-current hover:shadow-sm cursor-pointer ${
+                isFlashing ? 'flash-green' : ''
+              }`}
+              style={{
+                borderColor: isFlashing ? '#4ADE80' : '#E5E7EB',
+                color: '#2D3038',
+                backgroundColor: '#FFFFFF',
+              }}
+            >
+              {opt.label}
+            </button>
+          )
+        })}
       </div>
     </div>
   )
@@ -567,7 +789,7 @@ function ContactForm({
         type="button"
         onClick={onBack}
         aria-label="Back"
-        className="mb-4 inline-flex items-center gap-1 text-xs font-medium transition-colors duration-200 hover:opacity-70"
+        className="mb-4 inline-flex items-center gap-1 text-xs font-medium transition-colors duration-200 hover:opacity-70 cursor-pointer"
         style={{ color: '#9CA3AF' }}
       >
         <svg
@@ -630,10 +852,10 @@ function ContactForm({
 
       <button
         type="submit"
-        className="mt-8 w-full inline-flex items-center justify-center rounded-full px-8 py-3.5 text-sm font-semibold text-white transition-colors duration-200 hover:opacity-90"
+        className="mt-8 w-full inline-flex items-center justify-center rounded-full px-8 py-3.5 text-sm font-semibold text-white transition-colors duration-200 hover:opacity-90 cursor-pointer"
         style={{ backgroundColor: '#2D3038' }}
       >
-        Submit Application
+        Continue
       </button>
     </form>
   )

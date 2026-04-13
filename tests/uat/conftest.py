@@ -351,10 +351,14 @@ def pick_room_id_from_homepage(page: Page) -> str | None:
 
 
 def screening_contact_fields(page: Page, email_suffix: str) -> None:
-    """Fill in the contact form on step 10 and submit. Uses a unique UAT email."""
+    """Fill in the contact form, proceed through review screen, and submit."""
     ts = int(time.time() * 1000)
     page.wait_for_selector("#fullName", timeout=10_000)
     page.fill("#fullName", "UAT Runner")
     page.fill("#email", f"{UAT_EMAIL_PREFIX}form{ts}-{email_suffix}@syzo.local")
     page.fill("#phone", "07000000000")
+    # Contact form button says "Continue" → shows review screen
+    page.get_by_role("button", name="Continue", exact=True).click()
+    # Review screen → click "Submit Application"
+    page.wait_for_selector("text=Review your answers", timeout=10_000)
     page.get_by_role("button", name="Submit Application", exact=True).click()
