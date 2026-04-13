@@ -302,7 +302,7 @@ export default function BookViewingClient({
 
         {/* Confirming panel */}
         {(view === 'confirming' || view === 'submitting') && selectedSlot && (
-          <div className="p-6 sm:p-8 max-w-lg mx-auto">
+          <div className="p-8 max-w-md mx-auto">
             <ConfirmPanel
               slot={selectedSlot}
               propertyNameLabel={application.propertyName}
@@ -533,7 +533,13 @@ function ConfirmPanel({
   onBack: () => void
 }) {
   return (
-    <div>
+    <div
+      className="rounded-2xl bg-white p-8 border"
+      style={{
+        borderColor: '#E5E7EB',
+        boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
+      }}
+    >
       <button
         type="button"
         onClick={onBack}
@@ -564,23 +570,32 @@ function ConfirmPanel({
         Confirm your viewing
       </h2>
 
-      <dl className="mt-6 flex flex-col gap-4 text-sm">
-        <Row label="Date">{formatLongDate(slot.slot_date)}</Row>
-        <Row label="Time">{formatTimeLabel(slot.start_time)}</Row>
-        <Row label="Property">{propertyNameLabel}</Row>
+      <dl className="mt-6 flex flex-col text-sm">
+        <div className="flex justify-between gap-4 py-3 border-b" style={{ borderColor: '#F3F4F6' }}>
+          <dt className="text-xs font-semibold uppercase tracking-[0.08em]" style={{ color: '#9CA3AF' }}>Date</dt>
+          <dd className="text-sm font-medium text-right" style={{ color: '#2D3038' }}>{formatLongDate(slot.slot_date)}</dd>
+        </div>
+        <div className="flex justify-between gap-4 py-3 border-b" style={{ borderColor: '#F3F4F6' }}>
+          <dt className="text-xs font-semibold uppercase tracking-[0.08em]" style={{ color: '#9CA3AF' }}>Time</dt>
+          <dd className="text-sm font-medium text-right" style={{ color: '#2D3038' }}>{formatTimeLabel(slot.start_time)}</dd>
+        </div>
+        <div className="flex justify-between gap-4 py-3">
+          <dt className="text-xs font-semibold uppercase tracking-[0.08em]" style={{ color: '#9CA3AF' }}>Property</dt>
+          <dd className="text-sm font-medium text-right" style={{ color: '#2D3038' }}>{propertyNameLabel}</dd>
+        </div>
       </dl>
 
       <div
         className="mt-6 rounded-xl border p-4"
-        style={{ borderColor: '#E5E7EB', backgroundColor: '#F9FAFB' }}
+        style={{ borderColor: '#E5E7EB', backgroundColor: '#FFFFFF' }}
       >
         <p
           className="text-xs font-semibold uppercase tracking-[0.08em] mb-2"
-          style={{ color: '#6B7280' }}
+          style={{ color: '#9CA3AF' }}
         >
           Your details
         </p>
-        <p className="text-sm" style={{ color: '#2D3038' }}>
+        <p className="text-sm font-medium" style={{ color: '#2D3038' }}>
           {application.fullName}
         </p>
         <p className="text-sm" style={{ color: '#6B7280' }}>
@@ -595,7 +610,7 @@ function ConfirmPanel({
         type="button"
         onClick={onConfirm}
         disabled={submitting}
-        className="mt-8 w-full inline-flex items-center justify-center rounded-full px-8 py-3.5 text-sm font-semibold text-white transition-colors duration-200 hover:opacity-90 disabled:opacity-60"
+        className="mt-8 w-full inline-flex items-center justify-center rounded-full px-8 py-3.5 text-sm font-semibold text-white transition-colors duration-200 hover:opacity-90 disabled:opacity-60 cursor-pointer"
         style={{ backgroundColor: '#2D3038' }}
       >
         {submitting ? 'Booking\u2026' : 'Confirm Viewing'}
