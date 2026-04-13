@@ -1,5 +1,6 @@
 import Link from 'next/link'
-import { fetchRoomById, fetchRoomBySpareRoomId, insertStaleLinkLead } from '@/lib/queries'
+import { fetchRoomById, fetchRoomBySpareRoomId, fetchAllPropertyNames, insertStaleLinkLead } from '@/lib/queries'
+import { buildPropertyDisplayName } from '@/lib/format'
 import type { RoomWithProperty } from '@/lib/types'
 import ApplyClient from './ApplyClient'
 
@@ -52,8 +53,9 @@ function formatAvailableLabel(availableFrom: string | null): string {
   })}`
 }
 
-function getRoomTitle(room: RoomWithProperty): string {
-  return `${room.name}, ${room.property_name}`
+function getRoomTitle(room: RoomWithProperty, allPropertyNames: string[]): string {
+  const displayProperty = buildPropertyDisplayName(room.property_name, allPropertyNames)
+  return `${room.name}, ${displayProperty}`
 }
 
 export default async function ApplyPage({
@@ -62,7 +64,10 @@ export default async function ApplyPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  const room = await resolveRoom(id)
+  const [room, allPropertyNames] = await Promise.all([
+    resolveRoom(id),
+    fetchAllPropertyNames(),
+  ])
 
   if (!room) {
     // Stale link — record lead and show fallback
@@ -93,8 +98,8 @@ export default async function ApplyPage({
   return (
     <ApplyClient
       roomId={room.id}
-      roomName={getRoomTitle(room)}
-      propertyName={room.property_name}
+      roomName={getRoomTitle(room, allPropertyNames)}
+      propertyName={buildPropertyDisplayName(room.property_name, allPropertyNames)}
       propertyRef={room.property_ref}
       rentPcm={Math.round(room.rent_pcm)}
       availableLabel={formatAvailableLabel(room.available_from)}
