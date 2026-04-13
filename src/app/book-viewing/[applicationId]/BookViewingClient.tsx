@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
@@ -321,11 +321,8 @@ function DatePicker({
   selectedDate: string
   onSelect: (date: string) => void
 }) {
-  const scrollRef = useRef<HTMLDivElement>(null)
-
   return (
     <div
-      ref={scrollRef}
       className="flex gap-2 overflow-x-auto pb-2"
       style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
     >

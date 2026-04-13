@@ -121,7 +121,9 @@ export default async function BookViewingPage({
   // (view-03) fires before the viewing, not immediately after booking.
   const minBookableDateTime = new Date(Date.now() + 48 * 60 * 60 * 1000)
   const bookableSlots = slotRows.filter((slot) => {
-    const slotDateTime = new Date(`${slot.slot_date}T${slot.start_time}`)
+    // Append 'Z' — Supabase stores times in UTC; explicit suffix avoids
+    // drift when the server's local timezone differs (e.g. BST in summer).
+    const slotDateTime = new Date(`${slot.slot_date}T${slot.start_time}Z`)
     return slotDateTime > minBookableDateTime
   })
 

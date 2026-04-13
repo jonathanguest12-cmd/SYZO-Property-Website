@@ -337,12 +337,22 @@ def _chk_48h_minimum_window(ctx: BrowserContext, seeder: Seeder, result: StepRes
             result.page_errors = pe
             return
 
-        # Verify via the API that the slots in the DB within 48h are NOT on the page.
+        # Determine the property's city (mirrors the production code path).
         now = datetime.now(timezone.utc)
         cutoff = now + timedelta(hours=48)
+        city_r = httpx.get(
+            f"{SUPABASE_URL}/rest/v1/properties"
+            f"?coho_reference=eq.{PROPERTY_REF_WITH_SLOTS}&select=city&limit=1",
+            headers=SB_HEADERS,
+            timeout=10.0,
+        )
+        city = (city_r.json() or [{}])[0].get("city", "").lower() if city_r.status_code == 200 else ""
+        slot_filter = (
+            f"city=eq.{city}" if city else f"property_ref=eq.{PROPERTY_REF_WITH_SLOTS}"
+        )
         r = httpx.get(
             f"{SUPABASE_URL}/rest/v1/viewing_slots"
-            f"?property_ref=eq.{PROPERTY_REF_WITH_SLOTS}&status=eq.available"
+            f"?{slot_filter}&status=eq.available"
             f"&select=slot_date,start_time&order=slot_date.asc,start_time.asc",
             headers=SB_HEADERS,
             timeout=10.0,
@@ -386,12 +396,16 @@ def _chk_rebook_banner(ctx: BrowserContext, seeder: Seeder, result: StepResult) 
     clear_rate_limit(app_id)
 
     # Set cancel_count = 1 on the test application.
-    httpx.patch(
+    patch_r = httpx.patch(
         f"{SUPABASE_URL}/rest/v1/applications?id=eq.{app_id}",
         headers={**SB_HEADERS, "Prefer": "return=minimal"},
         json={"cancel_count": 1},
         timeout=10.0,
     )
+    if patch_r.status_code not in (200, 204):
+        result.status = "FAIL"
+        result.reason = f"setup PATCH failed: HTTP {patch_r.status_code} {patch_r.text[:120]}"
+        return
 
     page, ce, pe = new_page(ctx)
     try:
