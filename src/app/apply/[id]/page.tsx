@@ -53,14 +53,7 @@ function formatAvailableLabel(availableFrom: string | null): string {
 }
 
 function getRoomTitle(room: RoomWithProperty): string {
-  if (room.advert_title) return room.advert_title
-  const type =
-    room.room_type === 'doubleRoom'
-      ? 'Double Room'
-      : room.room_type === 'singleRoom'
-      ? 'Single Room'
-      : 'Room'
-  return `${type} \u2014 ${room.property_name}`
+  return `${room.name}, ${room.property_name}`
 }
 
 export default async function ApplyPage({
