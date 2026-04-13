@@ -219,15 +219,24 @@ def clean_pre_run() -> None:
         )
     except Exception:
         pass
+    # Reset only slots booked by UAT-seeded applicants — never wipe real
+    # tenant bookings. Find UAT application IDs first, then reset their slots.
     try:
-        httpx.patch(
-            f"{SUPABASE_URL}/rest/v1/viewing_slots"
-            f"?property_ref=in.({PROPERTY_REF_WITH_SLOTS},{PROPERTY_REF_FOREIGN})"
-            f"&status=eq.booked",
-            headers={**SB_HEADERS, "Prefer": "return=minimal"},
-            json={"status": "available", "applicant_id": None},
+        uat_apps = httpx.get(
+            f"{SUPABASE_URL}/rest/v1/applications?email=like.{UAT_EMAIL_PREFIX}*&select=id",
+            headers=SB_HEADERS,
             timeout=10.0,
         )
+        if uat_apps.status_code == 200:
+            uat_ids = [a["id"] for a in uat_apps.json()]
+            for aid in uat_ids:
+                httpx.patch(
+                    f"{SUPABASE_URL}/rest/v1/viewing_slots"
+                    f"?applicant_id=eq.{aid}&status=eq.booked",
+                    headers={**SB_HEADERS, "Prefer": "return=minimal"},
+                    json={"status": "available", "applicant_id": None},
+                    timeout=10.0,
+                )
     except Exception:
         pass
     # Clear the /api/submit rate limit keys for every IP that localhost

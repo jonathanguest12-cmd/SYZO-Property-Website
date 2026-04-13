@@ -113,7 +113,13 @@ export default async function BookViewingPage({
   // Filter by room_ref when available, otherwise fall back to property_ref.
   const slotFilter = roomRef
     ? `room_ref=eq.${encodeURIComponent(roomRef)}`
-    : `property_ref=eq.${encodeURIComponent(application.property_ref!)}`
+    : application.property_ref
+      ? `property_ref=eq.${encodeURIComponent(application.property_ref)}`
+      : null
+
+  if (!slotFilter) {
+    redirect('/')
+  }
   const slotRows =
     (await sbGet<SlotData[]>(
       `viewing_slots?${slotFilter}&status=eq.available&slot_date=gte.${cutoffDate}&select=id,slot_date,start_time,property_name&order=slot_date.asc,start_time.asc&limit=500`,
