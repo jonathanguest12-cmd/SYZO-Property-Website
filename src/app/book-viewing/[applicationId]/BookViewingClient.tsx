@@ -28,17 +28,9 @@ interface Props {
 
 type View = 'calendar' | 'confirming' | 'submitting' | 'confirmed'
 
-function formatShortWeekday(dateStr: string): string {
-  const [y, m, d] = dateStr.split('-').map(Number)
-  const date = new Date(y, (m || 1) - 1, d || 1)
-  return date.toLocaleDateString('en-GB', { weekday: 'short' })
-}
-
-function formatShortDate(dateStr: string): string {
-  const [y, m, d] = dateStr.split('-').map(Number)
-  const date = new Date(y, (m || 1) - 1, d || 1)
-  return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
-}
+// ---------------------------------------------------------------------------
+// Date / time formatting helpers
+// ---------------------------------------------------------------------------
 
 function formatTimeLabel(timeStr: string): string {
   const [hStr, mStr] = timeStr.split(':')
@@ -46,8 +38,7 @@ function formatTimeLabel(timeStr: string): string {
   const m = Number(mStr)
   const period = h >= 12 ? 'PM' : 'AM'
   const hour12 = h % 12 === 0 ? 12 : h % 12
-  const mm = m.toString().padStart(2, '0')
-  return `${hour12}:${mm} ${period}`
+  return `${hour12}:${m.toString().padStart(2, '0')} ${period}`
 }
 
 function formatLongDate(dateStr: string): string {
@@ -61,7 +52,7 @@ function formatLongDate(dateStr: string): string {
   })
 }
 
-function formatDayLabel(dateStr: string): string {
+function formatDayHeader(dateStr: string): string {
   const [y, m, d] = dateStr.split('-').map(Number)
   const date = new Date(y, (m || 1) - 1, d || 1)
   return date.toLocaleDateString('en-GB', {
@@ -71,25 +62,76 @@ function formatDayLabel(dateStr: string): string {
   })
 }
 
-interface DayGroup {
-  date: string
-  slots: SlotData[]
+function toDateKey(y: number, m: number, d: number): string {
+  return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
 }
 
-function groupByDay(slots: SlotData[]): DayGroup[] {
-  const map = new Map<string, SlotData[]>()
-  for (const s of slots) {
-    const arr = map.get(s.slot_date) || []
-    arr.push(s)
-    map.set(s.slot_date, arr)
-  }
-  return Array.from(map.entries())
-    .sort((a, b) => a[0].localeCompare(b[0]))
-    .map(([date, arr]) => ({
-      date,
-      slots: arr.sort((a, b) => a.start_time.localeCompare(b.start_time)),
-    }))
+// ---------------------------------------------------------------------------
+// Month calendar grid builder
+// ---------------------------------------------------------------------------
+
+interface CalendarDay {
+  date: number
+  key: string // YYYY-MM-DD
+  inMonth: boolean
+  available: boolean
+  past: boolean
 }
+
+function buildMonthGrid(year: number, month: number, availableDates: Set<string>, todayKey: string): CalendarDay[] {
+  const firstDay = new Date(year, month, 1)
+  // Monday = 0 offset (ISO week)
+  let startDow = firstDay.getDay() - 1
+  if (startDow < 0) startDow = 6
+
+  const daysInMonth = new Date(year, month + 1, 0).getDate()
+  const days: CalendarDay[] = []
+
+  // Padding from previous month
+  const prevMonthDays = new Date(year, month, 0).getDate()
+  for (let i = startDow - 1; i >= 0; i--) {
+    const d = prevMonthDays - i
+    const pm = month === 0 ? 11 : month - 1
+    const py = month === 0 ? year - 1 : year
+    const key = toDateKey(py, pm, d)
+    days.push({ date: d, key, inMonth: false, available: false, past: true })
+  }
+
+  // Current month days
+  for (let d = 1; d <= daysInMonth; d++) {
+    const key = toDateKey(year, month, d)
+    days.push({
+      date: d,
+      key,
+      inMonth: true,
+      available: availableDates.has(key),
+      past: key < todayKey,
+    })
+  }
+
+  // Padding from next month (fill to complete last week row)
+  const remaining = 7 - (days.length % 7)
+  if (remaining < 7) {
+    const nm = month === 11 ? 0 : month + 1
+    const ny = month === 11 ? year + 1 : year
+    for (let d = 1; d <= remaining; d++) {
+      const key = toDateKey(ny, nm, d)
+      days.push({ date: d, key, inMonth: false, available: false, past: false })
+    }
+  }
+
+  return days
+}
+
+const WEEKDAY_HEADERS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']
+const MONTH_NAMES = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+]
+
+// ---------------------------------------------------------------------------
+// Main component
+// ---------------------------------------------------------------------------
 
 export default function BookViewingClient({
   application,
@@ -107,15 +149,66 @@ export default function BookViewingClient({
   )
   const [error, setError] = useState<string | null>(null)
 
-  const dayGroups = useMemo(() => groupByDay(initialSlots), [initialSlots])
-  const [selectedDate, setSelectedDate] = useState<string>(
-    dayGroups[0]?.date || ''
+  // Group slots by date
+  const slotsByDate = useMemo(() => {
+    const map = new Map<string, SlotData[]>()
+    for (const s of initialSlots) {
+      const arr = map.get(s.slot_date) || []
+      arr.push(s)
+      map.set(s.slot_date, arr)
+    }
+    // Sort times within each date
+    for (const arr of map.values()) {
+      arr.sort((a, b) => a.start_time.localeCompare(b.start_time))
+    }
+    return map
+  }, [initialSlots])
+
+  const availableDates = useMemo(
+    () => new Set(slotsByDate.keys()),
+    [slotsByDate]
   )
 
-  const activeDaySlots = useMemo(
-    () => dayGroups.find((g) => g.date === selectedDate)?.slots || [],
-    [dayGroups, selectedDate]
+  const sortedDates = useMemo(
+    () => [...availableDates].sort(),
+    [availableDates]
   )
+
+  const firstAvailableDate = sortedDates[0] || ''
+
+  const [selectedDate, setSelectedDate] = useState<string>(firstAvailableDate)
+  const [currentMonth, setCurrentMonth] = useState<Date>(() => {
+    if (firstAvailableDate) {
+      const [y, m] = firstAvailableDate.split('-').map(Number)
+      return new Date(y, m - 1, 1)
+    }
+    return new Date()
+  })
+
+  const activeDaySlots = slotsByDate.get(selectedDate) || []
+
+  const todayKey = useMemo(() => {
+    const now = new Date()
+    return toDateKey(now.getFullYear(), now.getMonth(), now.getDate())
+  }, [])
+
+  const monthGrid = useMemo(
+    () =>
+      buildMonthGrid(
+        currentMonth.getFullYear(),
+        currentMonth.getMonth(),
+        availableDates,
+        todayKey
+      ),
+    [currentMonth, availableDates, todayKey]
+  )
+
+  function navigateMonth(delta: number) {
+    setCurrentMonth((prev) => {
+      const next = new Date(prev.getFullYear(), prev.getMonth() + delta, 1)
+      return next
+    })
+  }
 
   async function handleConfirm() {
     if (!selectedSlot) return
@@ -180,26 +273,10 @@ export default function BookViewingClient({
   }
 
   return (
-    <div className="mx-auto w-full max-w-2xl px-4 py-12 sm:px-6 sm:py-16">
-      {/* Header */}
-      <div className="mb-6">
-        <p
-          className="text-xs font-semibold uppercase tracking-[0.08em]"
-          style={{ color: '#9CA3AF' }}
-        >
-          Book a viewing
-        </p>
-        <h1
-          className="mt-2 text-2xl font-bold tracking-tight md:text-3xl"
-          style={{ color: '#2D3038' }}
-        >
-          {application.propertyName}
-        </h1>
-      </div>
-
+    <div className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 sm:py-14">
       {isRebook && (
         <div
-          className="mb-4 rounded-xl px-4 py-3 text-sm leading-relaxed"
+          className="mb-4 mx-auto max-w-5xl rounded-xl px-4 py-3 text-sm leading-relaxed"
           style={{ backgroundColor: '#FEF3C7', color: '#92400E' }}
         >
           Your previous viewing was cancelled. Please select a new time
@@ -208,7 +285,7 @@ export default function BookViewingClient({
       )}
 
       <div
-        className="rounded-2xl bg-white p-6 sm:p-8 border"
+        className="rounded-2xl bg-white border overflow-hidden"
         style={{
           borderColor: '#E5E7EB',
           boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
@@ -216,7 +293,7 @@ export default function BookViewingClient({
       >
         {error && (
           <div
-            className="mb-6 rounded-lg px-4 py-3 text-sm"
+            className="px-6 py-3 text-sm"
             style={{ backgroundColor: '#FEF2F2', color: '#B91C1C' }}
           >
             {error}
@@ -225,77 +302,201 @@ export default function BookViewingClient({
 
         {/* Confirming panel */}
         {(view === 'confirming' || view === 'submitting') && selectedSlot && (
-          <ConfirmPanel
-            slot={selectedSlot}
-            propertyNameLabel={application.propertyName}
-            application={application}
-            submitting={view === 'submitting'}
-            onConfirm={handleConfirm}
-            onBack={() => {
-              setError(null)
-              setView('calendar')
-            }}
-          />
+          <div className="p-6 sm:p-8">
+            <ConfirmPanel
+              slot={selectedSlot}
+              propertyNameLabel={application.propertyName}
+              application={application}
+              submitting={view === 'submitting'}
+              onConfirm={handleConfirm}
+              onBack={() => {
+                setError(null)
+                setView('calendar')
+              }}
+            />
+          </div>
         )}
 
         {/* Calendar view */}
-        {view === 'calendar' && dayGroups.length > 0 && (
-          <div>
-            <p
-              className="mb-6 text-sm leading-relaxed"
-              style={{ color: '#6B7280' }}
-            >
-              Choose a time that works for you. Viewings last 15 minutes.
-            </p>
+        {view === 'calendar' && sortedDates.length > 0 && (
+          <div className="flex flex-col md:flex-row">
+            {/* Left: Info + Calendar */}
+            <div className="flex-1 p-6 sm:p-8 border-b md:border-b-0 md:border-r" style={{ borderColor: '#E5E7EB' }}>
+              {/* Room info header */}
+              <div className="mb-6">
+                <h1
+                  className="text-xl font-bold tracking-tight md:text-2xl"
+                  style={{ color: '#2D3038' }}
+                >
+                  {application.propertyName}
+                </h1>
+                <div className="mt-3 flex flex-col gap-1.5 text-sm" style={{ color: '#6B7280' }}>
+                  <div className="flex items-center gap-2">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    15 minutes
+                  </div>
+                </div>
+              </div>
 
-            {/* Date picker — horizontal scrollable row */}
-            <DatePicker
-              days={dayGroups}
-              selectedDate={selectedDate}
-              onSelect={setSelectedDate}
-            />
-
-            {/* Time slots for the selected date */}
-            <div className="mt-6">
-              <h2
-                className="mb-3 text-sm font-semibold"
+              <p
+                className="mb-5 text-sm font-semibold"
                 style={{ color: '#2D3038' }}
               >
-                {formatDayLabel(selectedDate)}
-              </h2>
-              <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
-                {activeDaySlots.map((slot) => (
+                Select a date &amp; time
+              </p>
+
+              {/* Month calendar */}
+              <div>
+                {/* Month header with arrows */}
+                <div className="flex items-center justify-between mb-4">
                   <button
-                    key={slot.id}
                     type="button"
-                    onClick={() => {
-                      setSelectedSlot(slot)
-                      setView('confirming')
-                    }}
-                    className="rounded-full border px-3 py-2 text-sm font-medium transition-all duration-150 hover:shadow-sm"
-                    style={{
-                      borderColor: '#E5E7EB',
-                      color: '#2D3038',
-                      backgroundColor: '#FFFFFF',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = '#2D3038'
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = '#E5E7EB'
-                    }}
+                    onClick={() => navigateMonth(-1)}
+                    className="p-1.5 rounded-full hover:bg-gray-100 transition-colors"
+                    aria-label="Previous month"
                   >
-                    {formatTimeLabel(slot.start_time)}
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2D3038" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
                   </button>
-                ))}
+                  <span className="text-sm font-semibold" style={{ color: '#2D3038' }}>
+                    {MONTH_NAMES[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => navigateMonth(1)}
+                    className="p-1.5 rounded-full hover:bg-gray-100 transition-colors"
+                    aria-label="Next month"
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2D3038" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                  </button>
+                </div>
+
+                {/* Weekday headers */}
+                <div className="grid grid-cols-7 mb-1">
+                  {WEEKDAY_HEADERS.map((d) => (
+                    <div
+                      key={d}
+                      className="text-center text-[11px] font-semibold tracking-wide py-1"
+                      style={{ color: '#9CA3AF' }}
+                    >
+                      {d}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Day grid */}
+                <div className="grid grid-cols-7">
+                  {monthGrid.map((day, i) => {
+                    const isSelected = day.key === selectedDate
+                    const isClickable = day.inMonth && day.available && !day.past
+
+                    return (
+                      <button
+                        key={`${day.key}-${i}`}
+                        type="button"
+                        disabled={!isClickable}
+                        onClick={() => {
+                          if (isClickable) setSelectedDate(day.key)
+                        }}
+                        className="flex items-center justify-center py-2"
+                        style={{ minHeight: '40px' }}
+                      >
+                        <span
+                          className="flex items-center justify-center rounded-full text-sm font-medium transition-colors"
+                          style={{
+                            width: '36px',
+                            height: '36px',
+                            backgroundColor: isSelected && isClickable
+                              ? '#1C1C1A'
+                              : isClickable
+                              ? 'transparent'
+                              : 'transparent',
+                            color: isSelected && isClickable
+                              ? '#FFFFFF'
+                              : !day.inMonth
+                              ? '#D1D5DB'
+                              : day.past || !day.available
+                              ? '#D1D5DB'
+                              : '#2D3038',
+                            cursor: isClickable ? 'pointer' : 'default',
+                            fontWeight: isClickable ? 600 : 400,
+                          }}
+                          onMouseEnter={(e) => {
+                            if (isClickable && !isSelected) {
+                              e.currentTarget.style.backgroundColor = '#F3F4F6'
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (isClickable && !isSelected) {
+                              e.currentTarget.style.backgroundColor = 'transparent'
+                            }
+                          }}
+                        >
+                          {day.date}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
+
+              <p className="mt-4 text-xs" style={{ color: '#9CA3AF' }}>
+                UK, Ireland, Lisbon Time
+              </p>
             </div>
+
+            {/* Right: Time slots for selected date */}
+            {selectedDate && activeDaySlots.length > 0 && (
+              <div className="w-full md:w-72 p-6 sm:p-8 overflow-y-auto" style={{ maxHeight: '520px' }}>
+                <h2
+                  className="text-sm font-semibold mb-4"
+                  style={{ color: '#2D3038' }}
+                >
+                  {formatDayHeader(selectedDate)}
+                </h2>
+                <div className="flex flex-col gap-2">
+                  {activeDaySlots.map((slot) => (
+                    <button
+                      key={slot.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedSlot(slot)
+                        setView('confirming')
+                      }}
+                      className="flex items-center gap-3 rounded-lg border px-4 py-3 text-sm font-semibold text-left transition-all duration-150"
+                      style={{
+                        borderColor: '#E5E7EB',
+                        color: '#2D3038',
+                        backgroundColor: '#FFFFFF',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = '#1C1C1A'
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = '#E5E7EB'
+                      }}
+                    >
+                      <span
+                        className="inline-block rounded-full shrink-0"
+                        style={{
+                          width: '8px',
+                          height: '8px',
+                          backgroundColor: '#22C55E',
+                        }}
+                      />
+                      {formatTimeLabel(slot.start_time)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
         {/* No slots fallback */}
-        {view === 'calendar' && dayGroups.length === 0 && (
-          <NoSlotsFallback application={application} />
+        {view === 'calendar' && sortedDates.length === 0 && (
+          <div className="p-6 sm:p-8">
+            <NoSlotsFallback application={application} />
+          </div>
         )}
       </div>
 
@@ -312,50 +513,9 @@ export default function BookViewingClient({
   )
 }
 
-function DatePicker({
-  days,
-  selectedDate,
-  onSelect,
-}: {
-  days: DayGroup[]
-  selectedDate: string
-  onSelect: (date: string) => void
-}) {
-  return (
-    <div
-      className="flex gap-2 overflow-x-auto pb-2"
-      style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-    >
-      {days.map((day) => {
-        const isSelected = day.date === selectedDate
-        return (
-          <button
-            key={day.date}
-            type="button"
-            onClick={() => onSelect(day.date)}
-            className="flex flex-col items-center rounded-xl border px-4 py-3 text-center transition-all duration-150 shrink-0"
-            style={{
-              minWidth: '72px',
-              borderColor: isSelected ? '#1C1C1A' : '#E5E7EB',
-              backgroundColor: isSelected ? '#1C1C1A' : '#FFFFFF',
-              color: isSelected ? '#FFFFFF' : '#2D3038',
-              boxShadow: isSelected
-                ? 'none'
-                : '0 1px 2px rgba(0,0,0,0.04)',
-            }}
-          >
-            <span className="text-xs font-semibold uppercase tracking-wide">
-              {formatShortWeekday(day.date)}
-            </span>
-            <span className="mt-0.5 text-sm font-medium">
-              {formatShortDate(day.date)}
-            </span>
-          </button>
-        )
-      })}
-    </div>
-  )
-}
+// ---------------------------------------------------------------------------
+// Sub-components
+// ---------------------------------------------------------------------------
 
 function ConfirmPanel({
   slot,

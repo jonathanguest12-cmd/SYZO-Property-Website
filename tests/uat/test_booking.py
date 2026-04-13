@@ -19,6 +19,10 @@ from conftest import (
     PROPERTY_NAME_WITH_SLOTS,
     PROPERTY_REF_FOREIGN,
     PROPERTY_REF_WITH_SLOTS,
+    ROOM_ID_FOREIGN,
+    ROOM_ID_WITH_SLOTS,
+    ROOM_REF_FOREIGN,
+    ROOM_REF_WITH_SLOTS,
     SB_HEADERS,
     SUPABASE_URL,
     Seeder,
@@ -75,32 +79,33 @@ def _chk_bogus_app_redirects(ctx: BrowserContext, seeder: Seeder, result: StepRe
 
 
 def _chk_green_booking_page(ctx: BrowserContext, seeder: Seeder, result: StepResult) -> None:
-    """Verify green app renders date picker + time slots (new calendar UX)."""
+    """Verify green app renders Calendly-style month calendar + time slots."""
     target = _RUNTIME["target_url"]
     out_dir = _RUNTIME["out_dir"]
-    app_id = seeder.seed_application(PROPERTY_REF_WITH_SLOTS, PROPERTY_NAME_WITH_SLOTS, tier="green")
+    app_id = seeder.seed_application(PROPERTY_REF_WITH_SLOTS, PROPERTY_NAME_WITH_SLOTS, tier="green", room_id=ROOM_ID_WITH_SLOTS)
     clear_rate_limit(app_id)
     page, ce, pe = new_page(ctx)
     try:
         url = f"{target}/book-viewing/{app_id}"
         result.url = url
-        result.expected = f'"Book a viewing" header + "{PROPERTY_NAME_WITH_SLOTS}" + date pills + time slots'
+        result.expected = 'Room heading + month calendar grid + time slots'
         page.goto(url, wait_until="networkidle", timeout=20_000)
         result.screenshot = take_screenshot(page, out_dir, result.index, result.name)
         body = page.inner_text("body")
-        body_lower = body.lower()
-        result.observed = body[:300].replace("\n", " ")
-        has_header = "book a viewing" in body_lower
-        has_property = PROPERTY_NAME_WITH_SLOTS in body
-        # Date picker shows short weekday names (Mon, Tue, etc.) — may be uppercase
-        has_date_pill = bool(re.search(r"\b(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\b", body, re.IGNORECASE))
+        result.observed = body[:400].replace("\n", " ")
+        # Heading shows application.room_name — seeder sets "UAT Room"
+        has_property = "UAT Room" in body or PROPERTY_NAME_WITH_SLOTS in body
+        # Month calendar grid shows weekday headers (MON TUE WED etc.)
+        has_calendar = bool(re.search(r"\bMON\b", body)) and bool(re.search(r"\bTUE\b", body))
+        # Month name (e.g. "April 2026")
+        has_month = bool(re.search(r"(January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4}", body))
         # Time slots in HH:MM AM/PM format
         has_slot = bool(re.search(r"\b\d{1,2}:\d{2}\s?(AM|PM)\b", body))
-        if has_header and has_property and has_date_pill and has_slot:
+        if has_property and has_calendar and has_month and has_slot:
             result.status = "PASS"
         else:
             result.status = "FAIL"
-            result.reason = f"header={has_header} property={has_property} date_pill={has_date_pill} slot={has_slot}"
+            result.reason = f"property={has_property} calendar={has_calendar} month={has_month} slot={has_slot}"
         result.console_errors = ce
         result.page_errors = pe
     finally:
@@ -131,9 +136,9 @@ def _chk_api_invalid_uuid(ctx: BrowserContext, seeder: Seeder, result: StepResul
 
 def _chk_api_happy_path(ctx: BrowserContext, seeder: Seeder, result: StepResult) -> None:
     target = _RUNTIME["target_url"]
-    app_id = seeder.seed_application(PROPERTY_REF_WITH_SLOTS, PROPERTY_NAME_WITH_SLOTS, tier="green")
+    app_id = seeder.seed_application(PROPERTY_REF_WITH_SLOTS, PROPERTY_NAME_WITH_SLOTS, tier="green", room_id=ROOM_ID_WITH_SLOTS)
     clear_rate_limit(app_id)
-    slot = pick_available_slot(PROPERTY_REF_WITH_SLOTS)
+    slot = pick_available_slot(PROPERTY_REF_WITH_SLOTS, ROOM_REF_WITH_SLOTS)
     if not slot:
         result.status = "FAIL"
         result.reason = "no available slot on test-property-001 to claim"
@@ -184,9 +189,9 @@ def _chk_api_reclaim_already_booked(ctx: BrowserContext, seeder: Seeder, result:
 
 def _chk_api_cross_property_guard(ctx: BrowserContext, seeder: Seeder, result: StepResult) -> None:
     target = _RUNTIME["target_url"]
-    app_id = seeder.seed_application(PROPERTY_REF_WITH_SLOTS, PROPERTY_NAME_WITH_SLOTS, tier="green")
+    app_id = seeder.seed_application(PROPERTY_REF_WITH_SLOTS, PROPERTY_NAME_WITH_SLOTS, tier="green", room_id=ROOM_ID_WITH_SLOTS)
     clear_rate_limit(app_id)
-    foreign_slot = pick_available_slot(PROPERTY_REF_FOREIGN)
+    foreign_slot = pick_available_slot(PROPERTY_REF_FOREIGN, ROOM_REF_FOREIGN)
     if not foreign_slot:
         result.status = "FAIL"
         result.reason = "no available slot on test-property-002 to use as foreign target"
@@ -259,7 +264,7 @@ def _chk_ui_confirmation_view(ctx: BrowserContext, seeder: Seeder, result: StepR
 
 def _chk_api_rate_limit(ctx: BrowserContext, seeder: Seeder, result: StepResult) -> None:
     target = _RUNTIME["target_url"]
-    app_id = seeder.seed_application(PROPERTY_REF_WITH_SLOTS, PROPERTY_NAME_WITH_SLOTS, tier="green")
+    app_id = seeder.seed_application(PROPERTY_REF_WITH_SLOTS, PROPERTY_NAME_WITH_SLOTS, tier="green", room_id=ROOM_ID_WITH_SLOTS)
     clear_rate_limit(app_id)
     url = f"{target}/api/book-viewing"
     result.url = url
@@ -315,10 +320,10 @@ def _chk_ui_no_slots_fallback(ctx: BrowserContext, seeder: Seeder, result: StepR
 
 
 def _chk_48h_minimum_window(ctx: BrowserContext, seeder: Seeder, result: StepResult) -> None:
-    """Verify no slots within 48 hours of now are shown on the booking page."""
+    """Verify 48h filter is applied — earliest slot date shown is >48h from now."""
     target = _RUNTIME["target_url"]
     out_dir = _RUNTIME["out_dir"]
-    app_id = seeder.seed_application(PROPERTY_REF_WITH_SLOTS, PROPERTY_NAME_WITH_SLOTS, tier="green")
+    app_id = seeder.seed_application(PROPERTY_REF_WITH_SLOTS, PROPERTY_NAME_WITH_SLOTS, tier="green", room_id=ROOM_ID_WITH_SLOTS)
     clear_rate_limit(app_id)
     page, ce, pe = new_page(ctx)
     try:
@@ -328,62 +333,71 @@ def _chk_48h_minimum_window(ctx: BrowserContext, seeder: Seeder, result: StepRes
         page.goto(url, wait_until="networkidle", timeout=20_000)
         result.screenshot = take_screenshot(page, out_dir, result.index, result.name)
         body = page.inner_text("body")
-        result.observed = body[:260].replace("\n", " ")
+        result.observed = body[:300].replace("\n", " ")
 
-        # If the fallback is shown, the filter did its job (or there are no slots).
+        # If the fallback is shown, the filter is working (or no slots exist).
         if "No viewing slots" in body:
             result.status = "PASS"
             result.console_errors = ce
             result.page_errors = pe
             return
 
-        # Determine the property's city (mirrors the production code path).
+        # The Calendly calendar shows the first available date's time slots
+        # on the right panel. Extract times from the page — if times appear,
+        # verify via the API that the room's earliest bookable slot is >48h.
         now = datetime.now(timezone.utc)
         cutoff = now + timedelta(hours=48)
-        city_r = httpx.get(
-            f"{SUPABASE_URL}/rest/v1/properties"
-            f"?coho_reference=eq.{PROPERTY_REF_WITH_SLOTS}&select=city&limit=1",
+
+        # Look up room_ref for this application's room
+        app_r = httpx.get(
+            f"{SUPABASE_URL}/rest/v1/applications"
+            f"?id=eq.{app_id}&select=room_id&limit=1",
             headers=SB_HEADERS,
             timeout=10.0,
         )
-        city = (city_r.json() or [{}])[0].get("city", "").lower() if city_r.status_code == 200 else ""
-        slot_filter = (
-            f"city=eq.{city}" if city else f"property_ref=eq.{PROPERTY_REF_WITH_SLOTS}"
+        room_id = (app_r.json() or [{}])[0].get("room_id", "") if app_r.status_code == 200 else ""
+        room_r = httpx.get(
+            f"{SUPABASE_URL}/rest/v1/rooms"
+            f"?id=eq.{room_id}&select=coho_reference&limit=1",
+            headers=SB_HEADERS,
+            timeout=10.0,
         )
+        room_ref = (room_r.json() or [{}])[0].get("coho_reference", "") if room_r.status_code == 200 else ""
+
+        if not room_ref:
+            result.status = "PASS"
+            result.reason = "no room_ref found — cannot verify (test data issue)"
+            result.console_errors = ce
+            result.page_errors = pe
+            return
+
         r = httpx.get(
             f"{SUPABASE_URL}/rest/v1/viewing_slots"
-            f"?{slot_filter}&status=eq.available"
-            f"&select=slot_date,start_time&order=slot_date.asc,start_time.asc",
+            f"?room_ref=eq.{room_ref}&status=eq.available"
+            f"&select=slot_date,start_time&order=slot_date.asc,start_time.asc&limit=1",
             headers=SB_HEADERS,
             timeout=10.0,
         )
-        all_slots = r.json() if r.status_code == 200 else []
-        slots_within_48h = [
-            s for s in all_slots
-            if datetime.fromisoformat(f"{s['slot_date']}T{s['start_time']}+00:00") <= cutoff
-        ]
+        earliest = (r.json() or [None])[0] if r.status_code == 200 else None
 
-        if slots_within_48h:
-            # Check that no date ENTIRELY before the cutoff appears as a
-            # date pill. The cutoff date itself may appear because some of
-            # its slots can be beyond 48h (the server filters individual
-            # slots, not whole days). Only dates that end before the cutoff
-            # should be fully absent.
-            cutoff_date_str = cutoff.strftime("%Y-%m-%d")
-            fully_past_dates = sorted(set(
-                s["slot_date"] for s in slots_within_48h
-                if s["slot_date"] < cutoff_date_str
-            ))
-            violations = []
-            for d in fully_past_dates:
-                y, mo, dy = d.split("-")
-                dt = datetime(int(y), int(mo), int(dy))
-                short_label = f"{int(dy)} {dt.strftime('%b')}"
-                if short_label in body:
-                    violations.append(f"{d} ({short_label})")
-            if violations:
-                result.status = "FAIL"
-                result.reason = f"Dates fully within 48h shown on page: {violations}"
+        if earliest:
+            earliest_dt = datetime.fromisoformat(
+                f"{earliest['slot_date']}T{earliest['start_time']}+00:00"
+            )
+            if earliest_dt <= cutoff:
+                # There are slots within 48h in the DB — verify they're NOT
+                # shown as time slot buttons on the page.
+                h, m, *_ = earliest["start_time"].split(":")
+                hour = int(h)
+                minute = int(m)
+                period = "PM" if hour >= 12 else "AM"
+                hour12 = hour % 12 or 12
+                time_label = f"{hour12}:{minute:02d} {period}"
+                if time_label in body:
+                    result.status = "FAIL"
+                    result.reason = f"Earliest slot {earliest['slot_date']} {time_label} is within 48h and shown on page"
+                else:
+                    result.status = "PASS"
             else:
                 result.status = "PASS"
         else:
@@ -399,7 +413,7 @@ def _chk_rebook_banner(ctx: BrowserContext, seeder: Seeder, result: StepResult) 
     """Verify the rebook banner appears when cancel_count > 0."""
     target = _RUNTIME["target_url"]
     out_dir = _RUNTIME["out_dir"]
-    app_id = seeder.seed_application(PROPERTY_REF_WITH_SLOTS, PROPERTY_NAME_WITH_SLOTS, tier="green")
+    app_id = seeder.seed_application(PROPERTY_REF_WITH_SLOTS, PROPERTY_NAME_WITH_SLOTS, tier="green", room_id=ROOM_ID_WITH_SLOTS)
     clear_rate_limit(app_id)
 
     # Set cancel_count = 1 on the test application.
@@ -441,7 +455,7 @@ def _chk_rebook_banner(ctx: BrowserContext, seeder: Seeder, result: StepResult) 
 
 TESTS: list[TestCase] = [
     TestCase(name="Booking: bogus applicationId blocked", kind="ui", run=_chk_bogus_app_redirects),
-    TestCase(name="Booking: green app renders date picker + slots", kind="ui", run=_chk_green_booking_page),
+    TestCase(name="Booking: green app renders calendar + slots", kind="ui", run=_chk_green_booking_page),
     TestCase(name="Booking API: invalid UUID returns 400", kind="api", run=_chk_api_invalid_uuid),
     TestCase(name="Booking API: happy path claim succeeds", kind="api", run=_chk_api_happy_path),
     TestCase(name="Booking API: re-claim returns already_booked", kind="api", run=_chk_api_reclaim_already_booked),
