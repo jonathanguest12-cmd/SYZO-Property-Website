@@ -174,17 +174,31 @@ export default function ApplyClient({
   }
 
   function answerIncome(value: IncomeBracket) {
-    setAnswers((a) => ({ ...a, annualIncome: value }))
+    setAnswers((a) => ({ ...a, annualIncome: value, hasGuarantor: null }))
     flashAndAdvance(value, () => goTo(5))
   }
 
   function answerSmokes(value: boolean) {
-    setAnswers((a) => ({ ...a, smokes: value }))
+    setAnswers((a) => ({
+      ...a,
+      smokes: value,
+      // Clear downstream answers when gateway changes
+      hasPets: value ? null : a.hasPets,
+      lengthOfStay: value ? null : a.lengthOfStay,
+      adverseCredit: value ? null : a.adverseCredit,
+      hasGuarantor: value ? null : a.hasGuarantor,
+    }))
     flashAndAdvance(value ? 'yes' : 'no', () => goTo(value ? 10 : 6))
   }
 
   function answerPets(value: boolean) {
-    setAnswers((a) => ({ ...a, hasPets: value }))
+    setAnswers((a) => ({
+      ...a,
+      hasPets: value,
+      lengthOfStay: value ? null : a.lengthOfStay,
+      adverseCredit: value ? null : a.adverseCredit,
+      hasGuarantor: value ? null : a.hasGuarantor,
+    }))
     flashAndAdvance(value ? 'yes' : 'no', () => goTo(value ? 10 : 7))
   }
 
@@ -194,7 +208,7 @@ export default function ApplyClient({
   }
 
   function answerAdverseCredit(value: boolean) {
-    setAnswers((a) => ({ ...a, adverseCredit: value }))
+    setAnswers((a) => ({ ...a, adverseCredit: value, hasGuarantor: null }))
     const incomeFlagged =
       answers.annualIncome === 'under_low' || answers.annualIncome === 'low'
     flashAndAdvance(value ? 'yes' : 'no', () => goTo(incomeFlagged ? 9 : 10))
@@ -212,6 +226,30 @@ export default function ApplyClient({
     setShowReview(false)
     setStep(targetStep)
     setHistory([])
+  }
+
+  // Override goBack when editing from review — return to review screen
+  const originalGoBack = goBack
+  function goBackOrReview() {
+    if (returnToReviewRef.current) {
+      returnToReviewRef.current = false
+      setShowReview(true)
+    } else {
+      originalGoBack()
+    }
+  }
+
+  // Check if all required answers are filled (accounts for gateway skips).
+  function isReviewComplete(): boolean {
+    if (!answers.whoMovingIn || !answers.moveInTimeline || !answers.employmentStatus || !answers.annualIncome) return false
+    if (answers.smokes === null) return false
+    if (answers.smokes) return true // smokes=yes skips everything else
+    if (answers.hasPets === null) return false
+    if (answers.hasPets) return true // pets=yes skips stay/credit/guarantor
+    if (!answers.lengthOfStay || answers.adverseCredit === null) return false
+    const incomeFlagged = answers.annualIncome === 'under_low' || answers.annualIncome === 'low'
+    if (incomeFlagged && answers.hasGuarantor === null) return false
+    return true
   }
 
   // ----- submission -----
@@ -334,7 +372,7 @@ export default function ApplyClient({
             {answers.smokes === false && answers.hasPets === false && (
               <>
                 <ReviewRow label="Length of stay" value={displayValue(answers.lengthOfStay)} onEdit={() => editFromReview(7)} />
-                <ReviewRow label="Any adverse credit history?" value={displayValue(answers.adverseCredit)} onEdit={() => editFromReview(8)} />
+                <ReviewRow label="Any adverse credit history?" value={displayValue(answers.adverseCredit)} onEdit={() => editFromReview(8)} last={answers.hasGuarantor === null} />
               </>
             )}
             {answers.hasGuarantor !== null && (
@@ -343,9 +381,23 @@ export default function ApplyClient({
           </div>
 
           <div
-            className="mt-6 rounded-xl border p-4"
+            className="mt-6 rounded-xl border p-4 relative"
             style={{ borderColor: '#E5E7EB', backgroundColor: '#F9FAFB' }}
           >
+            <button
+              type="button"
+              onClick={() => { setShowReview(false); setStep(10) }}
+              className="absolute top-4 right-4 transition-colors duration-150 cursor-pointer"
+              style={{ color: '#9CA3AF' }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = '#4B5563' }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = '#9CA3AF' }}
+              aria-label="Edit contact details"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+              </svg>
+            </button>
             <p
               className="text-xs font-semibold uppercase tracking-[0.08em] mb-2"
               style={{ color: '#9CA3AF' }}
@@ -363,6 +415,12 @@ export default function ApplyClient({
             </p>
           </div>
 
+          {!isReviewComplete() && (
+            <p className="mt-4 text-sm text-center" style={{ color: '#D97706' }}>
+              Please complete all questions before submitting.
+            </p>
+          )}
+
           {submitError && (
             <p className="mt-4 text-sm text-center" style={{ color: '#B91C1C' }}>
               {submitError}
@@ -372,7 +430,8 @@ export default function ApplyClient({
           <button
             type="button"
             onClick={handleSubmit}
-            className="mt-8 w-full inline-flex items-center justify-center rounded-full px-8 py-3.5 text-sm font-semibold text-white transition-colors duration-200 hover:opacity-90 cursor-pointer"
+            disabled={!isReviewComplete()}
+            className="mt-8 w-full inline-flex items-center justify-center rounded-full px-8 py-3.5 text-sm font-semibold text-white transition-colors duration-200 hover:opacity-90 disabled:opacity-50 cursor-pointer"
             style={{ backgroundColor: '#2D3038' }}
           >
             Submit Application
@@ -386,21 +445,6 @@ export default function ApplyClient({
 
   return (
     <div className="mx-auto w-full max-w-2xl px-4 py-12 sm:px-6 sm:py-16">
-      {/* Green flash animation styles */}
-      <style>{`
-        @keyframes flashGreen {
-          0%   { background-color: transparent; }
-          20%  { background-color: #4ADE80; color: #fff; }
-          40%  { background-color: transparent; }
-          60%  { background-color: #4ADE80; color: #fff; }
-          80%  { background-color: transparent; }
-          100% { background-color: #4ADE80; color: #fff; }
-        }
-        .flash-green {
-          animation: flashGreen 0.6s ease-in-out forwards;
-        }
-      `}</style>
-
       <RoomBadge
         roomName={roomName}
         cleanProperty={cleanProperty}
@@ -418,7 +462,7 @@ export default function ApplyClient({
           <QuestionFrame
             questionNumber={step}
             totalQuestions={TOTAL_QUESTIONS}
-            onBack={goBack}
+            onBack={goBackOrReview}
           >
             {step === 1 && (
               <Question
@@ -519,7 +563,7 @@ export default function ApplyClient({
             contact={contact}
             onChange={setContact}
             onSubmit={handleContactSubmit}
-            onBack={goBack}
+            onBack={goBackOrReview}
             error={contactError || submitError}
           />
         )}
