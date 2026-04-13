@@ -92,8 +92,8 @@ def _chk_green_booking_page(ctx: BrowserContext, seeder: Seeder, result: StepRes
         result.observed = body[:300].replace("\n", " ")
         has_header = "book a viewing" in body_lower
         has_property = PROPERTY_NAME_WITH_SLOTS in body
-        # Date picker shows short weekday names (Mon, Tue, etc.)
-        has_date_pill = bool(re.search(r"\b(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\b", body))
+        # Date picker shows short weekday names (Mon, Tue, etc.) — may be uppercase
+        has_date_pill = bool(re.search(r"\b(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\b", body, re.IGNORECASE))
         # Time slots in HH:MM AM/PM format
         has_slot = bool(re.search(r"\b\d{1,2}:\d{2}\s?(AM|PM)\b", body))
         if has_header and has_property and has_date_pill and has_slot:
@@ -364,19 +364,26 @@ def _chk_48h_minimum_window(ctx: BrowserContext, seeder: Seeder, result: StepRes
         ]
 
         if slots_within_48h:
+            # Check that no date ENTIRELY before the cutoff appears as a
+            # date pill. The cutoff date itself may appear because some of
+            # its slots can be beyond 48h (the server filters individual
+            # slots, not whole days). Only dates that end before the cutoff
+            # should be fully absent.
+            cutoff_date_str = cutoff.strftime("%Y-%m-%d")
+            fully_past_dates = sorted(set(
+                s["slot_date"] for s in slots_within_48h
+                if s["slot_date"] < cutoff_date_str
+            ))
             violations = []
-            for s in slots_within_48h:
-                h, m, *_ = s["start_time"].split(":")
-                hour = int(h)
-                minute = int(m)
-                period = "PM" if hour >= 12 else "AM"
-                hour12 = hour % 12 or 12
-                time_label = f"{hour12}:{minute:02d} {period}"
-                if time_label in body:
-                    violations.append(f"{s['slot_date']} {time_label}")
+            for d in fully_past_dates:
+                y, mo, dy = d.split("-")
+                dt = datetime(int(y), int(mo), int(dy))
+                short_label = f"{int(dy)} {dt.strftime('%b')}"
+                if short_label in body:
+                    violations.append(f"{d} ({short_label})")
             if violations:
                 result.status = "FAIL"
-                result.reason = f"Slots within 48h shown on page: {violations}"
+                result.reason = f"Dates fully within 48h shown on page: {violations}"
             else:
                 result.status = "PASS"
         else:
