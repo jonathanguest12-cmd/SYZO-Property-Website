@@ -9,6 +9,7 @@ booked state, atomic claim).
 from __future__ import annotations
 
 import re
+from datetime import datetime, timedelta, timezone
 
 import httpx
 from playwright.sync_api import BrowserContext
@@ -74,6 +75,7 @@ def _chk_bogus_app_redirects(ctx: BrowserContext, seeder: Seeder, result: StepRe
 
 
 def _chk_green_booking_page(ctx: BrowserContext, seeder: Seeder, result: StepResult) -> None:
+    """Verify green app renders date picker + time slots (new calendar UX)."""
     target = _RUNTIME["target_url"]
     out_dir = _RUNTIME["out_dir"]
     app_id = seeder.seed_application(PROPERTY_REF_WITH_SLOTS, PROPERTY_NAME_WITH_SLOTS, tier="green")
@@ -82,20 +84,23 @@ def _chk_green_booking_page(ctx: BrowserContext, seeder: Seeder, result: StepRes
     try:
         url = f"{target}/book-viewing/{app_id}"
         result.url = url
-        result.expected = f'"Book a viewing" header + "{PROPERTY_NAME_WITH_SLOTS}" + at least one time slot'
+        result.expected = f'"Book a viewing" header + "{PROPERTY_NAME_WITH_SLOTS}" + date pills + time slots'
         page.goto(url, wait_until="networkidle", timeout=20_000)
         result.screenshot = take_screenshot(page, out_dir, result.index, result.name)
         body = page.inner_text("body")
         body_lower = body.lower()
-        result.observed = body[:240].replace("\n", " ")
+        result.observed = body[:300].replace("\n", " ")
         has_header = "book a viewing" in body_lower
         has_property = PROPERTY_NAME_WITH_SLOTS in body
+        # Date picker shows short weekday names (Mon, Tue, etc.)
+        has_date_pill = bool(re.search(r"\b(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\b", body))
+        # Time slots in HH:MM AM/PM format
         has_slot = bool(re.search(r"\b\d{1,2}:\d{2}\s?(AM|PM)\b", body))
-        if has_header and has_property and has_slot:
+        if has_header and has_property and has_date_pill and has_slot:
             result.status = "PASS"
         else:
             result.status = "FAIL"
-            result.reason = f"header={has_header} property={has_property} slot={has_slot}"
+            result.reason = f"header={has_header} property={has_property} date_pill={has_date_pill} slot={has_slot}"
         result.console_errors = ce
         result.page_errors = pe
     finally:
@@ -309,13 +314,113 @@ def _chk_ui_no_slots_fallback(ctx: BrowserContext, seeder: Seeder, result: StepR
         page.close()
 
 
+def _chk_48h_minimum_window(ctx: BrowserContext, seeder: Seeder, result: StepResult) -> None:
+    """Verify no slots within 48 hours of now are shown on the booking page."""
+    target = _RUNTIME["target_url"]
+    out_dir = _RUNTIME["out_dir"]
+    app_id = seeder.seed_application(PROPERTY_REF_WITH_SLOTS, PROPERTY_NAME_WITH_SLOTS, tier="green")
+    clear_rate_limit(app_id)
+    page, ce, pe = new_page(ctx)
+    try:
+        url = f"{target}/book-viewing/{app_id}"
+        result.url = url
+        result.expected = "All displayed slots are >48 hours from now"
+        page.goto(url, wait_until="networkidle", timeout=20_000)
+        result.screenshot = take_screenshot(page, out_dir, result.index, result.name)
+        body = page.inner_text("body")
+        result.observed = body[:260].replace("\n", " ")
+
+        # If the fallback is shown, the filter did its job (or there are no slots).
+        if "No viewing slots" in body:
+            result.status = "PASS"
+            result.console_errors = ce
+            result.page_errors = pe
+            return
+
+        # Verify via the API that the slots in the DB within 48h are NOT on the page.
+        now = datetime.now(timezone.utc)
+        cutoff = now + timedelta(hours=48)
+        r = httpx.get(
+            f"{SUPABASE_URL}/rest/v1/viewing_slots"
+            f"?property_ref=eq.{PROPERTY_REF_WITH_SLOTS}&status=eq.available"
+            f"&select=slot_date,start_time&order=slot_date.asc,start_time.asc",
+            headers=SB_HEADERS,
+            timeout=10.0,
+        )
+        all_slots = r.json() if r.status_code == 200 else []
+        slots_within_48h = [
+            s for s in all_slots
+            if datetime.fromisoformat(f"{s['slot_date']}T{s['start_time']}+00:00") <= cutoff
+        ]
+
+        if slots_within_48h:
+            violations = []
+            for s in slots_within_48h:
+                h, m, *_ = s["start_time"].split(":")
+                hour = int(h)
+                minute = int(m)
+                period = "PM" if hour >= 12 else "AM"
+                hour12 = hour % 12 or 12
+                time_label = f"{hour12}:{minute:02d} {period}"
+                if time_label in body:
+                    violations.append(f"{s['slot_date']} {time_label}")
+            if violations:
+                result.status = "FAIL"
+                result.reason = f"Slots within 48h shown on page: {violations}"
+            else:
+                result.status = "PASS"
+        else:
+            result.status = "PASS"
+
+        result.console_errors = ce
+        result.page_errors = pe
+    finally:
+        page.close()
+
+
+def _chk_rebook_banner(ctx: BrowserContext, seeder: Seeder, result: StepResult) -> None:
+    """Verify the rebook banner appears when cancel_count > 0."""
+    target = _RUNTIME["target_url"]
+    out_dir = _RUNTIME["out_dir"]
+    app_id = seeder.seed_application(PROPERTY_REF_WITH_SLOTS, PROPERTY_NAME_WITH_SLOTS, tier="green")
+    clear_rate_limit(app_id)
+
+    # Set cancel_count = 1 on the test application.
+    httpx.patch(
+        f"{SUPABASE_URL}/rest/v1/applications?id=eq.{app_id}",
+        headers={**SB_HEADERS, "Prefer": "return=minimal"},
+        json={"cancel_count": 1},
+        timeout=10.0,
+    )
+
+    page, ce, pe = new_page(ctx)
+    try:
+        url = f"{target}/book-viewing/{app_id}"
+        result.url = url
+        result.expected = "Rebook banner with 'previous viewing was cancelled' text"
+        page.goto(url, wait_until="networkidle", timeout=20_000)
+        result.screenshot = take_screenshot(page, out_dir, result.index, result.name)
+        body = page.inner_text("body")
+        result.observed = body[:300].replace("\n", " ")
+        has_banner = "previous viewing was cancelled" in body.lower()
+        if has_banner:
+            result.status = "PASS"
+        else:
+            result.status = "FAIL"
+            result.reason = "rebook banner not found on page"
+        result.console_errors = ce
+        result.page_errors = pe
+    finally:
+        page.close()
+
+
 # ----------------------------------------------------------------------------
 # Exported TESTS list — the suite runner concatenates all of these.
 # ----------------------------------------------------------------------------
 
 TESTS: list[TestCase] = [
     TestCase(name="Booking: bogus applicationId blocked", kind="ui", run=_chk_bogus_app_redirects),
-    TestCase(name="Booking: green app renders page with slots", kind="ui", run=_chk_green_booking_page),
+    TestCase(name="Booking: green app renders date picker + slots", kind="ui", run=_chk_green_booking_page),
     TestCase(name="Booking API: invalid UUID returns 400", kind="api", run=_chk_api_invalid_uuid),
     TestCase(name="Booking API: happy path claim succeeds", kind="api", run=_chk_api_happy_path),
     TestCase(name="Booking API: re-claim returns already_booked", kind="api", run=_chk_api_reclaim_already_booked),
@@ -323,4 +428,6 @@ TESTS: list[TestCase] = [
     TestCase(name="Booking UI: confirmation view + WhatsApp 24h copy", kind="ui", run=_chk_ui_confirmation_view),
     TestCase(name="Booking API: rate limit at 4th attempt", kind="api", run=_chk_api_rate_limit),
     TestCase(name="Booking UI: no-slots fallback with pre-filled details", kind="ui", run=_chk_ui_no_slots_fallback),
+    TestCase(name="Booking UI: 48h minimum booking window enforced", kind="ui", run=_chk_48h_minimum_window),
+    TestCase(name="Booking UI: rebook banner when cancel_count > 0", kind="ui", run=_chk_rebook_banner),
 ]

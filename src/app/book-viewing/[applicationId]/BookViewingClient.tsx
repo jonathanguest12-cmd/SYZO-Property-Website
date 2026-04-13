@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
@@ -23,27 +23,24 @@ interface Props {
   application: ApplicationData
   initialSlots: SlotData[]
   existingBooking: SlotData | null
+  isRebook?: boolean
 }
 
 type View = 'calendar' | 'confirming' | 'submitting' | 'confirmed'
 
-function stripHouseNumber(name: string): string {
-  return name.replace(/^\d+[-\s]+/, '').trim()
-}
-
-function formatDayLabel(dateStr: string): string {
-  // dateStr is YYYY-MM-DD. Parse as local date to avoid UTC-rollback on e.g. 13 Apr.
+function formatShortWeekday(dateStr: string): string {
   const [y, m, d] = dateStr.split('-').map(Number)
   const date = new Date(y, (m || 1) - 1, d || 1)
-  return date.toLocaleDateString('en-GB', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-  })
+  return date.toLocaleDateString('en-GB', { weekday: 'short' })
+}
+
+function formatShortDate(dateStr: string): string {
+  const [y, m, d] = dateStr.split('-').map(Number)
+  const date = new Date(y, (m || 1) - 1, d || 1)
+  return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
 }
 
 function formatTimeLabel(timeStr: string): string {
-  // timeStr is HH:MM:SS.
   const [hStr, mStr] = timeStr.split(':')
   const h = Number(hStr)
   const m = Number(mStr)
@@ -64,9 +61,18 @@ function formatLongDate(dateStr: string): string {
   })
 }
 
+function formatDayLabel(dateStr: string): string {
+  const [y, m, d] = dateStr.split('-').map(Number)
+  const date = new Date(y, (m || 1) - 1, d || 1)
+  return date.toLocaleDateString('en-GB', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  })
+}
+
 interface DayGroup {
   date: string
-  label: string
   slots: SlotData[]
 }
 
@@ -81,7 +87,6 @@ function groupByDay(slots: SlotData[]): DayGroup[] {
     .sort((a, b) => a[0].localeCompare(b[0]))
     .map(([date, arr]) => ({
       date,
-      label: formatDayLabel(date),
       slots: arr.sort((a, b) => a.start_time.localeCompare(b.start_time)),
     }))
 }
@@ -90,6 +95,7 @@ export default function BookViewingClient({
   application,
   initialSlots,
   existingBooking,
+  isRebook = false,
 }: Props) {
   const router = useRouter()
   const [view, setView] = useState<View>(
@@ -102,7 +108,14 @@ export default function BookViewingClient({
   const [error, setError] = useState<string | null>(null)
 
   const dayGroups = useMemo(() => groupByDay(initialSlots), [initialSlots])
-  const cleanProperty = stripHouseNumber(application.propertyName)
+  const [selectedDate, setSelectedDate] = useState<string>(
+    dayGroups[0]?.date || ''
+  )
+
+  const activeDaySlots = useMemo(
+    () => dayGroups.find((g) => g.date === selectedDate)?.slots || [],
+    [dayGroups, selectedDate]
+  )
 
   async function handleConfirm() {
     if (!selectedSlot) return
@@ -161,7 +174,7 @@ export default function BookViewingClient({
     return (
       <ConfirmedView
         slot={confirmedSlot}
-        propertyNameLabel={cleanProperty}
+        propertyNameLabel={application.propertyName}
       />
     )
   }
@@ -180,9 +193,19 @@ export default function BookViewingClient({
           className="mt-2 text-2xl font-bold tracking-tight md:text-3xl"
           style={{ color: '#2D3038' }}
         >
-          {cleanProperty}
+          {application.propertyName}
         </h1>
       </div>
+
+      {isRebook && (
+        <div
+          className="mb-4 rounded-xl px-4 py-3 text-sm leading-relaxed"
+          style={{ backgroundColor: '#FEF3C7', color: '#92400E' }}
+        >
+          Your previous viewing was cancelled. Please select a new time
+          below&nbsp;&mdash; your details are already saved.
+        </div>
+      )}
 
       <div
         className="rounded-2xl bg-white p-6 sm:p-8 border"
@@ -204,7 +227,7 @@ export default function BookViewingClient({
         {(view === 'confirming' || view === 'submitting') && selectedSlot && (
           <ConfirmPanel
             slot={selectedSlot}
-            propertyNameLabel={cleanProperty}
+            propertyNameLabel={application.propertyName}
             application={application}
             submitting={view === 'submitting'}
             onConfirm={handleConfirm}
@@ -224,17 +247,48 @@ export default function BookViewingClient({
             >
               Choose a time that works for you. Viewings last 15 minutes.
             </p>
-            <div className="flex flex-col gap-6">
-              {dayGroups.map((day) => (
-                <DayCard
-                  key={day.date}
-                  day={day}
-                  onPick={(slot) => {
-                    setSelectedSlot(slot)
-                    setView('confirming')
-                  }}
-                />
-              ))}
+
+            {/* Date picker — horizontal scrollable row */}
+            <DatePicker
+              days={dayGroups}
+              selectedDate={selectedDate}
+              onSelect={setSelectedDate}
+            />
+
+            {/* Time slots for the selected date */}
+            <div className="mt-6">
+              <h2
+                className="mb-3 text-sm font-semibold"
+                style={{ color: '#2D3038' }}
+              >
+                {formatDayLabel(selectedDate)}
+              </h2>
+              <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+                {activeDaySlots.map((slot) => (
+                  <button
+                    key={slot.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedSlot(slot)
+                      setView('confirming')
+                    }}
+                    className="rounded-full border px-3 py-2 text-sm font-medium transition-all duration-150 hover:shadow-sm"
+                    style={{
+                      borderColor: '#E5E7EB',
+                      color: '#2D3038',
+                      backgroundColor: '#FFFFFF',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = '#2D3038'
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = '#E5E7EB'
+                    }}
+                  >
+                    {formatTimeLabel(slot.start_time)}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         )}
@@ -258,38 +312,50 @@ export default function BookViewingClient({
   )
 }
 
-function DayCard({
-  day,
-  onPick,
+function DatePicker({
+  days,
+  selectedDate,
+  onSelect,
 }: {
-  day: DayGroup
-  onPick: (slot: SlotData) => void
+  days: DayGroup[]
+  selectedDate: string
+  onSelect: (date: string) => void
 }) {
+  const scrollRef = useRef<HTMLDivElement>(null)
+
   return (
-    <div>
-      <h2
-        className="mb-3 text-sm font-semibold"
-        style={{ color: '#2D3038' }}
-      >
-        {day.label}
-      </h2>
-      <div className="flex flex-wrap gap-2">
-        {day.slots.map((slot) => (
+    <div
+      ref={scrollRef}
+      className="flex gap-2 overflow-x-auto pb-2"
+      style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+    >
+      {days.map((day) => {
+        const isSelected = day.date === selectedDate
+        return (
           <button
-            key={slot.id}
+            key={day.date}
             type="button"
-            onClick={() => onPick(slot)}
-            className="rounded-full border px-4 py-2 text-sm font-medium transition-all duration-150 hover:border-current hover:shadow-sm"
+            onClick={() => onSelect(day.date)}
+            className="flex flex-col items-center rounded-xl border px-4 py-3 text-center transition-all duration-150 shrink-0"
             style={{
-              borderColor: '#E5E7EB',
-              color: '#2D3038',
-              backgroundColor: '#FFFFFF',
+              minWidth: '72px',
+              borderColor: isSelected ? '#1C1C1A' : '#E5E7EB',
+              backgroundColor: isSelected ? '#1C1C1A' : '#FFFFFF',
+              color: isSelected ? '#FFFFFF' : '#2D3038',
+              boxShadow: isSelected
+                ? 'none'
+                : '0 1px 2px rgba(0,0,0,0.04)',
             }}
           >
-            {formatTimeLabel(slot.start_time)}
+            <span className="text-xs font-semibold uppercase tracking-wide">
+              {formatShortWeekday(day.date)}
+            </span>
+            <span className="mt-0.5 text-sm font-medium">
+              {formatShortDate(day.date)}
+            </span>
           </button>
-        ))}
-      </div>
+        )
+      })}
     </div>
   )
 }
