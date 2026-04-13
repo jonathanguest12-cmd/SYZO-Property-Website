@@ -10,10 +10,10 @@ src/lib/scoring.ts (verified 2026-04-11):
   - low-income + guarantor=yes + clean otherwise → GREEN (guarantor clears flag)
   - everything clean + ≥75% score      → GREEN
 
-Brief-exact result copy (P02c):
-  GREEN: "Great news." + "You're a strong fit for this room. We'll be in touch within 24 hours to arrange a viewing."
-  AMBER: "Thanks for applying." + "Our team will review your application and be in touch within 2 working days."
-  RED:   "Thanks for applying." + "We've received your application and will be in touch if we have something that's a good fit."
+Brief-exact result copy:
+  GREEN: "Great news." + "You're a strong fit for this room. Book a viewing slot below to secure your place."
+  AMBER: "Thanks for applying." + "Thanks for applying. We'll review your application within 2 working days and be in touch."
+  RED:   "Thanks for applying." + "Thanks for applying. Unfortunately we're unable to proceed with your application at this time."
 
 "Book a Viewing" CTA must appear ONLY on green.
 """
@@ -127,7 +127,7 @@ def _verify_result(
         ok_heading = "Great news." in body
         ok_body = (
             "You're a strong fit for this room" in body
-            and "We'll be in touch within 24 hours" in body
+            and "Book a viewing slot below" in body
         )
         ok_cta = "Book a Viewing" in body
         if ok_heading and ok_body and ok_cta and not has_escape_leak:
@@ -139,7 +139,7 @@ def _verify_result(
             )
     elif expected_tier == "amber":
         ok_heading = "Thanks for applying." in body
-        ok_body = "Our team will review your application and be in touch within 2 working days." in body
+        ok_body = "review your application within 2 working days" in body
         ok_no_cta = "Book a Viewing" not in body
         if ok_heading and ok_body and ok_no_cta and not has_escape_leak:
             result.status = "PASS"
@@ -150,10 +150,7 @@ def _verify_result(
             )
     else:  # red
         ok_heading = "Thanks for applying." in body
-        ok_body = (
-            "We've received your application" in body
-            and "good fit" in body
-        )
+        ok_body = "unable to proceed with your application" in body
         ok_no_cta = "Book a Viewing" not in body
         if ok_heading and ok_body and ok_no_cta and not has_escape_leak:
             result.status = "PASS"
