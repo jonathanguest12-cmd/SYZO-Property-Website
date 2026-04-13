@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import { buildPropertyDisplayName } from '@/lib/format'
 import BookViewingClient, {
   type ApplicationData,
   type SlotData,
@@ -23,11 +24,6 @@ type ApplicationRow = {
 
 type PropertyRow = {
   city: string
-}
-
-// Today in UK time as YYYY-MM-DD. Uses en-CA because it emits ISO-format.
-function ukTodayIso(): string {
-  return new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/London' })
 }
 
 async function sbGet<T>(
@@ -89,49 +85,64 @@ export default async function BookViewingPage({
     redirect('/')
   }
 
-  // Look up the property's city so we can filter slots by city.
-  const propertyRows = await sbGet<PropertyRow[]>(
-    `properties?coho_reference=eq.${encodeURIComponent(application.property_ref)}&select=city&limit=1`,
-    SUPABASE_KEY,
-    SUPABASE_URL
-  )
-  const propertyCity = propertyRows?.[0]?.city?.toLowerCase() || ''
+  // Look up the property's city so we can filter slots by city, and fetch
+  // all property names for display name disambiguation.
+  const [propertyRows, allPropertyNameRows, existingRows] = await Promise.all([
+    sbGet<PropertyRow[]>(
+      `properties?coho_reference=eq.${encodeURIComponent(application.property_ref)}&select=city&limit=1`,
+      SUPABASE_KEY,
+      SUPABASE_URL
+    ),
+    sbGet<{ name: string }[]>(
+      'properties?select=name&active=eq.true',
+      SUPABASE_KEY,
+      SUPABASE_URL
+    ),
+    // Check if this applicant already has a booked slot.
+    sbGet<SlotData[]>(
+      `viewing_slots?applicant_id=eq.${applicationId}&status=eq.booked&select=id,slot_date,start_time,property_name&limit=1`,
+      SUPABASE_KEY,
+      SUPABASE_URL
+    ),
+  ])
 
-  // Check if this applicant already has a booked slot.
-  const existingRows = await sbGet<SlotData[]>(
-    `viewing_slots?applicant_id=eq.${applicationId}&status=eq.booked&select=id,slot_date,start_time,property_name&limit=1`,
-    SUPABASE_KEY,
-    SUPABASE_URL
-  )
+  const propertyCity = propertyRows?.[0]?.city?.toLowerCase() || ''
+  const allPropertyNames = (allPropertyNameRows || []).map((r) => r.name)
   const existingBooking = (existingRows && existingRows[0]) || null
 
-  // Fetch available slots for this property's city, today onwards (UK time).
-  const today = ukTodayIso()
+  // 48-hour minimum booking window — push the cutoff date into the DB query
+  // so PostgREST doesn't hit its row limit on near-term slots.
+  const minBookableDateTime = new Date(Date.now() + 48 * 60 * 60 * 1000)
+  const cutoffDate = minBookableDateTime.toISOString().slice(0, 10) // YYYY-MM-DD
+
+  // Fetch available slots for this property's city, from the cutoff date onwards.
   const cityFilter = propertyCity
     ? `&city=eq.${encodeURIComponent(propertyCity)}`
     : `&property_ref=eq.${encodeURIComponent(application.property_ref)}`
   const slotRows =
     (await sbGet<SlotData[]>(
-      `viewing_slots?status=eq.available&slot_date=gte.${today}${cityFilter}&select=id,slot_date,start_time,property_name&order=slot_date.asc,start_time.asc`,
+      `viewing_slots?status=eq.available&slot_date=gte.${cutoffDate}${cityFilter}&select=id,slot_date,start_time,property_name&order=slot_date.asc,start_time.asc`,
       SUPABASE_KEY,
       SUPABASE_URL
     )) || []
 
-  // Filter out slots within the next 48 hours — ensures the 24hr reminder
-  // (view-03) fires before the viewing, not immediately after booking.
-  const minBookableDateTime = new Date(Date.now() + 48 * 60 * 60 * 1000)
+  // Fine-grained 48h filter for slots on the cutoff date itself (some
+  // slots on that day may still be within 48h depending on the time).
   const bookableSlots = slotRows.filter((slot) => {
-    // Append 'Z' — Supabase stores times in UTC; explicit suffix avoids
-    // drift when the server's local timezone differs (e.g. BST in summer).
     const slotDateTime = new Date(`${slot.slot_date}T${slot.start_time}Z`)
     return slotDateTime > minBookableDateTime
   })
 
   const isRebook = (application.cancel_count ?? 0) > 0
 
+  const displayPropertyName = buildPropertyDisplayName(
+    application.property_name || '',
+    allPropertyNames
+  )
+
   const appData: ApplicationData = {
     id: application.id,
-    propertyName: application.property_name || 'your room',
+    propertyName: displayPropertyName || 'your room',
     fullName: application.full_name || '',
     email: application.email || '',
     phone: application.phone || '',
