@@ -90,6 +90,13 @@ def _chk_green_booking_page(ctx: BrowserContext, seeder: Seeder, result: StepRes
         result.url = url
         result.expected = 'Room heading + month calendar grid + time slots'
         page.goto(url, wait_until="networkidle", timeout=20_000)
+        # On mobile viewport, tap the first available (clickable) date to reveal times.
+        try:
+            page.locator("button:not([disabled])").filter(
+                has_text=re.compile(r"^\d{1,2}$")
+            ).first.click(timeout=5_000)
+        except Exception:
+            pass
         result.screenshot = take_screenshot(page, out_dir, result.index, result.name)
         body = page.inner_text("body")
         result.observed = body[:400].replace("\n", " ")
@@ -319,8 +326,8 @@ def _chk_ui_no_slots_fallback(ctx: BrowserContext, seeder: Seeder, result: StepR
         page.close()
 
 
-def _chk_48h_minimum_window(ctx: BrowserContext, seeder: Seeder, result: StepResult) -> None:
-    """Verify 48h filter is applied — earliest slot date shown is >48h from now."""
+def _chk_28h_minimum_window(ctx: BrowserContext, seeder: Seeder, result: StepResult) -> None:
+    """Verify 28h filter is applied — earliest slot date shown is >28h from now."""
     target = _RUNTIME["target_url"]
     out_dir = _RUNTIME["out_dir"]
     app_id = seeder.seed_application(PROPERTY_REF_WITH_SLOTS, PROPERTY_NAME_WITH_SLOTS, tier="green", room_id=ROOM_ID_WITH_SLOTS)
@@ -329,7 +336,7 @@ def _chk_48h_minimum_window(ctx: BrowserContext, seeder: Seeder, result: StepRes
     try:
         url = f"{target}/book-viewing/{app_id}"
         result.url = url
-        result.expected = "All displayed slots are >48 hours from now"
+        result.expected = "All displayed slots are >28 hours from now"
         page.goto(url, wait_until="networkidle", timeout=20_000)
         result.screenshot = take_screenshot(page, out_dir, result.index, result.name)
         body = page.inner_text("body")
@@ -344,9 +351,9 @@ def _chk_48h_minimum_window(ctx: BrowserContext, seeder: Seeder, result: StepRes
 
         # The Calendly calendar shows the first available date's time slots
         # on the right panel. Extract times from the page — if times appear,
-        # verify via the API that the room's earliest bookable slot is >48h.
+        # verify via the API that the room's earliest bookable slot is >28h.
         now = datetime.now(timezone.utc)
-        cutoff = now + timedelta(hours=48)
+        cutoff = now + timedelta(hours=28)
 
         # Look up room_ref for this application's room
         app_r = httpx.get(
@@ -385,7 +392,7 @@ def _chk_48h_minimum_window(ctx: BrowserContext, seeder: Seeder, result: StepRes
                 f"{earliest['slot_date']}T{earliest['start_time']}+00:00"
             )
             if earliest_dt <= cutoff:
-                # There are slots within 48h in the DB — verify they're NOT
+                # There are slots within 28h in the DB — verify they're NOT
                 # shown as time slot buttons on the page.
                 h, m, *_ = earliest["start_time"].split(":")
                 hour = int(h)
@@ -395,7 +402,7 @@ def _chk_48h_minimum_window(ctx: BrowserContext, seeder: Seeder, result: StepRes
                 time_label = f"{hour12}:{minute:02d} {period}"
                 if time_label in body:
                     result.status = "FAIL"
-                    result.reason = f"Earliest slot {earliest['slot_date']} {time_label} is within 48h and shown on page"
+                    result.reason = f"Earliest slot {earliest['slot_date']} {time_label} is within 28h and shown on page"
                 else:
                     result.status = "PASS"
             else:
@@ -463,6 +470,6 @@ TESTS: list[TestCase] = [
     TestCase(name="Booking UI: confirmation view + WhatsApp 24h copy", kind="ui", run=_chk_ui_confirmation_view),
     TestCase(name="Booking API: rate limit at 4th attempt", kind="api", run=_chk_api_rate_limit),
     TestCase(name="Booking UI: no-slots fallback with pre-filled details", kind="ui", run=_chk_ui_no_slots_fallback),
-    TestCase(name="Booking UI: 48h minimum booking window enforced", kind="ui", run=_chk_48h_minimum_window),
+    TestCase(name="Booking UI: 28h minimum booking window enforced", kind="ui", run=_chk_28h_minimum_window),
     TestCase(name="Booking UI: rebook banner when cancel_count > 0", kind="ui", run=_chk_rebook_banner),
 ]

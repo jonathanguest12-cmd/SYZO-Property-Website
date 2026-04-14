@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
@@ -176,7 +176,30 @@ export default function BookViewingClient({
 
   const firstAvailableDate = sortedDates[0] || ''
 
+  // Mobile detection — on mobile, calendar shows first, times panel
+  // appears only after a date is tapped.
+  const [isMobile, setIsMobile] = useState(false)
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+
   const [selectedDate, setSelectedDate] = useState<string>(firstAvailableDate)
+  const [isMobileTimesVisible, setIsMobileTimesVisible] = useState(false)
+
+  // On mobile, clear the auto-selected first date so the calendar starts
+  // with no date selected and no times showing.
+  useEffect(() => {
+    if (isMobile && !isMobileTimesVisible) {
+      setSelectedDate('')
+    } else if (!isMobile && !selectedDate && firstAvailableDate) {
+      setSelectedDate(firstAvailableDate)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMobile])
+
   const [currentMonth, setCurrentMonth] = useState<Date>(() => {
     if (firstAvailableDate) {
       const [y, m] = firstAvailableDate.split('-').map(Number)
@@ -400,7 +423,10 @@ export default function BookViewingClient({
                         type="button"
                         disabled={!isClickable}
                         onClick={() => {
-                          if (isClickable) setSelectedDate(day.key)
+                          if (isClickable) {
+                            setSelectedDate(day.key)
+                            setIsMobileTimesVisible(true)
+                          }
                         }}
                         className="flex items-center justify-center py-2"
                         style={{ minHeight: '40px' }}
@@ -449,9 +475,31 @@ export default function BookViewingClient({
               </p>
             </div>
 
-            {/* Right: Time slots for selected date */}
+            {/* Right: Time slots for selected date.
+                Desktop: always visible when a date is selected.
+                Mobile: hidden until user taps a date. */}
             {selectedDate && activeDaySlots.length > 0 && (
-              <div className="w-full md:w-72 p-6 sm:p-8 overflow-y-auto" style={{ maxHeight: '520px' }}>
+              <div
+                className={`w-full md:w-72 p-6 sm:p-8 overflow-y-auto ${
+                  isMobileTimesVisible ? '' : 'hidden md:block'
+                }`}
+                style={{ maxHeight: '520px' }}
+              >
+                {/* Mobile-only back link */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileTimesVisible(false)
+                    setSelectedDate('')
+                  }}
+                  className="md:hidden mb-3 inline-flex items-center gap-1 text-xs font-medium transition-colors duration-200 hover:opacity-70 cursor-pointer"
+                  style={{ color: '#9CA3AF' }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="15 18 9 12 15 6" />
+                  </svg>
+                  Change date
+                </button>
                 <h2
                   className="text-sm font-semibold mb-4"
                   style={{ color: '#2D3038' }}
