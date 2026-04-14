@@ -105,9 +105,9 @@ export default async function BookViewingPage({
   const roomRef = roomRows?.[0]?.coho_reference || ''
   const existingBooking = (existingRows && existingRows[0]) || null
 
-  // 48-hour minimum booking window — push the cutoff date into the DB query
+  // 28-hour minimum booking window — push the cutoff date into the DB query
   // so PostgREST doesn't hit its row limit on near-term slots.
-  const minBookableDateTime = new Date(Date.now() + 48 * 60 * 60 * 1000)
+  const minBookableDateTime = new Date(Date.now() + 28 * 60 * 60 * 1000)
   const cutoffDate = minBookableDateTime.toISOString().slice(0, 10)
 
   // Filter by room_ref when available, otherwise fall back to property_ref.
@@ -127,7 +127,7 @@ export default async function BookViewingPage({
       SUPABASE_URL
     )) || []
 
-  // Fine-grained 48h filter for slots on the cutoff date itself.
+  // Fine-grained 28h filter for slots on the cutoff date itself.
   const bookableSlots = slotRows.filter((slot) => {
     const slotDateTime = new Date(`${slot.slot_date}T${slot.start_time}Z`)
     return slotDateTime > minBookableDateTime
