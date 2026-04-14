@@ -90,7 +90,12 @@ def _chk_green_booking_page(ctx: BrowserContext, seeder: Seeder, result: StepRes
         result.url = url
         result.expected = 'Room heading + month calendar grid + time slots'
         page.goto(url, wait_until="networkidle", timeout=20_000)
-        # On mobile viewport, tap the first available (clickable) date to reveal times.
+        # First, assert the calendar is rendered (before any date tap).
+        pre_tap_body = page.inner_text("body")
+        has_property = "UAT Room" in pre_tap_body or PROPERTY_NAME_WITH_SLOTS in pre_tap_body
+        has_calendar = bool(re.search(r"\bMON\b", pre_tap_body)) and bool(re.search(r"\bTUE\b", pre_tap_body))
+        has_month = bool(re.search(r"(January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4}", pre_tap_body))
+        # On mobile, calendar hides when times show — tap a date to reveal times.
         try:
             page.locator("button:not([disabled])").filter(
                 has_text=re.compile(r"^\d{1,2}$")
@@ -100,13 +105,7 @@ def _chk_green_booking_page(ctx: BrowserContext, seeder: Seeder, result: StepRes
         result.screenshot = take_screenshot(page, out_dir, result.index, result.name)
         body = page.inner_text("body")
         result.observed = body[:400].replace("\n", " ")
-        # Heading shows application.room_name — seeder sets "UAT Room"
-        has_property = "UAT Room" in body or PROPERTY_NAME_WITH_SLOTS in body
-        # Month calendar grid shows weekday headers (MON TUE WED etc.)
-        has_calendar = bool(re.search(r"\bMON\b", body)) and bool(re.search(r"\bTUE\b", body))
-        # Month name (e.g. "April 2026")
-        has_month = bool(re.search(r"(January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4}", body))
-        # Time slots in HH:MM AM/PM format
+        # Time slots in HH:MM AM/PM format — checked AFTER the date tap.
         has_slot = bool(re.search(r"\b\d{1,2}:\d{2}\s?(AM|PM)\b", body))
         if has_property and has_calendar and has_month and has_slot:
             result.status = "PASS"
