@@ -365,7 +365,7 @@ export default function BookViewingClient({
                 <div className="mt-3 flex flex-col gap-1.5 text-sm" style={{ color: '#6B7280' }}>
                   <div className="flex items-center gap-2">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                    15 minutes
+                    30 minutes
                   </div>
                 </div>
               </div>
